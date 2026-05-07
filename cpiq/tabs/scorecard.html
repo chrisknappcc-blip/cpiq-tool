@@ -973,7 +973,37 @@ function renderScorecard(pid){
 
 // INIT
 updateSidebarCounts();
-buildPracticeList();
+wait for CPIQ state then render
+(function() {
+  function doInit() {
+    console.log('[CPIQ scorecard] PRACTICES:', PRACTICES ? PRACTICES.length : 'null', 'CPIQ:', window.CPIQ ? 'set' : 'null');
+    try {
+      buildPracticeList();
+    } catch(err) {
+      console.error('[CPIQ scorecard] init error:', err.message, err.stack);
+      document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">scorecard: ' + err.message + '</pre>';
+    }
+    window.parent.postMessage({ type: 'tab-ready', tab: 'scorecard' }, '*');
+  }
+
+  if (window.CPIQ && PRACTICES && PRACTICES.length) {
+    doInit();
+  } else {
+    // Poll for CPIQ state (injected script may not have run yet)
+    var attempts = 0;
+    var poll = setInterval(function() {
+      attempts++;
+      if (window.CPIQ && PRACTICES && PRACTICES.length) {
+        clearInterval(poll);
+        doInit();
+      } else if (attempts > 50) {
+        clearInterval(poll);
+        console.warn('[CPIQ scorecard] CPIQ state never arrived');
+        doInit(); // render anyway with empty data
+      }
+    }, 100);
+  }
+})();
 // Render the first practice on load
 if(state.selectedPid) renderScorecard(state.selectedPid);
 
