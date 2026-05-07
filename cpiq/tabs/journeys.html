@@ -163,34 +163,7 @@ footer{display:none!important}
   if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
 })();
 </script>
-<script>
-/* CPIQ preset patient loader — fetches /presets/*-patients.json lazily */
-(function() {
-  var _origReady = window.__cpiqReady;
-  window.__cpiqReady = function(state) {
-    if (state.patients) {
-      if (typeof _origReady === 'function') _origReady(state);
-      return;
-    }
-    if (state.meta && state.meta.patientsUrl) {
-      fetch(state.meta.patientsUrl)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          state.patients = data.patients || [];
-          window.CPIQ = state;
-          if (typeof _origReady === 'function') _origReady(state);
-        })
-        .catch(function(e) {
-          console.warn('Failed to load preset patients:', e);
-          state.patients = [];
-          if (typeof _origReady === 'function') _origReady(state);
-        });
-    } else {
-      if (typeof _origReady === 'function') _origReady(state);
-    }
-  };
-})();
-</script></head>
+</head>
 <body>
 
 <header>
@@ -915,16 +888,34 @@ window.__cpiqReady = function(state) {
   window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
 };
 
-if (_loadRaw()) {
-  populateDropdowns();
-  applyFilters();
-} else {
+(function waitForCPIQ() {
+  if (_loadRaw()) {
+    populateDropdowns();
+    applyFilters();
+    window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+    return;
+  }
   var waitEl = document.createElement('div');
+  waitEl.id = 'journeys-wait';
   waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
   waitEl.textContent = 'Loading patient data…';
   document.body.appendChild(waitEl);
-  window.__cpiqReadyWait = waitEl;
-}
+  var attempts = 0;
+  var poll = setInterval(function() {
+    attempts++;
+    if (_loadRaw()) {
+      clearInterval(poll);
+      var w = document.getElementById('journeys-wait');
+      if (w) w.remove();
+      populateDropdowns();
+      applyFilters();
+      window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+    } else if (attempts > 300) {
+      clearInterval(poll);
+      window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+    }
+  }, 100);
+})();
 
 // ── Listen for filter state from Patient Insights or CarePath IQ ──
 window.addEventListener('message', function(e) {
