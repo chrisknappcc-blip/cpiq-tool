@@ -797,7 +797,27 @@ async function generateAndBroadcast(sysName, mapState) {
   // Broadcast to any already-loaded frames
   broadcastToAllFrames({ type: 'cpiq-state', payload: dataset });
 
+  // Prefetch all tabs in parallel so they're ready when user clicks
+  prefetchTabs();
+
   return dataset;
+}
+
+// ── Tab prefetch cache ────────────────────────────────────────────────────────
+var _tabCache = {};
+var _tabFetching = {};
+
+function prefetchTabs() {
+  var tabs = ['carepathiq','source','destination','procedure','scorecard','insights','journeys','cycle'];
+  var v = '?v=' + Date.now();
+  tabs.forEach(function(id) {
+    if (_tabCache[id] || _tabFetching[id]) return;
+    _tabFetching[id] = true;
+    fetch('/tabs/' + id + '.html' + v)
+      .then(function(r) { return r.text(); })
+      .then(function(html) { _tabCache[id] = html; _tabFetching[id] = false; })
+      .catch(function() { _tabFetching[id] = false; });
+  });
 }
 
 // ── Broadcast to all loaded iframes ─────────────────────────────────────────
@@ -819,9 +839,7 @@ function loadFrame(id) {
   var loader = document.getElementById('loading-' + id);
   if (loader) loader.classList.remove('done');
 
-  fetch('/tabs/' + id + '.html?v=' + Date.now())
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
+  function _doRender(html) {
       // Inject slim state inline — patients fetched separately from blob
       if (cpiqState) {
         var slimState = {
@@ -835,7 +853,6 @@ function loadFrame(id) {
         var stateScript = '<script>window.__cpiqStateCache = ' + JSON.stringify(slimState) + '; window.CPIQ = window.__cpiqStateCache;<\/script>';
         html = html.replace('<head>', '<head>' + stateScript);
       }
-
       frame.srcdoc = html;
 
       // Fallback: clear loader after 12s
@@ -850,11 +867,19 @@ function loadFrame(id) {
           if (loader) loader.classList.add('done');
         }
       });
-    })
-    .catch(function(err) {
-      console.error('Failed to load tab ' + id + ':', err);
-      if (loader) loader.classList.add('done');
-    });
+  }
+
+  if (_tabCache[id]) {
+    _doRender(_tabCache[id]);
+  } else {
+    fetch('/tabs/' + id + '.html?v=' + Date.now())
+      .then(function(r) { return r.text(); })
+      .then(function(html) { _tabCache[id] = html; _doRender(html); })
+      .catch(function(err) {
+        console.error('Failed to load tab ' + id + ':', err);
+        if (loader) loader.classList.add('done');
+      });
+  }
 }
 
 function switchTab(id) {
