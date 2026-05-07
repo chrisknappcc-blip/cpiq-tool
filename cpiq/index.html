@@ -658,14 +658,23 @@ var loaded  = {};
 var current = 'carepathiq';
 var cpiqState = null;  // generated dataset, broadcast to all iframes
 
-// ── Fetch Map Tool shared state ──────────────────────────────────────────────
+// ── Fetch with timeout helper ────────────────────────────────────────────────
+function fetchWithTimeout(url, ms) {
+  ms = ms || 4000;
+  var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = setTimeout(function() { if (controller) controller.abort(); }, ms);
+  var opts = controller ? { signal: controller.signal } : {};
+  return fetch(url, opts).finally(function() { clearTimeout(timer); });
+}
+
+// ── Fetch Map Tool shared state (3s timeout, never blocks) ──────────────────
 async function loadMapState() {
   try {
-    var res = await fetch(MAP_TOOL_ROUTER + '?action=state-load');
+    var res = await fetchWithTimeout(MAP_TOOL_ROUTER + '?action=state-load', 3000);
     if (!res.ok) throw new Error('state-load ' + res.status);
     return await res.json();
   } catch(e) {
-    console.warn('Map Tool state-load failed, using empty state:', e.message);
+    console.warn('Map Tool state-load failed/timed out:', e.message);
     return { overrides: {}, typeOverrides: {}, customSystems: [], excluded: [] };
   }
 }
@@ -692,12 +701,12 @@ function extractCompetitors(mapState, targetSysName) {
     });
 }
 
-// ── Load target system logo from Map Tool ────────────────────────────────────
+// ── Load target system logo from Map Tool (2s timeout) ──────────────────────
 async function loadSystemLogo(sysName) {
   if (!sysName) return null;
   try {
     var key = encodeURIComponent(sysName.toLowerCase().trim());
-    var res = await fetch(MAP_TOOL_ROUTER + '?action=icon-load&system=' + key);
+    var res = await fetchWithTimeout(MAP_TOOL_ROUTER + '?action=icon-load&system=' + key, 2000);
     if (!res.ok) return null;
     var data = await res.json();
     return data.dataUrl || null;
@@ -712,14 +721,14 @@ async function generateAndBroadcast(sysName, mapState) {
   var dataset = CPIQEngine.generate(sysName, competitors, {});
   cpiqState = dataset;
 
-  // Update nav logo
-  var logoDataUrl = await loadSystemLogo(sysName);
-  if (logoDataUrl) {
+  // Update nav logo — fire and forget, never blocks generation
+  loadSystemLogo(sysName).then(function(logoDataUrl) {
+    if (!logoDataUrl) return;
     var logoImg = document.querySelector('.suite-logo img');
     if (logoImg) logoImg.src = logoDataUrl;
     var ctaLogo = document.getElementById('cta-panel-logo');
     if (ctaLogo) ctaLogo.src = logoDataUrl;
-  }
+  });
 
   // Update loading subtitles  
   document.querySelectorAll('.loading-sub').forEach(function(el) {
@@ -948,11 +957,18 @@ document.addEventListener('DOMContentLoaded', function() {
   var presetName = urlParams.get('preset');
   var sysName    = urlParams.get('sys');
 
-  // 1. Load map state and cache it for the modal
+  // 1. If no URL params, show modal immediately — don't wait for map state
+  if (!sysName && !presetName) {
+    openSysModal();
+    // Load map state in background for the hint feature
+    loadMapState().then(function(ms) { _mapStateCache = ms; });
+    return;
+  }
+
+  // 2. URL params provided — load map state then run (still with timeout so max 3s wait)
   var mapState = await loadMapState();
   _mapStateCache = mapState;
 
-  // 2. If URL params provided, skip modal and run directly
   if (sysName || presetName) {
     var dataset;
     if (presetName) {
