@@ -266,24 +266,36 @@ footer{display:none!important}
 <script>
 let PATIENTS = [];
 function _loadPatients() {
-  // Patients are stored in Azure blob — fetch async then render
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
+  
+  // Try sessionStorage first (instant, no network)
+  try {
+    var stored = window.parent.sessionStorage.getItem('cpiq_patients_' + sessionKey);
+    if (stored) {
+      var raw = JSON.parse(stored);
+      if (raw && raw.length) {
+        PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
+        try { render(); } catch(err) {
+          console.error('[CPIQ insights] render error:', err.message);
+          document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
+        }
+        window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
+        return;
+      }
+    }
+  } catch(e) { console.warn('[CPIQ insights] sessionStorage read failed:', e.message); }
+
+  // Fallback: fetch from blob
   var waitEl = document.createElement('div');
   waitEl.id = 'insights-wait';
   waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
   waitEl.textContent = 'Loading patient data…';
   document.body.appendChild(waitEl);
-
   var attempts = 0;
   function tryFetch() {
     fetch('/.netlify/functions/patients?action=load&session=' + encodeURIComponent(sessionKey))
       .then(function(r) {
-        if (r.status === 404 && attempts < 20) {
-          // Blob not ready yet — retry in 500ms (shell is still saving)
-          attempts++;
-          setTimeout(tryFetch, 500);
-          return null;
-        }
+        if (r.status === 404 && attempts < 20) { attempts++; setTimeout(tryFetch, 500); return null; }
         return r.json();
       })
       .then(function(data) {
@@ -294,19 +306,18 @@ function _loadPatients() {
         if (w) w.remove();
         try { render(); } catch(err) {
           console.error('[CPIQ insights] render error:', err.message);
-          document.body.innerHTML += '<pre style="color:red;padding:20px">' + err.message + '</pre>';
+          document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
         }
         window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
       })
       .catch(function(e) {
         console.error('[CPIQ insights] fetch failed:', e.message);
         var w = document.getElementById('insights-wait');
-        if (w) w.textContent = 'Failed to load patient data: ' + e.message;
+        if (w) w.textContent = 'Error: ' + e.message;
         window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
       });
   }
   tryFetch();
-  return false; // async — polling handles render
 }
 
 // ── State ─────────────────────────────────────────────────────────

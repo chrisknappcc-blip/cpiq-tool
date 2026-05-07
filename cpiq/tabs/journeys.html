@@ -343,63 +343,61 @@ const PAGE_SIZE  = 100;
 
 let _RAW = [];
 function expandPatient(r, cpiq) {
-  // Expand compact engine format to full journeys format
   var practices = (cpiq && cpiq.practices) || [];
   var referrers = (cpiq && cpiq.referrers) || [];
   var prac = practices.find(function(p) { return p.pid === r.dp; }) || {};
   var ref  = referrers.find(function(p) { return p.id === r.ri; }) || {};
   var doc  = (prac.docs || []).find(function(d) { return d.id === r.di; }) || {};
   return {
-    pid:           r.i,
-    id:            r.i,
-    spec:          r.sp,
-    refDate:       r.rd,
-    refTier:       r.rt,
-    refPtype:      r.rp,
-    refSource:     ref.name || 'Unknown Referrer',
-    refSourceId:   r.ri,
-    destPid:       r.dp,
-    destTier:      r.dt,
-    destPractice:  prac.name || r.dp,
-    destPhysician: doc.name || 'Unknown Physician',
-    destPhysId:    r.di,
-    visitDone:     r.v === 1,
-    mttaDays:      r.m,
-    visitDate:     r.vd,
-    edVisit:       r.e === 1,
-    procDone:      r.pr === 1,
-    procCode:      r.pc,
-    procName:      r.pn === 'in' ? 'In-Network' : r.pn === 'oon' ? 'Out-of-Network' : null,
-    procNet:       r.pn,
-    procDate:      r.pd,
-    daysFromRef:   r.df
+    pid:r.i, id:r.i, spec:r.sp, refDate:r.rd, refTier:r.rt, refPtype:r.rp,
+    refSource:ref.name||'Unknown', refSourceId:r.ri,
+    destPid:r.dp, destTier:r.dt,
+    destPractice:prac.name||r.dp,
+    destPhysician:doc.name||'Unknown', destPhysId:r.di,
+    visitDone:r.v===1, mttaDays:r.m, visitDate:r.vd,
+    edVisit:r.e===1, procDone:r.pr===1, procCode:r.pc,
+    procName:r.pn==='in'?'In-Network':r.pn==='oon'?'Out-of-Network':null,
+    procNet:r.pn, procDate:r.pd, daysFromRef:r.df
   };
 }
 
 function _loadRaw() {
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
   var cpiq = window.CPIQ;
+
+  // Try sessionStorage first (instant)
+  try {
+    var stored = window.parent.sessionStorage.getItem('cpiq_patients_' + sessionKey);
+    if (stored) {
+      var raw = JSON.parse(stored);
+      if (raw && raw.length) {
+        _RAW = raw.map(function(r) { return expandPatient(r, cpiq); });
+        try { populateDropdowns(); applyFilters(); } catch(err) {
+          console.error('[CPIQ journeys] render error:', err.message);
+          document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
+        }
+        window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+        return;
+      }
+    }
+  } catch(e) { console.warn('[CPIQ journeys] sessionStorage read failed:', e.message); }
+
+  // Fallback: fetch from blob
   var waitEl = document.createElement('div');
   waitEl.id = 'journeys-wait';
   waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
   waitEl.textContent = 'Loading patient data…';
   document.body.appendChild(waitEl);
-
   var attempts = 0;
   function tryFetch() {
     fetch('/.netlify/functions/patients?action=load&session=' + encodeURIComponent(sessionKey))
       .then(function(r) {
-        if (r.status === 404 && attempts < 20) {
-          attempts++;
-          setTimeout(tryFetch, 500);
-          return null;
-        }
+        if (r.status === 404 && attempts < 20) { attempts++; setTimeout(tryFetch, 500); return null; }
         return r.json();
       })
       .then(function(data) {
         if (!data) return;
         var raw = Array.isArray(data) ? data : [];
-        // Expand compact format to full journeys format
         _RAW = raw.map(function(r) { return expandPatient(r, cpiq); });
         var w = document.getElementById('journeys-wait');
         if (w) w.remove();
@@ -412,12 +410,11 @@ function _loadRaw() {
       .catch(function(e) {
         console.error('[CPIQ journeys] fetch failed:', e.message);
         var w = document.getElementById('journeys-wait');
-        if (w) w.textContent = 'Failed to load: ' + e.message;
+        if (w) w.textContent = 'Error: ' + e.message;
         window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
       });
   }
   tryFetch();
-  return false;
 }
 const PRAC_MAP = (function() {
   var m = {};
