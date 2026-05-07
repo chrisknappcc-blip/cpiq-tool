@@ -1,5 +1,5 @@
 [build]
-  publish = "cpiq"
+ 
 
 [[headers]]
   for = "/tabs/*"
