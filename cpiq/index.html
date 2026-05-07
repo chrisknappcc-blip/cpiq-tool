@@ -466,13 +466,83 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
 #cta-success svg { margin-bottom: 10px; }
 #cta-success h3 { margin: 0 0 6px; font-size: 14px; color: #1c2333; }
 #cta-success p { margin: 0; font-size: 12px; color: #667; }
+
+/* ── System Name Modal ── */
+#sys-modal-overlay {
+  position:fixed;inset:0;z-index:99999;
+  background:rgba(15,30,60,.55);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+}
+#sys-modal-overlay.hidden { display:none; }
+#sys-modal {
+  background:#fff;border-radius:18px;
+  box-shadow:0 24px 80px rgba(15,30,60,.28);
+  padding:36px 40px 32px;width:420px;max-width:90vw;
+  font-family:'Outfit',sans-serif;
+}
+#sys-modal h2 {
+  font-family:'DM Serif Display',serif;font-size:22px;
+  color:var(--text);margin:0 0 6px;
+}
+#sys-modal p {
+  font-size:13px;color:var(--text2);margin:0 0 24px;line-height:1.5;
+}
+#sys-modal label {
+  display:block;font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:var(--text3);margin-bottom:6px;
+}
+#sys-name-input {
+  width:100%;padding:11px 14px;font-size:14px;font-family:'Outfit',sans-serif;
+  border:1.5px solid var(--border);border-radius:10px;
+  color:var(--text);outline:none;
+  transition:border-color .15s;
+  box-sizing:border-box;
+}
+#sys-name-input:focus { border-color:var(--teal); }
+#sys-modal-hint {
+  font-size:11px;color:var(--text3);margin:8px 0 0;
+  min-height:16px;
+}
+#sys-modal-hint.warn { color:#c8354a; }
+#sys-modal-actions {
+  display:flex;gap:10px;margin-top:24px;
+}
+#sys-modal-go {
+  flex:1;padding:11px;background:var(--teal);color:#fff;
+  border:none;border-radius:10px;font-size:14px;font-weight:600;
+  font-family:'Outfit',sans-serif;cursor:pointer;
+  transition:opacity .15s;
+}
+#sys-modal-go:hover { opacity:.88; }
+#sys-modal-go:disabled { opacity:.45;cursor:not-allowed; }
+#sys-modal-preset {
+  padding:11px 16px;background:var(--bg);color:var(--text2);
+  border:1.5px solid var(--border);border-radius:10px;
+  font-size:13px;font-weight:500;font-family:'Outfit',sans-serif;
+  cursor:pointer;white-space:nowrap;
+  transition:border-color .15s;
+}
+#sys-modal-preset:hover { border-color:var(--text3); }
+
+/* Make logo area clickable */
+.suite-logo { cursor:pointer; }
+.suite-logo:hover img { opacity:.82; transition:opacity .15s; }
+.logo-edit-hint {
+  font-size:9px;color:var(--text3);font-weight:500;
+  letter-spacing:.04em;text-transform:uppercase;
+  margin-top:2px;text-align:center;opacity:0;
+  transition:opacity .15s;
+}
+.suite-logo:hover .logo-edit-hint { opacity:1; }
 </style>
 </head>
 <body>
 
 <nav class="suite-nav">
-  <div class="suite-logo">
+  <div class="suite-logo" onclick="openSysModal()" title="Change target system">
     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain">
+    <div class="logo-edit-hint">change system</div>
   </div>
   <div class="nav-divider"></div>
   <div class="tab-strip">
@@ -742,82 +812,204 @@ async function loadPreset(presetName) {
   return await res.json();
 }
 
-// ── Bootstrap ────────────────────────────────────────────────────────────────
-(async function init() {
-  var urlParams = new URLSearchParams(window.location.search);
-  var presetName = urlParams.get('preset');   // ?preset=original
-  var sysName    = urlParams.get('sys');       // ?sys=Baptist+Health
+// ── System Name Modal ─────────────────────────────────────────────────────────
+var _mapStateCache = null;
 
-  // 1. Load map state (competitors, overrides)
-  var mapState = await loadMapState();
+function openSysModal() {
+  var overlay = document.getElementById('sys-modal-overlay');
+  var input   = document.getElementById('sys-name-input');
+  overlay.classList.remove('hidden');
+  input.value = (cpiqState && cpiqState.meta && cpiqState.meta.sysName !== 'Health System')
+    ? cpiqState.meta.sysName : '';
+  setTimeout(function() { input.focus(); input.select(); }, 80);
+}
 
-  var dataset;
+function closeSysModal() {
+  document.getElementById('sys-modal-overlay').classList.add('hidden');
+}
 
-  if (presetName) {
-    // ── Preset mode: load preserved dataset, overlay sys name from URL or Map Tool ──
-    try {
-      var presetData = await loadPreset(presetName);
+function setSysModalHint(msg, warn) {
+  var el = document.getElementById('sys-modal-hint');
+  el.textContent = msg;
+  el.className = warn ? 'warn' : '';
+}
 
-      // Determine sys name: URL > Map Tool top system > preset default
-      if (!sysName) {
-        var counts = {};
-        Object.values(mapState.overrides || {}).forEach(function(n) {
-          if (n && n !== 'Independent / Community') counts[n] = (counts[n]||0)+1;
-        });
-        var top = Object.entries(counts).sort(function(a,b){return b[1]-a[1];})[0];
-        sysName = (top && top[0]) || presetData.meta.sysName || 'Health System';
+document.addEventListener('DOMContentLoaded', function() {
+  var overlay = document.getElementById('sys-modal-overlay');
+  var input   = document.getElementById('sys-name-input');
+  var goBtn   = document.getElementById('sys-modal-go');
+  var presetBtn = document.getElementById('sys-modal-preset');
+
+  // Close on overlay click (outside modal box)
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay && cpiqState) closeSysModal();
+  });
+
+  // Enter key submits
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') goBtn.click();
+  });
+
+  // Live hint: check if system exists in Map Tool state
+  input.addEventListener('input', function() {
+    var name = input.value.trim();
+    if (!name || !_mapStateCache) { setSysModalHint(''); return; }
+    var counts = {};
+    Object.values(_mapStateCache.overrides || {}).forEach(function(n) {
+      if (n && n !== 'Independent / Community') counts[n] = (counts[n]||0)+1;
+    });
+    if (counts[name]) {
+      setSysModalHint('✓ Found in Map Tool — logo + competitors will load automatically', false);
+    } else {
+      var similar = Object.keys(counts).filter(function(k) {
+        return k.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(k.toLowerCase().split(' ')[0]);
+      }).slice(0,2);
+      if (similar.length) {
+        setSysModalHint('Not found exactly — did you mean: ' + similar.join(', ') + '?', true);
+      } else {
+        setSysModalHint('Not in Map Tool — synthetic competitors will be used', false);
       }
+    }
+  });
 
-      var competitors = extractCompetitors(mapState, sysName);
-      presetData.meta.sysName      = sysName;
-      presetData.meta.competitors  = competitors;
-      // patients not in main preset file — tabs fetch /presets/<name>-patients.json themselves
-      presetData.meta.patientsUrl  = '/presets/' + presetName + '-patients.json';
-      presetData.patients          = null; // signal to tabs: fetch separately
+  goBtn.addEventListener('click', async function() {
+    var name = input.value.trim();
+    if (!name) { setSysModalHint('Please enter a system name', true); return; }
+    goBtn.disabled = true;
+    goBtn.textContent = 'Generating…';
+    setSysModalHint('');
 
-      dataset = presetData;
-      cpiqState = dataset;
+    // Reset loaded tabs so they re-receive new data
+    loaded = {};
+    document.querySelectorAll('.dash-frame').forEach(function(f) {
+      f.srcdoc = '';
+      f.classList.remove('visible');
+    });
+    document.querySelectorAll('.frame-loading').forEach(function(l) {
+      l.classList.remove('done');
+    });
+    document.getElementById('frame-carepathiq').classList.add('visible');
+    document.getElementById('tab-' + current).classList.remove('active');
+    current = 'carepathiq';
+    document.getElementById('tab-carepathiq').classList.add('active');
 
-      // Update nav logo from Map Tool
-      var logoDataUrl = await loadSystemLogo(sysName);
+    var mapState = _mapStateCache || { overrides:{}, typeOverrides:{}, customSystems:[], excluded:[] };
+    await generateAndBroadcast(name, mapState);
+    loadFrame('carepathiq');
+
+    goBtn.disabled = false;
+    goBtn.textContent = 'Generate Dashboard';
+    closeSysModal();
+  });
+
+  presetBtn.addEventListener('click', async function() {
+    presetBtn.disabled = true;
+    presetBtn.textContent = 'Loading…';
+
+    loaded = {};
+    document.querySelectorAll('.dash-frame').forEach(function(f) { f.srcdoc = ''; f.classList.remove('visible'); });
+    document.querySelectorAll('.frame-loading').forEach(function(l) { l.classList.remove('done'); });
+    document.getElementById('frame-carepathiq').classList.add('visible');
+    document.getElementById('tab-' + current).classList.remove('active');
+    current = 'carepathiq';
+    document.getElementById('tab-carepathiq').classList.add('active');
+
+    try {
+      var presetData = await loadPreset('original');
+      var name = input.value.trim() || 'Health System';
+      var mapState = _mapStateCache || { overrides:{}, typeOverrides:{}, customSystems:[], excluded:[] };
+      var competitors = extractCompetitors(mapState, name);
+      presetData.meta.sysName     = name;
+      presetData.meta.competitors = competitors;
+      presetData.meta.patientsUrl = '/presets/original-patients.json';
+      presetData.patients         = null;
+      cpiqState = presetData;
+
+      var logoDataUrl = await loadSystemLogo(name);
       if (logoDataUrl) {
         var logoImg = document.querySelector('.suite-logo img');
         if (logoImg) logoImg.src = logoDataUrl;
-        var ctaLogo = document.getElementById('cta-panel-logo');
-        if (ctaLogo) ctaLogo.src = logoDataUrl;
       }
-
-      document.querySelectorAll('.loading-sub').forEach(function(el) {
-        el.textContent = sysName;
-      });
-
-      broadcastToAllFrames({ type: 'cpiq-state', payload: dataset });
-      console.log('Preset loaded:', presetName, '— system:', sysName);
-
+      document.querySelectorAll('.loading-sub').forEach(function(el) { el.textContent = name; });
+      broadcastToAllFrames({ type: 'cpiq-state', payload: presetData });
+      loadFrame('carepathiq');
+      closeSysModal();
     } catch(e) {
-      console.warn('Preset load failed, falling back to engine:', e.message);
-      presetName = null; // fall through to engine
+      setSysModalHint('Could not load preset: ' + e.message, true);
     }
-  }
+    presetBtn.disabled = false;
+    presetBtn.textContent = 'Original Dataset';
+  });
+});
 
-  if (!presetName) {
-    // ── Engine mode: generate fresh from system name ──────────────────────────
-    if (!sysName) {
-      var counts = {};
-      Object.values(mapState.overrides || {}).forEach(function(n) {
-        if (n && n !== 'Independent / Community') counts[n] = (counts[n]||0)+1;
-      });
-      var top = Object.entries(counts).sort(function(a,b){return b[1]-a[1];})[0];
-      sysName = (top && top[0]) || 'Health System';
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+(async function init() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var presetName = urlParams.get('preset');
+  var sysName    = urlParams.get('sys');
+
+  // 1. Load map state and cache it for the modal
+  var mapState = await loadMapState();
+  _mapStateCache = mapState;
+
+  // 2. If URL params provided, skip modal and run directly
+  if (sysName || presetName) {
+    var dataset;
+    if (presetName) {
+      try {
+        var presetData = await loadPreset(presetName);
+        if (!sysName) {
+          var counts = {};
+          Object.values(mapState.overrides || {}).forEach(function(n) {
+            if (n && n !== 'Independent / Community') counts[n] = (counts[n]||0)+1;
+          });
+          var top = Object.entries(counts).sort(function(a,b){return b[1]-a[1];})[0];
+          sysName = (top && top[0]) || presetData.meta.sysName || 'Health System';
+        }
+        var competitors = extractCompetitors(mapState, sysName);
+        presetData.meta.sysName     = sysName;
+        presetData.meta.competitors = competitors;
+        presetData.meta.patientsUrl = '/presets/' + presetName + '-patients.json';
+        presetData.patients         = null;
+        cpiqState = presetData;
+        document.querySelectorAll('.loading-sub').forEach(function(el) { el.textContent = sysName; });
+        broadcastToAllFrames({ type: 'cpiq-state', payload: presetData });
+        var logoDataUrl = await loadSystemLogo(sysName);
+        if (logoDataUrl) {
+          var logoImg = document.querySelector('.suite-logo img');
+          if (logoImg) logoImg.src = logoDataUrl;
+        }
+      } catch(e) {
+        console.warn('Preset load failed, falling back to modal:', e.message);
+        openSysModal();
+        return;
+      }
+    } else {
+      await generateAndBroadcast(sysName, mapState);
     }
-    dataset = await generateAndBroadcast(sysName, mapState);
+    loadFrame('carepathiq');
+    document.getElementById('frame-carepathiq').classList.add('visible');
+  } else {
+    // 3. No URL params — show modal immediately
+    openSysModal();
   }
-
-  // Load first tab
-  loadFrame('carepathiq');
-  document.getElementById('frame-carepathiq').classList.add('visible');
 })();
 </script>
+
+<!-- ── System Name Modal ── -->
+<div id="sys-modal-overlay" class="hidden">
+  <div id="sys-modal">
+    <h2>Set Target System</h2>
+    <p>Enter the health system name for this demo. Stats and competitor data will generate automatically from the Map Tool.</p>
+    <label for="sys-name-input">Health System Name</label>
+    <input id="sys-name-input" type="text" placeholder="e.g. Baptist Health, Novant Health…" autocomplete="off" spellcheck="false">
+    <div id="sys-modal-hint"></div>
+    <div id="sys-modal-actions">
+      <button id="sys-modal-go">Generate Dashboard</button>
+      <button id="sys-modal-preset" title="Load original preserved demo dataset">Original Dataset</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Request A Custom Analysis Widget ── -->
 <div id="cta-bubble">
