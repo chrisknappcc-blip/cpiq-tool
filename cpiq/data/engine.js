@@ -390,6 +390,27 @@
       });
     }
 
+    // OON (independent/community) referring practices
+    const numOonRef = 2 + Math.floor(rng() * 2);
+    for (let i = 0; i < numOonRef; i++) {
+      const city = CITIES[(i + 3) % CITIES.length];
+      const comp = compSystems[i % compSystems.length] || { name: 'Community' };
+      const spec = PCP_TYPES[Math.floor(rng() * PCP_TYPES.length)];
+      referrers.push({
+        id: `r${String(numT1pcp + numT2 + numSpec + i + 1).padStart(3,'0')}`,
+        name: doctorName(rng),
+        practice: `${comp.name} ${spec} – ${city}`,
+        pid: `ph-oon-${city.toLowerCase().replace(' ','')}${i}`,
+        tier: 'oon', ptype: 'pcp', specialty: spec,
+        city: `${city}, ST`,
+        refs: {
+          ortho:  Math.round(specVols.ortho  * 0.03 * jitter(rng, 1, 0.5)),
+          cardio: Math.round(specVols.cardio * 0.03 * jitter(rng, 1, 0.5)),
+          gi:     Math.round(specVols.gi     * 0.03 * jitter(rng, 1, 0.5))
+        }
+      });
+    }
+
     return referrers;
   }
 
