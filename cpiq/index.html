@@ -814,7 +814,7 @@ function loadFrame(id) {
   var loader = document.getElementById('loading-' + id);
   if (loader) loader.classList.remove('done');
 
-  fetch('/tabs/' + id + '.html')
+  fetch('/tabs/' + id + '.html?v=' + Date.now())
     .then(function(r) { return r.text(); })
     .then(function(html) {
       // Inject slim state inline — patients fetched separately from blob
@@ -977,10 +977,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tab-carepathiq').classList.add('active');
 
     var mapState = _mapStateCache || { overrides:{}, typeOverrides:{}, customSystems:[], excluded:[] };
+
+    // Close modal and let browser repaint BEFORE the engine runs
+    // (engine is synchronous and blocks UI for ~2-3s)
+    goBtn.textContent = 'Building…';
+    closeSysModal();
+    applyUploadedLogo();
+
+    // Yield to browser for one frame, then generate
+    await new Promise(function(resolve) { setTimeout(resolve, 50); });
+
     await generateAndBroadcast(name, mapState);
     loadFrame('carepathiq');
-
-    applyUploadedLogo();
 
     // Force-clear the carepathiq loader after 5s as a safety net
     setTimeout(function() {
@@ -990,7 +998,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     goBtn.disabled = false;
     goBtn.textContent = 'Generate Dashboard';
-    closeSysModal();
   });
 
   // ── Logo file upload handler ──────────────────────────────────────────────
