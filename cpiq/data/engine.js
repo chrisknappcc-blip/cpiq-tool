@@ -129,7 +129,8 @@
     // ── 1. Volume math (50K pop base) ────────────────────────────────────
     const edVisits     = Math.round(jitter(rng, BASE.edVisits, 0.12));
     const edDischarges = Math.round(edVisits * BASE.edDischargeRate);
-    const totalRefs    = Math.round(edDischarges * BASE.specialtyRefPct * jitter(rng, 1, 0.08));
+    const rawRefs      = Math.round(edDischarges * BASE.specialtyRefPct * jitter(rng, 1, 0.08));
+    const totalRefs    = Math.min(rawRefs, 2000); // cap at 2000 for performance
     const inNetRate    = clamp(jitter(rng, BASE.inNetworkCompletionBase, 0.15), 0.28, 0.58);
     const oonLeakage   = clamp(jitter(rng, BASE.oonLeakageBase, 0.20), 0.18, 0.52);
 
