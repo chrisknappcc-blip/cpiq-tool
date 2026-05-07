@@ -764,21 +764,20 @@ async function generateAndBroadcast(sysName, mapState) {
   var sessionKey = sysName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 40);
   cpiqState._sessionKey = sessionKey;
 
-  // Stringify and save patients async — yields to browser first so UI stays responsive
-  var _patients = dataset.patients || [];
-  var _sessionKey2 = sessionKey;
-  setTimeout(function() {
-    var body = JSON.stringify(_patients);
-    fetch('/.netlify/functions/patients?action=save&session=' + encodeURIComponent(_sessionKey2), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: body
-    }).then(function(r) {
-      console.log('Patients saved to blob, session:', _sessionKey2, 'status:', r.status);
-    }).catch(function(e) {
-      console.warn('Patient blob save failed:', e.message);
-    });
-  }, 0);
+  // Store patients in sessionStorage — instant, no network round trip
+  try {
+    sessionStorage.setItem('cpiq_patients_' + sessionKey, JSON.stringify(dataset.patients || []));
+    console.log('Patients stored in sessionStorage, session:', sessionKey);
+  } catch(e) {
+    console.warn('sessionStorage failed, falling back to blob:', e.message);
+    // Fallback to blob if sessionStorage is full
+    setTimeout(function() {
+      fetch('/.netlify/functions/patients?action=save&session=' + encodeURIComponent(sessionKey), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataset.patients || [])
+      }).catch(function() {});
+    }, 0);
+  }
 
   // Update nav logo — fire and forget, never blocks generation
   loadSystemLogo(sysName).then(function(logoDataUrl) {
