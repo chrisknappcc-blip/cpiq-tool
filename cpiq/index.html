@@ -758,7 +758,22 @@ async function generateAndBroadcast(sysName, mapState) {
   var competitors = extractCompetitors(mapState, sysName);
   var dataset = CPIQEngine.generate(sysName, competitors, {});
   cpiqState = dataset;
-  window.__cpiqPatients = dataset.patients || [];
+
+  // Save patients to Azure blob via CPIQ's own Netlify function
+  // Session key is derived from system name so same system reuses same blob
+  var sessionKey = sysName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 40);
+  cpiqState._sessionKey = sessionKey;
+
+  // Fire-and-forget — tabs will poll until blob is ready
+  fetch('/.netlify/functions/patients?action=save&session=' + encodeURIComponent(sessionKey), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dataset.patients || [])
+  }).then(function(r) {
+    console.log('Patients saved to blob, session:', sessionKey, 'status:', r.status);
+  }).catch(function(e) {
+    console.warn('Patient blob save failed:', e.message);
+  });
 
   // Update nav logo — fire and forget, never blocks generation
   loadSystemLogo(sysName).then(function(logoDataUrl) {
@@ -802,18 +817,15 @@ function loadFrame(id) {
   fetch('/tabs/' + id + '.html')
     .then(function(r) { return r.text(); })
     .then(function(html) {
-      // Inject slim state (no patients) inline — patients stored on parent window
-      // to avoid srcdoc size limits (~512KB in Chrome)
+      // Inject slim state inline — patients fetched separately from blob
       if (cpiqState) {
-        // Store full patient array on parent window for direct access
-        window.__cpiqPatients = cpiqState.patients || [];
-        // Build slim state without patients
         var slimState = {
-          meta:       cpiqState.meta,
-          practices:  cpiqState.practices,
-          referrers:  cpiqState.referrers,
-          kpis:       cpiqState.kpis,
-          patients:   null  // tabs read from window.parent.__cpiqPatients
+          meta:        cpiqState.meta,
+          practices:   cpiqState.practices,
+          referrers:   cpiqState.referrers,
+          kpis:        cpiqState.kpis,
+          sessionKey:  cpiqState._sessionKey || 'default',
+          patients:    null
         };
         var stateScript = '<script>window.__cpiqStateCache = ' + JSON.stringify(slimState) + '; window.CPIQ = window.__cpiqStateCache;<\/script>';
         html = html.replace('<head>', '<head>' + stateScript);
