@@ -758,6 +758,7 @@ async function generateAndBroadcast(sysName, mapState) {
   var competitors = extractCompetitors(mapState, sysName);
   var dataset = CPIQEngine.generate(sysName, competitors, {});
   cpiqState = dataset;
+  window.__cpiqPatients = dataset.patients || [];
 
   // Update nav logo — fire and forget, never blocks generation
   loadSystemLogo(sysName).then(function(logoDataUrl) {
@@ -801,10 +802,20 @@ function loadFrame(id) {
   fetch('/tabs/' + id + '.html')
     .then(function(r) { return r.text(); })
     .then(function(html) {
-      // Inject state as an inline script at the very top of the HTML —
-      // this runs before any tab code so __cpiqStateCache is always available
+      // Inject slim state (no patients) inline — patients stored on parent window
+      // to avoid srcdoc size limits (~512KB in Chrome)
       if (cpiqState) {
-        var stateScript = '<script>window.__cpiqStateCache = ' + JSON.stringify(cpiqState) + ';<\/script>';
+        // Store full patient array on parent window for direct access
+        window.__cpiqPatients = cpiqState.patients || [];
+        // Build slim state without patients
+        var slimState = {
+          meta:       cpiqState.meta,
+          practices:  cpiqState.practices,
+          referrers:  cpiqState.referrers,
+          kpis:       cpiqState.kpis,
+          patients:   null  // tabs read from window.parent.__cpiqPatients
+        };
+        var stateScript = '<script>window.__cpiqStateCache = ' + JSON.stringify(slimState) + '; window.CPIQ = window.__cpiqStateCache;<\/script>';
         html = html.replace('<head>', '<head>' + stateScript);
       }
 
