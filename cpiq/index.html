@@ -683,8 +683,12 @@ function fetchWithTimeout(url, ms) {
   return fetch(url, opts).finally(function() { clearTimeout(timer); });
 }
 
-// ── Fetch Map Tool shared state (3s timeout, never blocks) ──────────────────
+// ── Fetch Map Tool shared state ───────────────────────────────────────────────
+// NOTE: Map Tool CORS not yet configured for this origin.
+// Returns empty state immediately — re-enable once CORS is sorted.
 async function loadMapState() {
+  return { overrides: {}, typeOverrides: {}, customSystems: [], excluded: [] };
+  /* CORS-DISABLED — uncomment when Map Tool allows this origin:
   try {
     var res = await fetchWithTimeout(MAP_TOOL_ROUTER + '?action=state-load', 3000);
     if (!res.ok) throw new Error('state-load ' + res.status);
@@ -693,6 +697,7 @@ async function loadMapState() {
     console.warn('Map Tool state-load failed/timed out:', e.message);
     return { overrides: {}, typeOverrides: {}, customSystems: [], excluded: [] };
   }
+  */
 }
 
 // ── Extract competitor systems from overrides map ───────────────────────────
@@ -717,8 +722,11 @@ function extractCompetitors(mapState, targetSysName) {
     });
 }
 
-// ── Load target system logo from Map Tool (2s timeout) ──────────────────────
+// ── Load target system logo from Map Tool ────────────────────────────────────
+// NOTE: CORS-disabled until Map Tool allows this origin.
 async function loadSystemLogo(sysName) {
+  return null;
+  /* CORS-DISABLED — uncomment when Map Tool allows this origin:
   if (!sysName) return null;
   try {
     var key = encodeURIComponent(sysName.toLowerCase().trim());
@@ -729,6 +737,7 @@ async function loadSystemLogo(sysName) {
   } catch(e) {
     return null;
   }
+  */
 }
 
 // ── Generate CPIQ dataset and broadcast to all frames ────────────────────────
