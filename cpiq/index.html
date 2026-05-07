@@ -764,8 +764,14 @@ function loadFrame(id) {
     .then(function(r) { return r.text(); })
     .then(function(html) {
       frame.srcdoc = html;
+      // Fallback: always clear loader after 10s regardless
+      var fallbackTimer = setTimeout(function() {
+        if (loader) loader.classList.add('done');
+      }, 10000);
+
       frame.addEventListener('load', function onLoad() {
         frame.removeEventListener('load', onLoad);
+        clearTimeout(fallbackTimer);
         // Inject state after frame loads
         setTimeout(function() {
           if (cpiqState && frame.contentWindow) {
@@ -952,6 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
 (async function init() {
   var urlParams = new URLSearchParams(window.location.search);
   var presetName = urlParams.get('preset');
@@ -1010,6 +1017,7 @@ document.addEventListener('DOMContentLoaded', function() {
     openSysModal();
   }
 })();
+}); // end DOMContentLoaded
 </script>
 
 <!-- ── System Name Modal ── -->
