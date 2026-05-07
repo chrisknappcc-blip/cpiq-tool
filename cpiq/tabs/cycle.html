@@ -328,7 +328,7 @@ const referrers = (window.CPIQ && window.CPIQ.referrers) ? window.CPIQ.referrers
    procRate: fraction with downstream procedure within 120d
    procNetSplit: fraction of procedures done in-network
 ══════════════════════════════════════════════════════════════ */
-const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+let specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
 // Normalize engine practices for procedure/cycle tabs
 specialists = specialists.map(function(s) {
   var refs = {ortho: 0, cardio: 0, gi: 0};

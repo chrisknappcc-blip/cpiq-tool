@@ -288,7 +288,7 @@ footer{display:none!important}
    convRate: base conversion rate for this physician (0–1)
    refs: annual referral volume received {ortho, cardio, gi}
 ══════════════════════════════════════════════════════ */
-const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+let specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
 // Normalize engine practices for destination tab
 specialists = specialists.map(function(s) {
   if (s.refs) return s;

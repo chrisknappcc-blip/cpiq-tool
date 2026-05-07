@@ -326,7 +326,7 @@ function getLocationsForPractice(p, selectedCode, overrides) {
     .slice(0, 15);
 }
 
-const PRACTICES = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : []
+let PRACTICES = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : []
 // Normalize engine practices to add fields expected by scorecard
 PRACTICES = PRACTICES.map(function(p) {
   // monthlyProc: estimate from monthly * procRate
@@ -357,7 +357,7 @@ PRACTICES = PRACTICES.map(function(p) {
   });
 });
 
-const SYS_NAME = (window.CPIQ && window.CPIQ.meta && window.CPIQ.meta.sysName) || 'Health System'; // REPLACE: set to new health system name
+let SYS_NAME = (window.CPIQ && window.CPIQ.meta && window.CPIQ.meta.sysName) || 'Health System'; // REPLACE: set to new health system name
 ;
 
 const SPEC_META = {

@@ -456,7 +456,7 @@ function getLocationRows(filtered, k, procNetFilter){
    procNetSplit: fraction of those procedures done in-network
    Ortho avg ~30%, Cardio ~22%, GI ~14% → blended ~22%
 ══════════════════════════════════════════════════════════════ */
-const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+let specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
 // Normalize engine practices for procedure/cycle tabs
 specialists = specialists.map(function(s) {
   var refs = {ortho: 0, cardio: 0, gi: 0};
