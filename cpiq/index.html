@@ -594,7 +594,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
     <div class="loading-label">Loading CarePath IQ…</div>
     <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
   </div>
-  <iframe class="dash-frame visible" id="frame-carepathiq" class="dash-frame visible"
+  <iframe class="dash-frame" id="frame-carepathiq"
     sandbox="allow-scripts allow-same-origin"></iframe>
 
   <iframe class="dash-frame" id="frame-source"
@@ -648,6 +648,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <iframe class="dash-frame" id="frame-insights"
     sandbox="allow-scripts allow-same-origin"></iframe>
 </div>
+
+<!-- ── System Name Modal ── -->
+<div id="sys-modal-overlay" class="hidden">
+  <div id="sys-modal">
+    <h2>Set Target System</h2>
+    <p>Enter the health system name for this demo. Stats and competitor data will generate automatically from the Map Tool.</p>
+    <label for="sys-name-input">Health System Name</label>
+    <input id="sys-name-input" type="text" placeholder="e.g. Baptist Health, Novant Health…" autocomplete="off" spellcheck="false">
+    <div id="sys-modal-hint"></div>
+    <div id="sys-modal-actions">
+      <button id="sys-modal-go">Generate Dashboard</button>
+      <button id="sys-modal-preset" title="Load original preserved demo dataset">Original Dataset</button>
+    </div>
+  </div>
+</div>
+
 
 <script src="/data/engine.js"></script>
 <script>
@@ -763,11 +779,14 @@ function loadFrame(id) {
   fetch('/tabs/' + id + '.html')
     .then(function(r) { return r.text(); })
     .then(function(html) {
+      // Set onload before srcdoc to guarantee the event fires
+      frame.onload = null;
       frame.srcdoc = html;
-      // Fallback: always clear loader after 10s regardless
+      // Fallback: clear loader after 10s (20s for insights/journeys which lazy-fetch patients)
+      var fallbackMs = (id === 'insights' || id === 'journeys') ? 20000 : 10000;
       var fallbackTimer = setTimeout(function() {
         if (loader) loader.classList.add('done');
-      }, 10000);
+      }, fallbackMs);
 
       frame.addEventListener('load', function onLoad() {
         frame.removeEventListener('load', onLoad);
@@ -833,6 +852,7 @@ var _mapStateCache = null;
 function openSysModal() {
   var overlay = document.getElementById('sys-modal-overlay');
   var input   = document.getElementById('sys-name-input');
+  if (!overlay || !input) { console.warn('Modal not ready yet'); return; }
   overlay.classList.remove('hidden');
   input.value = (cpiqState && cpiqState.meta && cpiqState.meta.sysName !== 'Health System')
     ? cpiqState.meta.sysName : '';
@@ -911,6 +931,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var mapState = _mapStateCache || { overrides:{}, typeOverrides:{}, customSystems:[], excluded:[] };
     await generateAndBroadcast(name, mapState);
     loadFrame('carepathiq');
+
+    // Force-clear the carepathiq loader after 5s as a safety net
+    setTimeout(function() {
+      var l = document.getElementById('loading-carepathiq');
+      if (l) l.classList.add('done');
+    }, 5000);
 
     goBtn.disabled = false;
     goBtn.textContent = 'Generate Dashboard';
@@ -1019,21 +1045,6 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 }); // end DOMContentLoaded
 </script>
-
-<!-- ── System Name Modal ── -->
-<div id="sys-modal-overlay" class="hidden">
-  <div id="sys-modal">
-    <h2>Set Target System</h2>
-    <p>Enter the health system name for this demo. Stats and competitor data will generate automatically from the Map Tool.</p>
-    <label for="sys-name-input">Health System Name</label>
-    <input id="sys-name-input" type="text" placeholder="e.g. Baptist Health, Novant Health…" autocomplete="off" spellcheck="false">
-    <div id="sys-modal-hint"></div>
-    <div id="sys-modal-actions">
-      <button id="sys-modal-go">Generate Dashboard</button>
-      <button id="sys-modal-preset" title="Load original preserved demo dataset">Original Dataset</button>
-    </div>
-  </div>
-</div>
 
 <!-- ── Request A Custom Analysis Widget ── -->
 <div id="cta-bubble">
