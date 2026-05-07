@@ -813,7 +813,7 @@ function loadFrame(id) {
       frame.addEventListener('load', function onLoad() {
         frame.removeEventListener('load', onLoad);
         clearTimeout(fallbackTimer);
-        // Inject state after frame loads
+        // Inject state after frame loads — 600ms gives tab scripts time to fully execute
         setTimeout(function() {
           if (cpiqState && frame.contentWindow) {
             try {
@@ -821,8 +821,11 @@ function loadFrame(id) {
               frame.contentWindow.postMessage({ type: 'cpiq-state', payload: cpiqState }, '*');
             } catch(e) {}
           }
-          if (loader) loader.classList.add('done');
-        }, 150);
+          // Only clear loader for non-patient tabs — patient tabs signal tab-ready themselves
+          if (id !== 'insights' && id !== 'journeys') {
+            if (loader) loader.classList.add('done');
+          }
+        }, 600);
       });
     })
     .catch(function(err) {
