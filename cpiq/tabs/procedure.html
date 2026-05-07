@@ -457,6 +457,22 @@ function getLocationRows(filtered, k, procNetFilter){
    Ortho avg ~30%, Cardio ~22%, GI ~14% → blended ~22%
 ══════════════════════════════════════════════════════════════ */
 const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+// Normalize engine practices for procedure/cycle tabs
+specialists = specialists.map(function(s) {
+  var refs = {ortho: 0, cardio: 0, gi: 0};
+  if (s.spec && refs.hasOwnProperty(s.spec)) refs[s.spec] = s.totalRefs || 0;
+  var inNetProcs  = Math.round((s.totalRefs||0) * (s.procRate||0.15) * (1-(s.oonProcRate||0.1)));
+  var oonProcs    = Math.round((s.totalRefs||0) * (s.procRate||0.15) * (s.oonProcRate||0.1));
+  return Object.assign({}, s, {
+    id:           s.pid,
+    refs:         refs,
+    practice:     s.name,
+    city:         'City A, ST',
+    procNetSplit: {in: inNetProcs, oon: oonProcs},
+    meta:         {tier: s.tier, spec: s.spec}
+  });
+});
+
 
 /* ══════════════════════════════════════════════════════
    MONTHLY WEIGHTS — same seasonal pattern

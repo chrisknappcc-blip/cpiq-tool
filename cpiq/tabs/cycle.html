@@ -316,123 +316,10 @@ footer{display:none!important}
    ptype: pcp | spec
    refs: annual volume sent {ortho, cardio, gi}
 ══════════════════════════════════════════════════════════════ */
-const referrers = [
-  {id:'r001',name:'Dr. Kevin T. Brady',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:420,cardio:396,gi:472}},
-  {id:'r002',name:'Dr. Melissa J. Thornton',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:390,cardio:364,gi:432}},
-  {id:'r003',name:'Dr. Anthony R. Davis',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:356,cardio:336,gi:396}},
-  {id:'r004',name:'Dr. Stephanie L. Martin',practice:'Competitor Primary Care – City B',pid:'ph-fm-simp',tier:'t1',ptype:'pcp',refs:{ortho:324,cardio:376,gi:408}},
-  {id:'r005',name:'Dr. Ronald G. Barnes',practice:'Competitor Primary Care – City B',pid:'ph-fm-simp',tier:'t1',ptype:'pcp',refs:{ortho:296,cardio:344,gi:376}},
-  {id:'r006',name:'Dr. Catherine P. Morrison',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:276,cardio:390,gi:448}},
-  {id:'r007',name:'Dr. James A. Wilson',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:250,cardio:360,gi:420}},
-  {id:'r008',name:'Dr. Laura M. Hendricks',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:224,cardio:330,gi:384}},
-  {id:'r009',name:'Dr. Nathan P. Coleman',practice:'Health System Primary Care – City C',pid:'ph-pc-greer',tier:'t1',ptype:'pcp',refs:{ortho:290,cardio:264,gi:312}},
-  {id:'r010',name:'Dr. Cheryl A. Griffin',practice:'Health System Primary Care – City C',pid:'ph-pc-greer',tier:'t1',ptype:'pcp',refs:{ortho:264,cardio:240,gi:280}},
-  {id:'r011',name:'Dr. Barry T. Hollis',practice:'Health System Family Medicine – City D',pid:'ph-fm-laurens',tier:'t1',ptype:'pcp',refs:{ortho:236,cardio:216,gi:256}},
-  {id:'r012',name:'Dr. Virginia E. Foster',practice:'Health System Family Medicine – City D',pid:'ph-fm-laurens',tier:'t1',ptype:'pcp',refs:{ortho:210,cardio:192,gi:228}},
-  {id:'r013',name:'Dr. Lawrence T. Webb',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:256,cardio:296,gi:352}},
-  {id:'r014',name:'Dr. Deborah A. Sutton',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:230,cardio:270,gi:320}},
-  {id:'r015',name:'Dr. Calvin J. Reed',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:204,cardio:244,gi:288}},
-  {id:'r016',name:'Dr. Rosemary K. Nash',practice:'Health System Family Medicine – City F',pid:'ph-fm-lex',tier:'t1',ptype:'pcp',refs:{ortho:276,cardio:250,gi:296}},
-  {id:'r017',name:'Dr. Frederick H. Grant',practice:'Health System Family Medicine – City F',pid:'ph-fm-lex',tier:'t1',ptype:'pcp',refs:{ortho:244,cardio:224,gi:264}},
-  {id:'r018',name:'Dr. Irene C. Barrett',practice:'Health System Internal Medicine – City G',pid:'ph-im-spart',tier:'t1',ptype:'pcp',refs:{ortho:230,cardio:264,gi:312}},
-  {id:'r019',name:'Dr. Leonard W. Dixon',practice:'Health System Internal Medicine – City G',pid:'ph-im-spart',tier:'t1',ptype:'pcp',refs:{ortho:210,cardio:244,gi:288}},
-  {id:'r020',name:'Dr. Karen B. Singh',practice:'Health System Cardiology – City A',pid:'ph-cardio-gvm',tier:'t1',ptype:'spec',refs:{ortho:2386,cardio:0,gi:881}},
-  {id:'r021',name:'Dr. Mark T. Bhatt',practice:'Health System Cardiology – City B',pid:'ph-cardio-spart',tier:'t1',ptype:'spec',refs:{ortho:1762,cardio:0,gi:587}},
-  {id:'r022',name:'Dr. Robert P. Kimbrell',practice:'Health System Heart & Vascular – City A',pid:'ph-cardio-col',tier:'t1',ptype:'spec',refs:{ortho:1542,cardio:0,gi:587}},
-  {id:'r023',name:'Dr. Benjamin T. Mauldin',practice:'Health System Digestive Health – City B',pid:'ph-gi-gvl',tier:'t1',ptype:'spec',refs:{ortho:1175,cardio:1322,gi:0}},
-  {id:'r024',name:'Dr. Kenneth J. Vega',practice:'Health System Digestive Health – City A',pid:'ph-gi-col',tier:'t1',ptype:'spec',refs:{ortho:1028,cardio:1175,gi:0}},
-  {id:'r025',name:'Dr. Robert H. Stokes',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:390,cardio:356,gi:408}},
-  {id:'r026',name:'Dr. Charles W. Duncan',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:364,cardio:330,gi:380}},
-  {id:'r027',name:'Dr. Patricia L. Morrison',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:336,cardio:304,gi:352}},
-  {id:'r028',name:'Dr. Thomas J. Watkins',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:310,cardio:280,gi:320}},
-  {id:'r029',name:'Dr. Nancy B. Crawford',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:296,cardio:268,gi:312}},
-  {id:'r030',name:'Dr. Michael T. Garrett',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:276,cardio:248,gi:288}},
-  {id:'r031',name:'Dr. Leslie A. Freeman',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:250,cardio:224,gi:260}},
-  {id:'r032',name:'Dr. James W. Richardson',practice:'CIN Partner Primary Care – City C',pid:'medlife',tier:'t2',ptype:'pcp',refs:{ortho:236,cardio:276,gi:288}},
-  {id:'r033',name:'Dr. Priya R. Mehta',practice:'CIN Partner Primary Care – City C',pid:'medlife',tier:'t2',ptype:'pcp',refs:{ortho:216,cardio:256,gi:264}},
-  {id:'r034',name:'Dr. David A. Reynolds',practice:'CIN Partner Primary Care – City D',pid:'anmed-phy',tier:'t2',ptype:'pcp',refs:{ortho:230,cardio:264,gi:272}},
-  {id:'r035',name:'Dr. Carol S. Hendrix',practice:'CIN Partner Primary Care – City D',pid:'anmed-phy',tier:'t2',ptype:'pcp',refs:{ortho:210,cardio:240,gi:248}},
-  {id:'r036',name:'Dr. Frances L. Cannon',practice:'CIN Partner Primary Care – City F',pid:'midlands-pc',tier:'t2',ptype:'pcp',refs:{ortho:264,cardio:296,gi:328}},
-  {id:'r037',name:'Dr. Herbert J. Norwood',practice:'CIN Partner Primary Care – City F',pid:'midlands-pc',tier:'t2',ptype:'pcp',refs:{ortho:236,cardio:270,gi:300}},
-  {id:'r038',name:'Dr. Arthur P. Cunningham',practice:'CIN Partner Primary Care – City M',pid:'palmetto-pc',tier:'t2',ptype:'pcp',refs:{ortho:250,cardio:284,gi:312}},
-  {id:'r039',name:'Dr. Judith R. Flowers',practice:'CIN Partner Primary Care – City M',pid:'palmetto-pc',tier:'t2',ptype:'pcp',refs:{ortho:224,cardio:256,gi:280}},
-  {id:'r040',name:'Dr. Patrick W. Hamilton',practice:'CIN Partner Cardiology – City G',pid:'foothill-cardio',tier:'t2',ptype:'spec',refs:{ortho:2276,cardio:0,gi:808}},
-  {id:'r041',name:'Dr. Anita J. Patel',practice:'CIN Partner Gastroenterology – City M',pid:'upstate-gi',tier:'t2',ptype:'spec',refs:{ortho:881,cardio:955,gi:0}},
-  {id:'r042',name:'Dr. Russell A. Bowen',practice:'CIN Partner Cardiology – City H',pid:'midlands-cardio',tier:'t2',ptype:'spec',refs:{ortho:1909,cardio:0,gi:661}},
-  {id:'r043',name:'Dr. Timothy J. Norris',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:376,cardio:344,gi:392}},
-  {id:'r044',name:'Dr. Jennifer A. Wallace',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:350,cardio:316,gi:360}},
-  {id:'r045',name:'Dr. Christopher L. Owens',practice:'Health System Medical Group',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:324,cardio:296,gi:336}},
-  {id:'r046',name:'Dr. Angela M. Brooks',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:310,cardio:280,gi:320}},
-  {id:'r047',name:'Dr. Marcus D. Fleming',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:296,cardio:264,gi:304}},
-  {id:'r048',name:'Dr. Sandra R. Phillips',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:276,cardio:244,gi:280}},
-  {id:'r049',name:'Dr. George T. Williamson',practice:'Academic Medical Primary Care – City A',pid:'sc-ima',tier:'oon',ptype:'pcp',refs:{ortho:256,cardio:228,gi:260}},
-  {id:'r050',name:'Dr. Diana K. Lewis',practice:'Academic Medical Primary Care – City A',pid:'sc-ima',tier:'oon',ptype:'pcp',refs:{ortho:236,cardio:210,gi:240}},
-  {id:'r051',name:'Dr. Robert W. Hawkins',practice:'Regional Health Primary Care – City A',pid:'parkside',tier:'oon',ptype:'pcp',refs:{ortho:184,cardio:210,gi:216}},
-  {id:'r052',name:'Dr. Linda S. Chambers',practice:'Regional Health Primary Care – City A',pid:'parkside',tier:'oon',ptype:'pcp',refs:{ortho:170,cardio:192,gi:200}},
-  {id:'r053',name:'Dr. Gary W. Simpson',practice:'Competitor Orthopedic Associates – City B',pid:'carolina-ortho',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:734,gi:514}},
-  {id:'r054',name:'Dr. Douglas P. Holt',practice:'Academic Medical Cardiology – City A',pid:'bon-cardio',tier:'oon',ptype:'spec',refs:{ortho:2019,cardio:0,gi:734}},
-  {id:'r055',name:'Dr. Vivian N. Pearce',practice:'Health System Digestive Health – City A',pid:'carolina-gi',tier:'oon',ptype:'spec',refs:{ortho:808,cardio:881,gi:0}},
-  {id:'r056',name:'Dr. Sarah A. Smith',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r057',name:'Dr. Joseph E. White',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r058',name:'Dr. Anthony J. Torres',practice:'Competitor Primary Care – City B',pid:'ph-fm-simp',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r059',name:'Dr. Carol N. Turner',practice:'Competitor Primary Care – City B',pid:'ph-fm-simp',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r060',name:'Dr. Timothy T. Perry',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r061',name:'Dr. Ryan C. Griffin',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r062',name:'Dr. Alexander G. Reynolds',practice:'Health System Primary Care – City C',pid:'ph-pc-greer',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r063',name:'Dr. Douglas L. Webb',practice:'Health System Primary Care – City C',pid:'ph-pc-greer',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r064',name:'Dr. Carl R. Warren',practice:'Health System Family Medicine – City D',pid:'ph-fm-laurens',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r065',name:'Dr. Scott A. Palmer',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r066',name:'Dr. Dorothy E. Gardner',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r067',name:'Dr. Catherine J. Snyder',practice:'Health System Family Medicine – City F',pid:'ph-fm-lex',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r068',name:'Dr. Carolyn N. Greene',practice:'Health System Family Medicine – City F',pid:'ph-fm-lex',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r069',name:'Dr. Olivia T. Mendoza',practice:'Health System Internal Medicine – City G',pid:'ph-im-spart',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r070',name:'Dr. Joan C. Carr',practice:'Health System Internal Medicine – City G',pid:'ph-im-spart',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r071',name:'Dr. Paula G. Duran',practice:'Health System Cardiology – City A',pid:'ph-cardio-gvm',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r072',name:'Dr. Crystal L. Gilbert',practice:'Health System Cardiology – City A',pid:'ph-cardio-gvm',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r073',name:'Dr. Kathy R. Henderson',practice:'Health System Cardiology – City A',pid:'ph-cardio-gvm',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r074',name:'Dr. Richard A. Miller',practice:'Health System Cardiology – City B',pid:'ph-cardio-spart',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r075',name:'Dr. Margaret E. Lewis',practice:'Health System Cardiology – City B',pid:'ph-cardio-spart',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r076',name:'Dr. Emily J. Nelson',practice:'Health System Heart & Vascular – City A',pid:'ph-cardio-col',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r077',name:'Dr. Kevin N. Sanders',practice:'Health System Heart & Vascular – City A',pid:'ph-cardio-col',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r078',name:'Dr. Cynthia T. Butler',practice:'Health System Digestive Health – City B',pid:'ph-gi-gvl',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r079',name:'Dr. Brandon C. Graham',practice:'Health System Digestive Health – City B',pid:'ph-gi-gvl',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r080',name:'Dr. Tyler G. Cruz',practice:'Health System Digestive Health – City A',pid:'ph-gi-col',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r081',name:'Dr. Kyle L. Hicks',practice:'Health System Digestive Health – City A',pid:'ph-gi-col',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r082',name:'Dr. Jonathan R. Shaw',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r083',name:'Dr. Charles A. Rose',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r084',name:'Dr. Virginia E. Arnold',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r085',name:'Dr. Joyce J. Ruiz',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r086',name:'Dr. Doris N. Peters',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r087',name:'Dr. Alice T. Guerrero',practice:'CIN Partner Primary Care – City C',pid:'medlife',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r088',name:'Dr. Diana C. Conner',practice:'CIN Partner Primary Care – City C',pid:'medlife',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r089',name:'Dr. Mildred G. Floyd',practice:'CIN Partner Primary Care – City D',pid:'anmed-phy',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r090',name:'Dr. Amber L. Guy',practice:'CIN Partner Primary Care – City D',pid:'anmed-phy',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r091',name:'Dr. Jessica R. Howell',practice:'CIN Partner Primary Care – City F',pid:'midlands-pc',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r092',name:'Dr. Lisa A. Jackson',practice:'CIN Partner Primary Care – City F',pid:'midlands-pc',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r093',name:'Dr. Matthew E. Scott',practice:'CIN Partner Primary Care – City M',pid:'palmetto-pc',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r094',name:'Dr. Andrew J. Roberts',practice:'CIN Partner Primary Care – City M',pid:'palmetto-pc',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r095',name:'Dr. George N. Jenkins',practice:'CIN Partner Cardiology – City G',pid:'foothill-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r096',name:'Dr. Amy T. Russell',practice:'CIN Partner Cardiology – City G',pid:'foothill-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r097',name:'Dr. Frank C. Owens',practice:'CIN Partner Cardiology – City G',pid:'foothill-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r098',name:'Dr. Nathan G. Wells',practice:'CIN Partner Gastroenterology – City M',pid:'upstate-gi',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r099',name:'Dr. Jeremy L. Kennedy',practice:'CIN Partner Gastroenterology – City M',pid:'upstate-gi',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r100',name:'Dr. Justin R. Daniels',practice:'CIN Partner Cardiology – City H',pid:'midlands-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r101',name:'Dr. Margaret A. Spencer',practice:'CIN Partner Cardiology – City H',pid:'midlands-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r102',name:'Dr. Janet E. Duncan',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r103',name:'Dr. Madison J. Weaver',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r104',name:'Dr. Lauren N. Silva',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r105',name:'Dr. Christina T. Bruno',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r106',name:'Dr. Evelyn C. Duke',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r107',name:'Dr. Robin G. Garrett',practice:'Academic Medical Primary Care – City A',pid:'sc-ima',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r108',name:'Dr. Tammy L. Heath',practice:'Academic Medical Primary Care – City A',pid:'sc-ima',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r109',name:'Dr. Elizabeth R. Garcia',practice:'Regional Health Primary Care – City A',pid:'parkside',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r110',name:'Dr. Christopher A. Robinson',practice:'Competitor Orthopedic Associates – City B',pid:'carolina-ortho',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r111',name:'Dr. Donald E. Adams',practice:'Competitor Orthopedic Associates – City B',pid:'carolina-ortho',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r112',name:'Dr. Melissa J. Kelly',practice:'Academic Medical Cardiology – City A',pid:'bon-cardio',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r113',name:'Dr. Edward N. Washington',practice:'Academic Medical Cardiology – City A',pid:'bon-cardio',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r114',name:'Dr. Jacob T. Hamilton',practice:'Health System Digestive Health – City A',pid:'carolina-gi',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
-  {id:'r115',name:'Dr. Dennis C. McDonald',practice:'Health System Digestive Health – City A',pid:'carolina-gi',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}}
-];
+const referrers = (window.CPIQ && window.CPIQ.referrers) ? window.CPIQ.referrers.map(function(r) {
+  if (r.refs && typeof r.refs === 'object') return r;
+  return Object.assign({}, r, {refs: {ortho: 0, cardio: 0, gi: 0}});
+}) : [];
 
 /* ══════════════════════════════════════════════════════════════
    RECEIVING SPECIALISTS (destination) — 63 physicians
@@ -442,6 +329,22 @@ const referrers = [
    procNetSplit: fraction of procedures done in-network
 ══════════════════════════════════════════════════════════════ */
 const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+// Normalize engine practices for procedure/cycle tabs
+specialists = specialists.map(function(s) {
+  var refs = {ortho: 0, cardio: 0, gi: 0};
+  if (s.spec && refs.hasOwnProperty(s.spec)) refs[s.spec] = s.totalRefs || 0;
+  var inNetProcs  = Math.round((s.totalRefs||0) * (s.procRate||0.15) * (1-(s.oonProcRate||0.1)));
+  var oonProcs    = Math.round((s.totalRefs||0) * (s.procRate||0.15) * (s.oonProcRate||0.1));
+  return Object.assign({}, s, {
+    id:           s.pid,
+    refs:         refs,
+    practice:     s.name,
+    city:         'City A, ST',
+    procNetSplit: {in: inNetProcs, oon: oonProcs},
+    meta:         {tier: s.tier, spec: s.spec}
+  });
+});
+
 
 /* ══════════════════════════════════════════════════════
    REFERRAL TRANSACTION TABLE

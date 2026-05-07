@@ -327,6 +327,36 @@ function getLocationsForPractice(p, selectedCode, overrides) {
 }
 
 const PRACTICES = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : []
+// Normalize engine practices to add fields expected by scorecard
+PRACTICES = PRACTICES.map(function(p) {
+  // monthlyProc: estimate from monthly * procRate
+  var monthlyProc = (p.monthly || []).map(function(v) {
+    return Math.round(v * (p.procRate || 0.15));
+  });
+  // topProcs: derive from proc codes in engine or use placeholder
+  var topProcs = [
+    {code: p.spec === 'ortho' ? '27447' : p.spec === 'cardio' ? '93306' : '45378',
+     label: p.spec === 'ortho' ? 'Joint Replacement' : p.spec === 'cardio' ? 'Echocardiography' : 'Colonoscopy',
+     vol: Math.round((p.totalRefs || 0) * (p.procRate || 0.15)),
+     inV: Math.round((p.totalRefs || 0) * (p.procRate || 0.15) * (1 - (p.oonProcRate || 0.1))),
+     oonV: Math.round((p.totalRefs || 0) * (p.procRate || 0.15) * (p.oonProcRate || 0.1))}
+  ];
+  // topRefs: placeholder referrer volumes
+  var topRefs = (p.docs || []).slice(0, 5).map(function(d) {
+    return {name: d.name || 'Physician', vol: Math.round((p.totalRefs || 0) / Math.max((p.docs||[]).length, 1))};
+  });
+  // refs object for sidebar counts
+  var refs = {ortho: 0, cardio: 0, gi: 0};
+  if (p.spec && refs.hasOwnProperty(p.spec)) refs[p.spec] = p.totalRefs || 0;
+  
+  return Object.assign({}, p, {
+    monthlyProc: monthlyProc,
+    topProcs: topProcs,
+    topRefs: topRefs,
+    refs: refs
+  });
+});
+
 const SYS_NAME = (window.CPIQ && window.CPIQ.meta && window.CPIQ.meta.sysName) || 'Health System'; // REPLACE: set to new health system name
 ;
 

@@ -289,6 +289,20 @@ footer{display:none!important}
    refs: annual referral volume received {ortho, cardio, gi}
 ══════════════════════════════════════════════════════ */
 const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+// Normalize engine practices for destination tab
+specialists = specialists.map(function(s) {
+  if (s.refs) return s;
+  var refs = {ortho: 0, cardio: 0, gi: 0};
+  if (s.spec && refs.hasOwnProperty(s.spec)) refs[s.spec] = s.totalRefs || 0;
+  return Object.assign({}, s, {
+    id: s.pid,
+    refs: refs,
+    practice: s.name,
+    city: 'City A, ST',
+    meta: {tier: s.tier, spec: s.spec}
+  });
+});
+
 
 /* ══════════════════════════════════════════════════════
    MONTHLY DISTRIBUTION WEIGHTS (CY 2025) — same seasonal

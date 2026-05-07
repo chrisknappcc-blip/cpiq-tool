@@ -291,6 +291,12 @@ footer{display:none!important}
    refs: {ortho, cardio, gi} = annual referral volume
 ══════════════════════════════════════════════════════ */
 const physicians = (window.CPIQ && window.CPIQ.referrers) ? window.CPIQ.referrers : [];
+// Normalize engine referrers — ensure refs:{ortho,cardio,gi} exists
+physicians = physicians.map(function(p) {
+  if (p.refs && typeof p.refs === 'object') return p;
+  return Object.assign({}, p, {refs: {ortho: 0, cardio: 0, gi: 0}});
+});
+
 
 /* ══════════════════════════════════════════════════════
    MONTHLY DISTRIBUTION WEIGHTS (CY 2025)

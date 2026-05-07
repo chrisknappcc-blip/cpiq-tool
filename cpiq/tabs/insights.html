@@ -264,7 +264,7 @@ footer{display:none!important}
 </div>
 
 <script>
-const PATIENTS = [];
+let PATIENTS = [];
 function _loadPatients() {
   // Patients are stored in Azure blob — fetch async then render
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
