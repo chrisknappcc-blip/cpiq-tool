@@ -266,20 +266,47 @@ footer{display:none!important}
 <script>
 const PATIENTS = [];
 function _loadPatients() {
-  // Read patients from parent window (stored separately to avoid srcdoc size limit)
-  var raw = null;
-  try { raw = window.parent && window.parent.__cpiqPatients; } catch(e) {}
-  if (!raw || !raw.length) {
-    // Fallback: check if patients were embedded directly
-    if (window.CPIQ && window.CPIQ.patients && window.CPIQ.patients.length) {
-      raw = window.CPIQ.patients;
-    }
+  // Patients are stored in Azure blob — fetch async then render
+  var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
+  var waitEl = document.createElement('div');
+  waitEl.id = 'insights-wait';
+  waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
+  waitEl.textContent = 'Loading patient data…';
+  document.body.appendChild(waitEl);
+
+  var attempts = 0;
+  function tryFetch() {
+    fetch('/.netlify/functions/patients?action=load&session=' + encodeURIComponent(sessionKey))
+      .then(function(r) {
+        if (r.status === 404 && attempts < 20) {
+          // Blob not ready yet — retry in 500ms (shell is still saving)
+          attempts++;
+          setTimeout(tryFetch, 500);
+          return null;
+        }
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data) return;
+        var raw = Array.isArray(data) ? data : [];
+        PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
+        var w = document.getElementById('insights-wait');
+        if (w) w.remove();
+        try { render(); } catch(err) {
+          console.error('[CPIQ insights] render error:', err.message);
+          document.body.innerHTML += '<pre style="color:red;padding:20px">' + err.message + '</pre>';
+        }
+        window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
+      })
+      .catch(function(e) {
+        console.error('[CPIQ insights] fetch failed:', e.message);
+        var w = document.getElementById('insights-wait');
+        if (w) w.textContent = 'Failed to load patient data: ' + e.message;
+        window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
+      });
   }
-  if (raw && raw.length) {
-    PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
-    return true;
-  }
-  return false;
+  tryFetch();
+  return false; // async — polling handles render
 }
 
 // ── State ─────────────────────────────────────────────────────────
@@ -632,36 +659,8 @@ window.__cpiqReady = function(state) {
 };
 
 // Poll for CPIQ state — renders as soon as data is available regardless of timing
-(function waitForCPIQ() {
-  if (_loadPatients()) {
-    render();
-    window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
-    return;
-  }
-  // Not ready yet — poll every 100ms for up to 30s
-  var attempts = 0;
-  var poll = setInterval(function() {
-    attempts++;
-    if (_loadPatients()) {
-      clearInterval(poll);
-      // Remove wait overlay if present
-      var w = document.getElementById('insights-wait');
-      if (w) w.remove();
-      render();
-      window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
-    } else if (attempts > 300) {
-      clearInterval(poll);
-      console.warn('insights: CPIQ state never arrived after 30s');
-      window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
-    }
-  }, 100);
-  // Show wait overlay
-  var waitEl = document.createElement('div');
-  waitEl.id = 'insights-wait';
-  waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
-  waitEl.textContent = 'Loading patient data…';
-  document.body.appendChild(waitEl);
-})();
+// Patients loaded async via _loadPatients() above
+_loadPatients();
 
 // Notify parent suite of this tab's system name for CTA widget
 (function() {

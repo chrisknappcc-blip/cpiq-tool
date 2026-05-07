@@ -343,17 +343,42 @@ const PAGE_SIZE  = 100;
 
 let _RAW = [];
 function _loadRaw() {
-  var raw = null;
-  try { raw = window.parent && window.parent.__cpiqPatients; } catch(e) {}
-  if (!raw || !raw.length) {
-    if (window.CPIQ && window.CPIQ.patients && window.CPIQ.patients.length) {
-      raw = window.CPIQ.patients;
-    }
+  var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
+  var waitEl = document.createElement('div');
+  waitEl.id = 'journeys-wait';
+  waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
+  waitEl.textContent = 'Loading patient data…';
+  document.body.appendChild(waitEl);
+
+  var attempts = 0;
+  function tryFetch() {
+    fetch('/.netlify/functions/patients?action=load&session=' + encodeURIComponent(sessionKey))
+      .then(function(r) {
+        if (r.status === 404 && attempts < 20) {
+          attempts++;
+          setTimeout(tryFetch, 500);
+          return null;
+        }
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data) return;
+        _RAW = Array.isArray(data) ? data : [];
+        var w = document.getElementById('journeys-wait');
+        if (w) w.remove();
+        try { populateDropdowns(); applyFilters(); } catch(err) {
+          console.error('[CPIQ journeys] render error:', err.message);
+        }
+        window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+      })
+      .catch(function(e) {
+        console.error('[CPIQ journeys] fetch failed:', e.message);
+        var w = document.getElementById('journeys-wait');
+        if (w) w.textContent = 'Failed to load: ' + e.message;
+        window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+      });
   }
-  if (raw && raw.length) {
-    _RAW = raw;
-    return true;
-  }
+  tryFetch();
   return false;
 }
 const PRAC_MAP = {
@@ -895,34 +920,7 @@ window.__cpiqReady = function(state) {
   window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
 };
 
-(function waitForCPIQ() {
-  if (_loadRaw()) {
-    populateDropdowns();
-    applyFilters();
-    window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
-    return;
-  }
-  var waitEl = document.createElement('div');
-  waitEl.id = 'journeys-wait';
-  waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
-  waitEl.textContent = 'Loading patient data…';
-  document.body.appendChild(waitEl);
-  var attempts = 0;
-  var poll = setInterval(function() {
-    attempts++;
-    if (_loadRaw()) {
-      clearInterval(poll);
-      var w = document.getElementById('journeys-wait');
-      if (w) w.remove();
-      populateDropdowns();
-      applyFilters();
-      window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
-    } else if (attempts > 300) {
-      clearInterval(poll);
-      window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
-    }
-  }, 100);
-})();
+_loadRaw();
 
 // ── Listen for filter state from Patient Insights or CarePath IQ ──
 window.addEventListener('message', function(e) {
