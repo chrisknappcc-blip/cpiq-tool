@@ -340,7 +340,7 @@ specialists = specialists.map(function(s) {
     refs:         refs,
     practice:     s.name,
     city:         'City A, ST',
-    procNetSplit: {in: inNetProcs, oon: oonProcs},
+    procNetSplit: 1 - (s.oonProcRate || 0.1),  // scalar: fraction done in-network
     meta:         {tier: s.tier, spec: s.spec}
   });
 });

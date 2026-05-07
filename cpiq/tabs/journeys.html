@@ -342,8 +342,43 @@ const TIER_PILL  = {t1:'pill-t1', t2:'pill-t2', oon:'pill-oon'};
 const PAGE_SIZE  = 100;
 
 let _RAW = [];
+function expandPatient(r, cpiq) {
+  // Expand compact engine format to full journeys format
+  var practices = (cpiq && cpiq.practices) || [];
+  var referrers = (cpiq && cpiq.referrers) || [];
+  var prac = practices.find(function(p) { return p.pid === r.dp; }) || {};
+  var ref  = referrers.find(function(p) { return p.id === r.ri; }) || {};
+  var doc  = (prac.docs || []).find(function(d) { return d.id === r.di; }) || {};
+  return {
+    pid:           r.i,
+    id:            r.i,
+    spec:          r.sp,
+    refDate:       r.rd,
+    refTier:       r.rt,
+    refPtype:      r.rp,
+    refSource:     ref.name || 'Unknown Referrer',
+    refSourceId:   r.ri,
+    destPid:       r.dp,
+    destTier:      r.dt,
+    destPractice:  prac.name || r.dp,
+    destPhysician: doc.name || 'Unknown Physician',
+    destPhysId:    r.di,
+    visitDone:     r.v === 1,
+    mttaDays:      r.m,
+    visitDate:     r.vd,
+    edVisit:       r.e === 1,
+    procDone:      r.pr === 1,
+    procCode:      r.pc,
+    procName:      r.pn === 'in' ? 'In-Network' : r.pn === 'oon' ? 'Out-of-Network' : null,
+    procNet:       r.pn,
+    procDate:      r.pd,
+    daysFromRef:   r.df
+  };
+}
+
 function _loadRaw() {
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
+  var cpiq = window.CPIQ;
   var waitEl = document.createElement('div');
   waitEl.id = 'journeys-wait';
   waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
@@ -363,11 +398,14 @@ function _loadRaw() {
       })
       .then(function(data) {
         if (!data) return;
-        _RAW = Array.isArray(data) ? data : [];
+        var raw = Array.isArray(data) ? data : [];
+        // Expand compact format to full journeys format
+        _RAW = raw.map(function(r) { return expandPatient(r, cpiq); });
         var w = document.getElementById('journeys-wait');
         if (w) w.remove();
         try { populateDropdowns(); applyFilters(); } catch(err) {
           console.error('[CPIQ journeys] render error:', err.message);
+          document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
         }
         window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
       })
@@ -381,39 +419,12 @@ function _loadRaw() {
   tryFetch();
   return false;
 }
-const PRAC_MAP = {
-  "anmed-cardio":"CIN Partner Cardiology – City I",
-  "anmed-gi":"CIN Partner Gastroenterology – City K",
-  "bon-cardio":"Competitor Cardiovascular Group – City A",
-  "bon-ortho":"CIN Partner Orthopedics – City F",
-  "carolina-gi":"Competitor Gastroenterology – City A",
-  "carolina-ortho":"Competitor Orthopaedics – City A",
-  "carolina-ortho-and":"Competitor Orthopedic Associates – City B",
-  "foothill-cardio":"CIN Partner Cardiology – City G",
-  "lowcountry-gi":"Independent Digestive Disease Consultants – City A",
-  "midlands-cardio":"CIN Partner Cardiology – City H",
-  "midlands-gi-cin":"CIN Partner Gastroenterology – City J",
-  "midlands-gi-oon":"Academic Medical Digestive Disease – City B",
-  "ph-cardio-anderson":"Health System Heart & Vascular – City E",
-  "ph-cardio-col":"Health System Cardiovascular Associates – City C",
-  "ph-cardio-gvm":"Health System Heart & Vascular – City A",
-  "ph-cardio-seneca":"Health System Heart & Vascular – City B",
-  "ph-cardio-spart":"Health System Heart & Vascular – City D",
-  "ph-gi-col":"Health System Digestive Health – City B",
-  "ph-gi-greer":"Health System Digestive Health – City C",
-  "ph-gi-gvl":"Health System Digestive Health – City A",
-  "ph-gi-park":"Health System Digestive Health – City D",
-  "ph-gi-tuomey":"Health System Digestive Health – City E",
-  "ph-ortho-col":"Health System Orthopedics – City B",
-  "ph-ortho-greer":"Health System Orthopedics – City C",
-  "ph-ortho-gvl":"Health System Orthopedics – City A",
-  "ph-ortho-lex":"Health System Orthopedics – City F",
-  "ph-ortho-spart":"Health System Orthopaedic Trauma & Spine – City A",
-  "spart-cardio":"Competitor Cardiovascular Group – City B",
-  "spart-ortho":"CIN Partner Orthopedics – City E",
-  "upstate-gi":"CIN Partner Gastroenterology – City M",
-  "upstate-ortho":"CIN Partner Orthopedics – City D"
-}
+const PRAC_MAP = (function() {
+  var m = {};
+  var practices = (window.CPIQ && window.CPIQ.practices) || [];
+  practices.forEach(function(p) { m[p.pid] = p.name; });
+  return m;
+})()
 const PHYS_MAP = {"s001":"Dr. James H. Andrews","s010":"Dr. Angela C. Rhee","s003":"Dr. Robert L. Hazel","s011":"Dr. William B. Foster","s071":"Dr. Kelly T. Coles","s065":"Dr. Ethan L. Gordon","s009":"Dr. Thomas W. Gallagher","s007":"Dr. Jerome M. Patel","s068":"Dr. Ann E. Andrews","s113":"Dr. Deborah E. Barnes","s050":"Dr. Kathleen R. Monroe","s066":"Dr. Barbara R. Ferguson","s069":"Dr. Teresa J. Austin","s033":"Dr. Mark E. Sullivan","s096":"Dr. Ronald J. Hughes","s051":"Dr. Gary W. Simpson","s097":"Dr. Angela N. Ford","s035":"Dr. Vincent P. Rossi","s002":"Dr. Susan M. Schaefer","s008":"Dr. Linda R. Kessler","s099":"Dr. Zachary C. Porter","s037":"Dr. Denise K. Harmon","s117":"Dr. Walter C. Mason","s049":"Dr. Franklin T. Bivens","s005":"Dr. Dennis L. Howell","s072":"Dr. Gloria C. Fleming","s006":"Dr. Marcus A. Price","s064":"Dr. Peter G. Hunter","s067":"Dr. Helen A. Matthews","s004":"Dr. Patricia E. Conway","s070":"Dr. Sara N. Romero","s073":"Dr. Tiffany G. Guerra","s012":"Dr. Catherine J. Moss","s112":"Dr. Steven A. Mitchell","s034":"Dr. Steven L. Abbott","s115":"Dr. Samuel N. West","s036":"Dr. Gary T. Whitfield","s098":"Dr. Jack T. Gibson","s114":"Dr. Jason J. Bryant","s116":"Dr. Aaron T. Murray","s053":"Dr. Sharon D. Hartley","s052":"Dr. Albert C. Reeves","s018":"Dr. Robert P. Kimbrell","s103":"Dr. Frances A. Lane","s078":"Dr. Stephanie J. Cole","s076":"Dr. Dorothy A. Wright","s014":"Dr. William C. Lee","s038":"Dr. Patrick W. Hamilton","s101":"Dr. Richard L. Knight","s080":"Dr. Raymond T. Jordan","s081":"Dr. Adam C. Freeman","s015":"Dr. Theresa M. Nguyen","s041":"Dr. Russell A. Bowen","s055":"Dr. Martin J. Cross","s105":"Dr. Martha J. Sanchez","s057":"Dr. Brenda T. Jackson","s077":"Dr. Donna E. Carter","s079":"Dr. Kathleen N. Alexander","s042":"Dr. Evelyn G. Perry","s020":"Dr. Juan J. Cabanero","s043":"Dr. Kenneth R. Patterson","s074":"Dr. Nicole L. Howard","s021":"Dr. Sandra T. Brewington","s013":"Dr. Karen B. Singh","s056":"Dr. Gary W. Simpson II","s118":"Dr. Stephen G. Hunt","s019":"Dr. Michael S. Fowler","s121":"Dr. Alice A. Armstrong","s058":"Dr. Susan K. Alexander","s016":"Dr. Mark T. Bhatt","s054":"Dr. Douglas P. Holt","s040":"Dr. William C. Parsons","s104":"Dr. Gloria E. Sims","s075":"Dr. Charles R. Thomas","s017":"Dr. Jimmy R. Baucum","s022":"Dr. Philip A. Norwood","s082":"Dr. Harold G. Morales","s023":"Dr. Cheryl D. Hayes","s119":"Dr. Lisa L. Perkins","s039":"Dr. Rebecca S. Lawrence","s100":"Dr. Keith G. Burns","s102":"Dr. Sandra R. Berry","s120":"Dr. Christine R. Olson","s030":"Dr. Laura E. Ferris","s028":"Dr. Benjamin T. Mauldin","s046":"Dr. Henry T. Moore","s127":"Dr. Sarah G. Brown","s088":"Dr. Kelly N. Bishop","s095":"Dr. Amanda E. Brooks","s086":"Dr. Jean E. Carpenter","s107":"Dr. Teresa T. Fields","s032":"Dr. Balbir S. Minhas","s090":"Dr. Carolyn C. Gaines","s106":"Dr. Diana N. Coker","s085":"Dr. Samantha A. Carroll","s110":"Dr. Barbara L. Taylor","s029":"Dr. Srivathsan Palaniappan","s122":"Dr. Lori E. Medina","s024":"Dr. Kenneth J. Vega","s084":"Dr. Nancy R. Hudson","s125":"Dr. Shirley T. Fuller","s093":"Dr. Nancy R. Young","s083":"Dr. Larry L. Black","s026":"Dr. Zachary P. Gitto","s109":"Dr. Rachel G. Hopkins","s025":"Dr. Mohammad A. Abudalou","s087":"Dr. Janice J. Castillo","s111":"Dr. Daniel R. King","s027":"Dr. Joseph D. Meserve","s060":"Dr. Paul J. Hernandez","s123":"Dr. Emma J. Banks","s092":"Dr. John L. Jones","s089":"Dr. Judith T. Drew","s059":"Dr. Vivian N. Pearce","s044":"Dr. Anita J. Patel","s094":"Dr. Ashley A. Green","s126":"Dr. Beverly C. Harmon","s047":"Dr. Maria C. Vasquez","s091":"Dr. Denise G. Harper","s063":"Dr. Russell K. Pope","s045":"Dr. Gregory B. Nichols","s061":"Dr. Brian L. Caldwell","s124":"Dr. Heather N. Drake","s031":"Dr. Devendra Enjamuri","s048":"Dr. Sylvia R. Weston","s108":"Dr. Julie C. Gross","s062":"Dr. Ellen M. Fitzgerald"};
 
 const SRC_MAP = {

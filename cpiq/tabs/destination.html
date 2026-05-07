@@ -317,7 +317,14 @@ const MONTH_NAMES  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 const QUARTER_MAP  = {1:'Q1',2:'Q1',3:'Q1',4:'Q2',5:'Q2',6:'Q2',7:'Q3',8:'Q3',9:'Q3',10:'Q4',11:'Q4',12:'Q4'};
 
 function getMonthlyRef(s, specKey, month) {
-  if(!specKey || !MONTH_WEIGHTS[specKey]) return 0;
+  if(!specKey || specKey === 'all') {
+    // Sum across all specialties
+    return ['ortho','cardio','gi'].reduce(function(t, sp) {
+      if(!MONTH_WEIGHTS[sp]) return t;
+      return t + Math.round((s.refs[sp]||0) * MONTH_WEIGHTS[sp][month-1]);
+    }, 0);
+  }
+  if(!MONTH_WEIGHTS[specKey]) return 0;
   return Math.round((s.refs[specKey]||0) * MONTH_WEIGHTS[specKey][month-1]);
 }
 // Weighted median MTTA across a list of specialists (volume-weighted average as proxy)

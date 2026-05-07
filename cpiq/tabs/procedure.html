@@ -468,7 +468,7 @@ specialists = specialists.map(function(s) {
     refs:         refs,
     practice:     s.name,
     city:         'City A, ST',
-    procNetSplit: {in: inNetProcs, oon: oonProcs},
+    procNetSplit: 1 - (s.oonProcRate || 0.1),  // scalar: fraction done in-network
     meta:         {tier: s.tier, spec: s.spec}
   });
 });
@@ -508,7 +508,13 @@ const CT = {
    HELPERS
 ══════════════════════════════════════════════════════ */
 function getMonthlyRef(s, specKey, month){
-  return Math.round(s.refs[specKey] * MONTH_WEIGHTS[specKey][month-1]);
+  if(!specKey || specKey==='all'){
+    return ['ortho','cardio','gi'].reduce(function(t,sp){
+      return t + (MONTH_WEIGHTS[sp] ? Math.round((s.refs[sp]||0)*MONTH_WEIGHTS[sp][month-1]) : 0);
+    },0);
+  }
+  if(!MONTH_WEIGHTS[specKey] || s.refs[specKey] === undefined) return 0;
+  return Math.round((s.refs[specKey]||0) * MONTH_WEIGHTS[specKey][month-1]);
 }
 function getActiveMonths(){
   if(state.month!=='all') return [parseInt(state.month)];

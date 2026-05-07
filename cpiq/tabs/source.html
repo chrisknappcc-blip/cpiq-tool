@@ -311,7 +311,11 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 const QUARTER_MAP = {1:'Q1',2:'Q1',3:'Q1',4:'Q2',5:'Q2',6:'Q2',7:'Q3',8:'Q3',9:'Q3',10:'Q4',11:'Q4',12:'Q4'};
 
 function getMonthlyRef(p, specKey, month) {
-  if(!specKey || specKey==='all') return 0;
+  if(!specKey || specKey==='all'){
+    return ['ortho','cardio','gi'].reduce(function(t,sp){
+      return t + (MONTH_WEIGHTS[sp] ? Math.round((p.refs[sp]||0)*MONTH_WEIGHTS[sp][month-1]) : 0);
+    },0);
+  }
   const annual = p.refs[specKey] || 0;
   const w = (MONTH_WEIGHTS[specKey]||MONTH_WEIGHTS['ortho'])[month-1];
   return Math.round(annual * w);
@@ -366,7 +370,7 @@ function filteredPhysicians() {
   return physicians.filter(p => {
     if (getRefTotal(p,k) === 0) return false;
     if (state.source === 'internal' && p.tier === 'oon') return false;
-    if (state.source === 'external' && p.tier !== 'oon') return false;
+    if (state.source === 'external' && p.tier === 't1') return false;
     if (state.tier !== 'all' && p.tier !== state.tier) return false;
     if (state.ptype !== 'all' && p.ptype !== state.ptype) return false;
     if (state.practice !== 'all' && p.pid !== state.practice) return false;
