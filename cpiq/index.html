@@ -764,16 +764,21 @@ async function generateAndBroadcast(sysName, mapState) {
   var sessionKey = sysName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 40);
   cpiqState._sessionKey = sessionKey;
 
-  // Fire-and-forget — tabs will poll until blob is ready
-  fetch('/.netlify/functions/patients?action=save&session=' + encodeURIComponent(sessionKey), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(dataset.patients || [])
-  }).then(function(r) {
-    console.log('Patients saved to blob, session:', sessionKey, 'status:', r.status);
-  }).catch(function(e) {
-    console.warn('Patient blob save failed:', e.message);
-  });
+  // Stringify and save patients async — yields to browser first so UI stays responsive
+  var _patients = dataset.patients || [];
+  var _sessionKey2 = sessionKey;
+  setTimeout(function() {
+    var body = JSON.stringify(_patients);
+    fetch('/.netlify/functions/patients?action=save&session=' + encodeURIComponent(_sessionKey2), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body
+    }).then(function(r) {
+      console.log('Patients saved to blob, session:', _sessionKey2, 'status:', r.status);
+    }).catch(function(e) {
+      console.warn('Patient blob save failed:', e.message);
+    });
+  }, 0);
 
   // Update nav logo — fire and forget, never blocks generation
   loadSystemLogo(sysName).then(function(logoDataUrl) {
@@ -984,10 +989,22 @@ document.addEventListener('DOMContentLoaded', function() {
     closeSysModal();
     applyUploadedLogo();
 
-    // Yield to browser for one frame, then generate
-    await new Promise(function(resolve) { setTimeout(resolve, 50); });
+    // Show generating overlay
+    var genOverlay = document.createElement('div');
+    genOverlay.id = 'gen-overlay';
+    genOverlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(247,249,252,.92);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Outfit,sans-serif;gap:12px';
+    genOverlay.innerHTML = '<div style="width:40px;height:40px;border:3px solid #e0e8f0;border-top-color:#007d6e;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="font-size:14px;font-weight:600;color:#0f1e2e">Generating dashboard for <span style="color:#007d6e">' + name + '</span>…</div><div style="font-size:11px;color:#8aa0b8">Building referral network data</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    document.body.appendChild(genOverlay);
+
+    // Yield to browser to paint the overlay
+    await new Promise(function(resolve) { setTimeout(resolve, 80); });
 
     await generateAndBroadcast(name, mapState);
+
+    // Remove overlay
+    var ov = document.getElementById('gen-overlay');
+    if (ov) ov.remove();
+
     loadFrame('carepathiq');
 
     // Force-clear the carepathiq loader after 5s as a safety net
