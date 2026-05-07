@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarePath IQ Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f7f9fc;--surface:#fff;--text:#0f1e2e;--text2:#4a6080;--text3:#8aa0b8;
+  --border:rgba(15,30,60,.09);--border2:rgba(15,30,60,.05);
+  --teal:#007d6e;--teal-lt:#e6f4f2;
+  --gold:#b8720e;--gold-lt:#fdf3e2;
+  --rose:#c8354a;--rose-lt:#fdeef0;
+  --blue:#1a56b0;--blue-lt:#e8f0ff;
+  --purple:#6a42b8;--purple-lt:#f0eaff;
+  --shadow:0 1px 4px rgba(15,30,60,.06),0 4px 16px rgba(15,30,60,.04);
+}
+html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+/* LAYOUT */
+header{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);height:56px;padding:0 20px;
+  display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+.hd-left{display:flex;align-items:center;gap:12px}
+.hd-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text)}
+.hd-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.hd-right{display:flex;align-items:center;gap:8px}
+
+.shell{display:flex;height:calc(100vh - 56px);overflow:hidden}
+
+/* FILTER PANEL */
+aside{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+  overflow-y:auto;padding:14px 0;display:flex;flex-direction:column;gap:0}
+.f-section{padding:0 14px 10px}
+.f-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
+  margin-bottom:6px;display:block}
+.f-divider{height:1px;background:var(--border);margin:8px 0}
+.f-select{width:100%;font-size:11px;font-family:'Outfit',sans-serif;color:var(--text);
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:5px 8px;cursor:pointer;margin-bottom:6px}
+.f-select:focus{outline:none;border-color:var(--teal)}
+.f-toggle-group{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.f-toggle{font-size:10px;font-weight:600;padding:3px 8px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg);color:var(--text2);
+  font-family:'DM Mono',monospace;transition:all .12s;white-space:nowrap}
+.f-toggle.active{background:var(--teal-lt);color:var(--teal);border-color:rgba(0,125,110,.3)}
+.f-toggle.active-rose{background:var(--rose-lt);color:var(--rose);border-color:rgba(200,53,74,.3)}
+.f-toggle.active-blue{background:var(--blue-lt);color:var(--blue);border-color:rgba(26,86,176,.3)}
+.f-toggle.active-gold{background:var(--gold-lt);color:var(--gold);border-color:rgba(184,114,14,.3)}
+.f-range{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.f-range input{width:52px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text);
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:4px 6px;text-align:center}
+.f-range-sep{font-size:10px;color:var(--text3)}
+.f-clear{width:100%;padding:6px;font-size:11px;font-family:'Outfit',sans-serif;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--text2);cursor:pointer;margin-top:4px;transition:all .12s}
+.f-clear:hover{background:var(--rose-lt);color:var(--rose);border-color:rgba(200,53,74,.2)}
+
+/* SUMMARY STRIP */
+.summary-strip{background:var(--surface);border-bottom:1px solid var(--border);
+  padding:10px 20px;display:flex;gap:20px;flex-wrap:wrap;flex-shrink:0}
+.ss-stat{display:flex;flex-direction:column;gap:2px}
+.ss-val{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);line-height:1}
+.ss-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.ss-div{width:1px;background:var(--border);align-self:stretch;margin:0 4px}
+
+/* MAIN CONTENT */
+main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.table-wrap{flex:1;overflow:auto;padding:0 0 20px}
+
+/* PATIENT TABLE */
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{position:sticky;top:0;z-index:10;background:var(--bg);
+  padding:8px 10px;text-align:left;
+  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);
+  border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text);background:#eef1f6}
+thead th .sort-icon{opacity:.4;font-size:9px;margin-left:3px}
+thead th.sorted .sort-icon{opacity:1;color:var(--teal)}
+tbody tr{border-bottom:1px solid var(--border2);transition:background .1s;cursor:pointer}
+tbody tr:hover{background:rgba(0,125,110,.025)}
+tbody tr.expanded{background:var(--teal-lt)}
+tbody td{padding:8px 10px;vertical-align:middle;white-space:nowrap}
+
+/* JOURNEY INDICATOR */
+.journey-bar{display:flex;align-items:center;gap:3px}
+.j-step{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.j-line{width:14px;height:2px;flex-shrink:0}
+.j-done{background:var(--teal);color:#fff}
+.j-done-gold{background:var(--gold);color:#fff}
+.j-done-rose{background:var(--rose);color:#fff}
+.j-done-blue{background:var(--blue);color:#fff}
+.j-skip{background:rgba(15,30,60,.08);color:var(--text3)}
+.j-line-done{background:var(--teal)}
+.j-line-skip{background:rgba(15,30,60,.1)}
+.j-line-gold{background:var(--gold)}
+
+/* PILLS */
+.pill{display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:2px 6px;
+  border-radius:6px;font-family:'DM Mono',monospace;letter-spacing:.03em;white-space:nowrap}
+.pill-t1{background:var(--teal-lt);color:var(--teal)}
+.pill-t2{background:var(--blue-lt);color:var(--blue)}
+.pill-oon{background:var(--rose-lt);color:var(--rose)}
+.pill-in{background:var(--teal-lt);color:var(--teal)}
+.pill-pcp{background:var(--bg);color:var(--text3);border:1px solid var(--border)}
+.pill-spec{background:var(--purple-lt);color:var(--purple)}
+.pill-ortho{background:var(--gold-lt);color:var(--gold)}
+.pill-cardio{background:var(--rose-lt);color:var(--rose)}
+.pill-gi{background:var(--teal-lt);color:var(--teal)}
+
+/* FLAGS */
+.flag-ed{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;
+  color:var(--rose);background:var(--rose-lt);padding:2px 6px;border-radius:6px;font-family:'DM Mono',monospace}
+
+/* EXPANDED ROW */
+.exp-row td{padding:0!important;border-bottom:2px solid var(--teal)!important}
+.exp-content{padding:14px 20px;background:linear-gradient(135deg,var(--teal-lt),#f0f8ff);
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.exp-section{}
+.exp-sec-title{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:8px}
+.exp-field{margin-bottom:6px}
+.exp-key{font-size:9px;color:var(--text3);margin-bottom:1px}
+.exp-val{font-size:12px;font-weight:500;color:var(--text)}
+.exp-val-mono{font-family:'DM Mono',monospace;font-size:11px;font-weight:600}
+
+/* JOURNEY TIMELINE in expanded row */
+.journey-timeline{display:flex;align-items:center;gap:0;margin-top:8px}
+.jt-node{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px}
+.jt-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
+.jt-label{font-size:9px;font-weight:600;text-align:center;line-height:1.3;color:var(--text2)}
+.jt-date{font-size:8px;font-family:'DM Mono',monospace;color:var(--text3);text-align:center}
+.jt-connector{flex:1;height:3px;min-width:24px;align-self:flex-start;margin-top:14px}
+.jt-conn-done{background:linear-gradient(90deg,var(--teal),var(--blue))}
+.jt-conn-skip{background:var(--border);border-top:2px dashed rgba(15,30,60,.15)}
+
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:300px;gap:12px;color:var(--text3)}
+.empty-icon{font-size:40px;opacity:.4}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<script>
+/* CPIQ Data Shim */
+(function() {
+  function applyState(s) {
+    window.CPIQ = s;
+    window.SYS_NAME = s.meta ? s.meta.sysName : 'Health System';
+    window.COMPETITORS = (s.meta && s.meta.competitors) || [];
+    if (typeof window.__cpiqReady === 'function') window.__cpiqReady(s);
+  }
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cpiq-state') applyState(e.data.payload);
+    if (e.data && e.data.type === 'apply-filters' && typeof window.__applyFilters === 'function') window.__applyFilters(e.data.filterState);
+  });
+  if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
+})();
+</script>
+<script>
+/* CPIQ preset patient loader — fetches /presets/*-patients.json lazily */
+(function() {
+  var _origReady = window.__cpiqReady;
+  window.__cpiqReady = function(state) {
+    if (state.patients) {
+      if (typeof _origReady === 'function') _origReady(state);
+      return;
+    }
+    if (state.meta && state.meta.patientsUrl) {
+      fetch(state.meta.patientsUrl)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          state.patients = data.patients || [];
+          window.CPIQ = state;
+          if (typeof _origReady === 'function') _origReady(state);
+        })
+        .catch(function(e) {
+          console.warn('Failed to load preset patients:', e);
+          state.patients = [];
+          if (typeof _origReady === 'function') _origReady(state);
+        });
+    } else {
+      if (typeof _origReady === 'function') _origReady(state);
+    }
+  };
+})();
+</script></head>
+<body>
+
+<header>
+  <div class="hd-left">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain">
+    <div style="width:1px;height:32px;background:rgba(15,30,60,.1)"></div>
+    <div class="hd-title">Patient Journeys</div>
+    <span id="hd-count" class="hd-count">— patients</span>
+  </div>
+  <div class="hd-right">
+    <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">CY 2025 · Health System CIN Network</span>
+  </div>
+</header>
+
+<div class="shell">
+<!-- FILTER PANEL -->
+<aside>
+  <div class="f-section">
+    <span class="f-label">Specialty</span>
+    <div class="f-toggle-group" id="tog-spec">
+      <div class="f-toggle active" data-val="all" onclick="setToggle('spec','all',this)">All</div>
+      <div class="f-toggle" data-val="ortho" onclick="setToggle('spec','ortho',this)" style="--ac:var(--gold-lt);--tc:var(--gold)">Ortho</div>
+      <div class="f-toggle" data-val="cardio" onclick="setToggle('spec','cardio',this)">Cardio</div>
+      <div class="f-toggle" data-val="gi" onclick="setToggle('spec','gi',this)">GI</div>
+    </div>
+  </div>
+  <div class="f-divider"></div>
+
+  <div class="f-section">
+    <span class="f-label">Destination Tier</span>
+    <div class="f-toggle-group" id="tog-tier">
+      <div class="f-toggle active" data-val="all" onclick="setToggle('destTier','all',this)">All</div>
+      <div class="f-toggle" data-val="t1" onclick="setToggle('destTier','t1',this)">T1</div>
+      <div class="f-toggle" data-val="t2" onclick="setToggle('destTier','t2',this)">T2</div>
+      <div class="f-toggle" data-val="oon" onclick="setToggle('destTier','oon',this)">OON</div>
+    </div>
+  </div>
+  <div class="f-divider"></div>
+
+  <div class="f-section">
+    <span class="f-label">Referral Source Type</span>
+    <div class="f-toggle-group" id="tog-ptype">
+      <div class="f-toggle active" data-val="all" onclick="setToggle('refPtype','all',this)">All</div>
+      <div class="f-toggle" data-val="pcp" onclick="setToggle('refPtype','pcp',this)">PCP</div>
+      <div class="f-toggle" data-val="spec" onclick="setToggle('refPtype','spec',this)">Specialist</div>
+    </div>
+  </div>
+  <div class="f-divider"></div>
+
+  <div class="f-section">
+    <span class="f-label">Journey Status</span>
+    <div class="f-toggle-group" id="tog-status">
+      <div class="f-toggle active" data-val="all" onclick="setToggle('status','all',this)">All</div>
+      <div class="f-toggle" data-val="visited" onclick="setToggle('status','visited',this)">Visit ✓</div>
+      <div class="f-toggle" data-val="novisit" onclick="setToggle('status','novisit',this)">No Visit</div>
+      <div class="f-toggle" data-val="proc" onclick="setToggle('status','proc',this)">Procedure ✓</div>
+      <div class="f-toggle" data-val="noproc" onclick="setToggle('status','noproc',this)">No Procedure</div>
+    </div>
+  </div>
+  <div class="f-divider"></div>
+
+  <div class="f-section">
+    <span class="f-label">Network (Procedure)</span>
+    <div class="f-toggle-group" id="tog-procnet">
+      <div class="f-toggle active" data-val="all" onclick="setToggle('procNet','all',this)">All</div>
+      <div class="f-toggle" data-val="in" onclick="setToggle('procNet','in',this)">In-Net</div>
+      <div class="f-toggle" data-val="oon" onclick="setToggle('procNet','oon',this)">OON</div>
+    </div>
+  </div>
+  <div class="f-divider"></div>
+
+  <div class="f-section">
+    <span class="f-label">ED Visit</span>
+    <div class="f-toggle-group" id="tog-ed">
+      <div class="f-toggle active" data-val="all" onclick="setToggle('edVisit','all',this)">All</div>
+      <div class="f-toggle" data-val="yes" onclick="setToggle('edVisit','yes',this)">ED Visit ⚠</div>
+      <div class="f-toggle" data-val="no" onclick="setToggle('edVisit','no',this)">No ED</div>
+    </div>
+  </div>
+  <div class="f-divider"></div>
+
+  <div class="f-section">
+    <span class="f-label">Destination Practice</span>
+    <select class="f-select" id="sel-practice" onchange="filters.destPid=this.value;applyFilters()">
+      <option value="all">All Practices</option>
+    </select>
+    <span class="f-label" style="margin-top:6px">Destination Physician</span>
+    <select class="f-select" id="sel-physician" onchange="filters.destPhysId=this.value;applyFilters()">
+      <option value="all">All Physicians</option>
+    </select>
+    <span class="f-label" style="margin-top:6px">Referral Source</span>
+    <select class="f-select" id="sel-source" onchange="filters.refSourceId=this.value;applyFilters()">
+      <option value="all">All Sources</option>
+    </select>
+    <span class="f-label" style="margin-top:6px">Procedure</span>
+    <select class="f-select" id="sel-proc" onchange="filters.procCode=this.value;applyFilters()">
+      <option value="all">All Procedures</option>
+    </select>
+  </div>
+  <div class="f-divider"></div>
+
+  <div class="f-section">
+    <span class="f-label">MTTA Days (range)</span>
+    <div class="f-range">
+      <input type="number" id="mtta-min" placeholder="Min" min="1" max="365" onchange="filters.mttaMin=this.value?+this.value:null;applyFilters()">
+      <span class="f-range-sep">–</span>
+      <input type="number" id="mtta-max" placeholder="Max" min="1" max="365" onchange="filters.mttaMax=this.value?+this.value:null;applyFilters()">
+    </div>
+    <span class="f-label" style="margin-top:4px">Referral Month</span>
+    <select class="f-select" id="sel-month" onchange="filters.month=this.value==='all'?null:+this.value;applyFilters()">
+      <option value="all">All Months</option>
+      <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+      <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+      <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+    </select>
+  </div>
+  <div class="f-divider"></div>
+
+  <div class="f-section">
+    <button class="f-clear" onclick="clearFilters()">✕  Clear All Filters</button>
+  </div>
+</aside>
+
+<!-- MAIN AREA -->
+<main>
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip" id="summary-strip"></div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table id="patient-table">
+      <thead>
+        <tr>
+          <th onclick="sortBy('pid')">Patient ID <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('spec')">Specialty <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('refDate')">Ref Date <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('refSource')">Referral Source <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('refTier')">Src Tier <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('destPractice')">Destination Practice <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('destPhysician')">Physician <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('destTier')">Dest Tier <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('visitDone')">Visit <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('mttaDays')">MTTA <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('edVisit')">ED <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('procDone')">Procedure <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('procNet')">Net <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('daysFromRef')">Days <span class="sort-icon">↕</span></th>
+          <th>Journey</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div id="empty-state" class="empty-state" style="display:none">
+      <div class="empty-icon">🔍</div>
+      <div style="font-size:13px;font-weight:500">No patients match these filters</div>
+      <div style="font-size:11px;color:var(--text3)">Try adjusting the filter criteria</div>
+    </div>
+    <div id="load-more-wrap" style="padding:14px 20px;text-align:center;display:none">
+      <button onclick="loadMore()" style="font-size:11px;padding:7px 18px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text2);cursor:pointer;font-family:'Outfit',sans-serif">
+        Show more patients
+      </button>
+      <span id="load-more-label" style="font-size:10px;color:var(--text3);margin-left:10px"></span>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+const SPEC_LABEL = {ortho:'Orthopedics', cardio:'Cardiology', gi:'Gastroenterology'};
+const SPEC_COLOR = {ortho:'var(--gold)',  cardio:'var(--rose)',  gi:'var(--teal)'};
+const SPEC_PILL  = {ortho:'pill-ortho',   cardio:'pill-cardio',  gi:'pill-gi'};
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TIER_LABEL = {t1:'T1 Employed', t2:'T2 CIN Network', oon:'Out-of-Net'};
+const TIER_PILL  = {t1:'pill-t1', t2:'pill-t2', oon:'pill-oon'};
+const PAGE_SIZE  = 100;
+
+const _RAW = (window.CPIQ && window.CPIQ.patients) ? window.CPIQ.patients : [];
+const PRAC_MAP = {
+  "anmed-cardio":"CIN Partner Cardiology – City I",
+  "anmed-gi":"CIN Partner Gastroenterology – City K",
+  "bon-cardio":"Competitor Cardiovascular Group – City A",
+  "bon-ortho":"CIN Partner Orthopedics – City F",
+  "carolina-gi":"Competitor Gastroenterology – City A",
+  "carolina-ortho":"Competitor Orthopaedics – City A",
+  "carolina-ortho-and":"Competitor Orthopedic Associates – City B",
+  "foothill-cardio":"CIN Partner Cardiology – City G",
+  "lowcountry-gi":"Independent Digestive Disease Consultants – City A",
+  "midlands-cardio":"CIN Partner Cardiology – City H",
+  "midlands-gi-cin":"CIN Partner Gastroenterology – City J",
+  "midlands-gi-oon":"Academic Medical Digestive Disease – City B",
+  "ph-cardio-anderson":"Health System Heart & Vascular – City E",
+  "ph-cardio-col":"Health System Cardiovascular Associates – City C",
+  "ph-cardio-gvm":"Health System Heart & Vascular – City A",
+  "ph-cardio-seneca":"Health System Heart & Vascular – City B",
+  "ph-cardio-spart":"Health System Heart & Vascular – City D",
+  "ph-gi-col":"Health System Digestive Health – City B",
+  "ph-gi-greer":"Health System Digestive Health – City C",
+  "ph-gi-gvl":"Health System Digestive Health – City A",
+  "ph-gi-park":"Health System Digestive Health – City D",
+  "ph-gi-tuomey":"Health System Digestive Health – City E",
+  "ph-ortho-col":"Health System Orthopedics – City B",
+  "ph-ortho-greer":"Health System Orthopedics – City C",
+  "ph-ortho-gvl":"Health System Orthopedics – City A",
+  "ph-ortho-lex":"Health System Orthopedics – City F",
+  "ph-ortho-spart":"Health System Orthopaedic Trauma & Spine – City A",
+  "spart-cardio":"Competitor Cardiovascular Group – City B",
+  "spart-ortho":"CIN Partner Orthopedics – City E",
+  "upstate-gi":"CIN Partner Gastroenterology – City M",
+  "upstate-ortho":"CIN Partner Orthopedics – City D"
+}
+const PHYS_MAP = {"s001":"Dr. James H. Andrews","s010":"Dr. Angela C. Rhee","s003":"Dr. Robert L. Hazel","s011":"Dr. William B. Foster","s071":"Dr. Kelly T. Coles","s065":"Dr. Ethan L. Gordon","s009":"Dr. Thomas W. Gallagher","s007":"Dr. Jerome M. Patel","s068":"Dr. Ann E. Andrews","s113":"Dr. Deborah E. Barnes","s050":"Dr. Kathleen R. Monroe","s066":"Dr. Barbara R. Ferguson","s069":"Dr. Teresa J. Austin","s033":"Dr. Mark E. Sullivan","s096":"Dr. Ronald J. Hughes","s051":"Dr. Gary W. Simpson","s097":"Dr. Angela N. Ford","s035":"Dr. Vincent P. Rossi","s002":"Dr. Susan M. Schaefer","s008":"Dr. Linda R. Kessler","s099":"Dr. Zachary C. Porter","s037":"Dr. Denise K. Harmon","s117":"Dr. Walter C. Mason","s049":"Dr. Franklin T. Bivens","s005":"Dr. Dennis L. Howell","s072":"Dr. Gloria C. Fleming","s006":"Dr. Marcus A. Price","s064":"Dr. Peter G. Hunter","s067":"Dr. Helen A. Matthews","s004":"Dr. Patricia E. Conway","s070":"Dr. Sara N. Romero","s073":"Dr. Tiffany G. Guerra","s012":"Dr. Catherine J. Moss","s112":"Dr. Steven A. Mitchell","s034":"Dr. Steven L. Abbott","s115":"Dr. Samuel N. West","s036":"Dr. Gary T. Whitfield","s098":"Dr. Jack T. Gibson","s114":"Dr. Jason J. Bryant","s116":"Dr. Aaron T. Murray","s053":"Dr. Sharon D. Hartley","s052":"Dr. Albert C. Reeves","s018":"Dr. Robert P. Kimbrell","s103":"Dr. Frances A. Lane","s078":"Dr. Stephanie J. Cole","s076":"Dr. Dorothy A. Wright","s014":"Dr. William C. Lee","s038":"Dr. Patrick W. Hamilton","s101":"Dr. Richard L. Knight","s080":"Dr. Raymond T. Jordan","s081":"Dr. Adam C. Freeman","s015":"Dr. Theresa M. Nguyen","s041":"Dr. Russell A. Bowen","s055":"Dr. Martin J. Cross","s105":"Dr. Martha J. Sanchez","s057":"Dr. Brenda T. Jackson","s077":"Dr. Donna E. Carter","s079":"Dr. Kathleen N. Alexander","s042":"Dr. Evelyn G. Perry","s020":"Dr. Juan J. Cabanero","s043":"Dr. Kenneth R. Patterson","s074":"Dr. Nicole L. Howard","s021":"Dr. Sandra T. Brewington","s013":"Dr. Karen B. Singh","s056":"Dr. Gary W. Simpson II","s118":"Dr. Stephen G. Hunt","s019":"Dr. Michael S. Fowler","s121":"Dr. Alice A. Armstrong","s058":"Dr. Susan K. Alexander","s016":"Dr. Mark T. Bhatt","s054":"Dr. Douglas P. Holt","s040":"Dr. William C. Parsons","s104":"Dr. Gloria E. Sims","s075":"Dr. Charles R. Thomas","s017":"Dr. Jimmy R. Baucum","s022":"Dr. Philip A. Norwood","s082":"Dr. Harold G. Morales","s023":"Dr. Cheryl D. Hayes","s119":"Dr. Lisa L. Perkins","s039":"Dr. Rebecca S. Lawrence","s100":"Dr. Keith G. Burns","s102":"Dr. Sandra R. Berry","s120":"Dr. Christine R. Olson","s030":"Dr. Laura E. Ferris","s028":"Dr. Benjamin T. Mauldin","s046":"Dr. Henry T. Moore","s127":"Dr. Sarah G. Brown","s088":"Dr. Kelly N. Bishop","s095":"Dr. Amanda E. Brooks","s086":"Dr. Jean E. Carpenter","s107":"Dr. Teresa T. Fields","s032":"Dr. Balbir S. Minhas","s090":"Dr. Carolyn C. Gaines","s106":"Dr. Diana N. Coker","s085":"Dr. Samantha A. Carroll","s110":"Dr. Barbara L. Taylor","s029":"Dr. Srivathsan Palaniappan","s122":"Dr. Lori E. Medina","s024":"Dr. Kenneth J. Vega","s084":"Dr. Nancy R. Hudson","s125":"Dr. Shirley T. Fuller","s093":"Dr. Nancy R. Young","s083":"Dr. Larry L. Black","s026":"Dr. Zachary P. Gitto","s109":"Dr. Rachel G. Hopkins","s025":"Dr. Mohammad A. Abudalou","s087":"Dr. Janice J. Castillo","s111":"Dr. Daniel R. King","s027":"Dr. Joseph D. Meserve","s060":"Dr. Paul J. Hernandez","s123":"Dr. Emma J. Banks","s092":"Dr. John L. Jones","s089":"Dr. Judith T. Drew","s059":"Dr. Vivian N. Pearce","s044":"Dr. Anita J. Patel","s094":"Dr. Ashley A. Green","s126":"Dr. Beverly C. Harmon","s047":"Dr. Maria C. Vasquez","s091":"Dr. Denise G. Harper","s063":"Dr. Russell K. Pope","s045":"Dr. Gregory B. Nichols","s061":"Dr. Brian L. Caldwell","s124":"Dr. Heather N. Drake","s031":"Dr. Devendra Enjamuri","s048":"Dr. Sylvia R. Weston","s108":"Dr. Julie C. Gross","s062":"Dr. Ellen M. Fitzgerald"};
+
+const SRC_MAP = {
+  "r001":"Health System Family Medicine – City A",
+  "r002":"Health System Family Medicine – City A",
+  "r003":"Health System Family Medicine – City A",
+  "r004":"Competitor Primary Care – City B",
+  "r005":"Competitor Primary Care – City B",
+  "r006":"Health System Internal Medicine – City A",
+  "r007":"Health System Internal Medicine – City A",
+  "r008":"Health System Internal Medicine – City A",
+  "r009":"Health System Primary Care – City C",
+  "r010":"Health System Primary Care – City C",
+  "r011":"Health System Family Medicine – City D",
+  "r012":"Health System Family Medicine – City D",
+  "r013":"Health System Internal Medicine – City E",
+  "r014":"Health System Internal Medicine – City E",
+  "r015":"Health System Internal Medicine – City E",
+  "r016":"Health System Family Medicine – City F",
+  "r017":"Health System Family Medicine – City F",
+  "r018":"Health System Internal Medicine – City G",
+  "r019":"Health System Internal Medicine – City G",
+  "r020":"Health System Cardiology – City A",
+  "r021":"Health System Cardiology – City B",
+  "r022":"Health System Heart & Vascular – City A",
+  "r023":"Health System Digestive Health – City B",
+  "r024":"Health System Digestive Health – City A",
+  "r025":"CIN Partner Primary Care – City A",
+  "r026":"CIN Partner Primary Care – City A",
+  "r027":"CIN Partner Primary Care – City A",
+  "r028":"CIN Partner Primary Care – City A",
+  "r029":"CIN Partner Primary Care – City B",
+  "r030":"CIN Partner Primary Care – City B",
+  "r031":"CIN Partner Primary Care – City B",
+  "r032":"CIN Partner Primary Care – City C",
+  "r033":"CIN Partner Primary Care – City C",
+  "r034":"CIN Partner Primary Care – City D",
+  "r035":"CIN Partner Primary Care – City D",
+  "r036":"CIN Partner Primary Care – City F",
+  "r037":"CIN Partner Primary Care – City F",
+  "r038":"CIN Partner Primary Care – City M",
+  "r039":"CIN Partner Primary Care – City M",
+  "r040":"CIN Partner Cardiology – City G",
+  "r041":"CIN Partner Gastroenterology – City M",
+  "r042":"CIN Partner Cardiology – City H",
+  "r043":"Health System Family Medicine – City A",
+  "r044":"Health System Family Medicine – City A",
+  "r045":"Health System Medical Group",
+  "r046":"Competitor Primary Care – City B",
+  "r047":"Competitor Primary Care – City B",
+  "r048":"Competitor Primary Care – City B",
+  "r049":"Academic Medical Primary Care – City A",
+  "r050":"Academic Medical Primary Care – City A",
+  "r051":"Regional Health Primary Care – City A",
+  "r052":"Regional Health Primary Care – City A",
+  "r053":"Competitor Orthopedic Associates – City B",
+  "r054":"Academic Medical Cardiology – City A",
+  "r055":"Health System Digestive Health – City A",
+  "r056":"Health System Family Medicine – City A",
+  "r057":"Health System Family Medicine – City A",
+  "r058":"Competitor Primary Care – City B",
+  "r059":"Competitor Primary Care – City B",
+  "r060":"Health System Internal Medicine – City A",
+  "r061":"Health System Internal Medicine – City A",
+  "r062":"Health System Primary Care – City C",
+  "r063":"Health System Primary Care – City C",
+  "r064":"Health System Family Medicine – City D",
+  "r065":"Health System Internal Medicine – City E",
+  "r066":"Health System Internal Medicine – City E",
+  "r067":"Health System Family Medicine – City F",
+  "r068":"Health System Family Medicine – City F",
+  "r069":"Health System Internal Medicine – City G",
+  "r070":"Health System Internal Medicine – City G",
+  "r071":"Health System Cardiology – City A",
+  "r072":"Health System Cardiology – City A",
+  "r073":"Health System Cardiology – City A",
+  "r074":"Health System Cardiology – City B",
+  "r075":"Health System Cardiology – City B",
+  "r076":"Health System Heart & Vascular – City A",
+  "r077":"Health System Heart & Vascular – City A",
+  "r078":"Health System Digestive Health – City B",
+  "r079":"Health System Digestive Health – City B",
+  "r080":"Health System Digestive Health – City A",
+  "r081":"Health System Digestive Health – City A",
+  "r082":"CIN Partner Primary Care – City A",
+  "r083":"CIN Partner Primary Care – City A",
+  "r084":"CIN Partner Primary Care – City A",
+  "r085":"CIN Partner Primary Care – City B",
+  "r086":"CIN Partner Primary Care – City B",
+  "r087":"CIN Partner Primary Care – City C",
+  "r088":"CIN Partner Primary Care – City C",
+  "r089":"CIN Partner Primary Care – City D",
+  "r090":"CIN Partner Primary Care – City D",
+  "r091":"CIN Partner Primary Care – City F",
+  "r092":"CIN Partner Primary Care – City F",
+  "r093":"CIN Partner Primary Care – City M",
+  "r094":"CIN Partner Primary Care – City M",
+  "r095":"CIN Partner Cardiology – City G",
+  "r096":"CIN Partner Cardiology – City G",
+  "r097":"CIN Partner Cardiology – City G",
+  "r098":"CIN Partner Gastroenterology – City M",
+  "r099":"CIN Partner Gastroenterology – City M",
+  "r100":"CIN Partner Cardiology – City H",
+  "r101":"CIN Partner Cardiology – City H",
+  "r102":"Health System Family Medicine – City A",
+  "r103":"Health System Family Medicine – City A",
+  "r104":"Health System Family Medicine – City A",
+  "r105":"Competitor Primary Care – City B",
+  "r106":"Competitor Primary Care – City B",
+  "r107":"Academic Medical Primary Care – City A",
+  "r108":"Academic Medical Primary Care – City A",
+  "r109":"Regional Health Primary Care – City A",
+  "r110":"Competitor Orthopedic Associates – City B",
+  "r111":"Competitor Orthopedic Associates – City B",
+  "r112":"Academic Medical Cardiology – City A",
+  "r113":"Academic Medical Cardiology – City A",
+  "r114":"Health System Digestive Health – City A",
+  "r115":"Health System Digestive Health – City A"
+};
+const PROC_MAP = {"27447":"Total Knee Arthroplasty","20610":"Joint Aspiration / Injection","29881":"Knee Arthroscopy w/ Meniscectomy","27130":"Total Hip Arthroplasty","27487":"Revision Total Knee Arthroplasty","22612":"Lumbar Spinal Fusion","29827":"Shoulder Arthroscopy / Rotator Cuff Repair","29823":"Shoulder Arthroscopy D\u00e9bridement","93306":"Echocardiography w/ Doppler","92928":"Percutaneous Coronary Intervention","93458":"Left Heart Catheterization","33208":"Permanent Pacemaker Implantation","33249":"ICD Implantation","33533":"CABG \u2014 Arterial","93621":"Electrophysiology Study","93018":"Cardiovascular Stress Test","43239":"Upper GI Endoscopy w/ Biopsy","43281":"Laparoscopic Hiatal Hernia Repair","45380":"Colonoscopy w/ Biopsy","45378":"Diagnostic Colonoscopy","47562":"Laparoscopic Cholecystectomy","43760":"Percutaneous Gastrostomy Tube"};
+
+// Expand slim records to full patient objects
+const PATIENTS = _RAW.map(r=>{
+  return {
+    pid:          r.i,
+    spec:         r.sp,
+    refDate:      r.rd,
+    refSource:    SRC_MAP[r.ri]  || r.ri,
+    refSourceId:  r.ri,
+    refTier:      r.rt,
+    refPtype:     r.rp,
+    destPractice: PRAC_MAP[r.dp] || r.dp,
+    destPid:      r.dp,
+    destPhysician:PHYS_MAP[r.di] || r.di,
+    destPhysId:   r.di,
+    destTier:     r.dt,
+    visitDone:    r.v===1,
+    mttaDays:     r.m,
+    visitDate:    r.vd,
+    edVisit:      r.e===1,
+    procDone:     r.pr===1,
+    procCode:     r.pc,
+    procName:     r.pc ? PROC_MAP[r.pc] : null,
+    procNet:      r.pn,
+    procDate:     r.pd,
+    daysFromRef:  r.df,
+  };
+});
+
+// ── Filters ──────────────────────────────────────────────────────────────────
+const filters = {
+  spec:'all', destTier:'all', refPtype:'all', status:'all',
+  procNet:'all', edVisit:'all',
+  destPid:'all', destPhysId:'all', refSourceId:'all', procCode:'all',
+  mttaMin:null, mttaMax:null, month:null,
+};
+
+let sortKey = 'refDate', sortDir = 1;
+let filtered = [], expandedPid = null, shownCount = PAGE_SIZE;
+
+// ── Populate dropdowns ───────────────────────────────────────────────────────
+function populateDropdowns(){
+  const practices = [...new Set(PATIENTS.map(p=>JSON.stringify({id:p.destPid,name:p.destPractice})))]
+    .map(s=>JSON.parse(s)).sort((a,b)=>a.name.localeCompare(b.name));
+  const selPrac = document.getElementById('sel-practice');
+  practices.forEach(pr=>{
+    const o=document.createElement('option'); o.value=pr.id; o.textContent=pr.name;
+    selPrac.appendChild(o);
+  });
+
+  // Physicians (repopulate based on practice filter)
+  populatePhysicians();
+
+  const sources = [...new Set(PATIENTS.map(p=>JSON.stringify({id:p.refSourceId,name:p.refSource})))]
+    .map(s=>JSON.parse(s)).sort((a,b)=>a.name.localeCompare(b.name));
+  const selSrc = document.getElementById('sel-source');
+  sources.forEach(src=>{
+    const o=document.createElement('option'); o.value=src.id; o.textContent=src.name;
+    selSrc.appendChild(o);
+  });
+
+  const procs = [...new Set(PATIENTS.filter(p=>p.procCode).map(p=>JSON.stringify({code:p.procCode,name:p.procName})))]
+    .map(s=>JSON.parse(s)).sort((a,b)=>a.name.localeCompare(b.name));
+  const selProc = document.getElementById('sel-proc');
+  procs.forEach(pr=>{
+    const o=document.createElement('option'); o.value=pr.code; o.textContent=pr.name;
+    selProc.appendChild(o);
+  });
+}
+
+function populatePhysicians(){
+  const selPhys = document.getElementById('sel-physician');
+  const curVal = selPhys.value;
+  selPhys.innerHTML = '<option value="all">All Physicians</option>';
+  const pool = filters.destPid==='all' ? PATIENTS : PATIENTS.filter(p=>p.destPid===filters.destPid);
+  const phys = [...new Set(pool.map(p=>JSON.stringify({id:p.destPhysId,name:p.destPhysician})))]
+    .map(s=>JSON.parse(s)).sort((a,b)=>a.name.localeCompare(b.name));
+  phys.forEach(ph=>{
+    const o=document.createElement('option'); o.value=ph.id; o.textContent=ph.name;
+    selPhys.appendChild(o);
+  });
+  selPhys.value = phys.find(p=>p.id===curVal) ? curVal : 'all';
+}
+
+// ── Filtering ────────────────────────────────────────────────────────────────
+function applyFilters(){
+  populatePhysicians();
+  filtered = PATIENTS.filter(p=>{
+    if(filters.spec!=='all'     && p.spec!==filters.spec)               return false;
+    if(filters.destTier!=='all' && p.destTier!==filters.destTier)       return false;
+    if(filters.refPtype!=='all' && p.refPtype!==filters.refPtype)       return false;
+    if(filters.destPid!=='all'  && p.destPid!==filters.destPid)         return false;
+    if(filters.destPhysId!=='all'&&p.destPhysId!==filters.destPhysId)   return false;
+    if(filters.refSourceId!=='all'&&p.refSourceId!==filters.refSourceId)return false;
+    if(filters.procCode!=='all' && p.procCode!==filters.procCode)       return false;
+    if(filters.month!==null     && p.refDate.slice(5,7)!==String(filters.month).padStart(2,'0')) return false;
+    if(filters.mttaMin!==null   && (p.mttaDays===null||p.mttaDays<filters.mttaMin))  return false;
+    if(filters.mttaMax!==null   && (p.mttaDays===null||p.mttaDays>filters.mttaMax))  return false;
+    if(filters.status==='visited' && !p.visitDone)   return false;
+    if(filters.status==='novisit' && p.visitDone)    return false;
+    if(filters.status==='proc'    && !p.procDone)    return false;
+    if(filters.status==='noproc'  && p.procDone)     return false;
+    if(filters.procNet==='in'  && p.procNet!=='in')  return false;
+    if(filters.procNet==='oon' && p.procNet!=='oon') return false;
+    if(filters.edVisit==='yes' && !p.edVisit)        return false;
+    if(filters.edVisit==='no'  && p.edVisit)         return false;
+    return true;
+  });
+  // Sort
+  filtered.sort((a,b)=>{
+    const av = a[sortKey], bv = b[sortKey];
+    if(av===null&&bv===null) return 0;
+    if(av===null) return 1;
+    if(bv===null) return -1;
+    return av<bv ? -sortDir : av>bv ? sortDir : 0;
+  });
+  shownCount = PAGE_SIZE;
+  expandedPid = null;
+  renderSummary();
+  renderTable();
+}
+
+// ── Summary strip ────────────────────────────────────────────────────────────
+function renderSummary(){
+  const n = filtered.length;
+  const visited = filtered.filter(p=>p.visitDone).length;
+  const proc    = filtered.filter(p=>p.procDone).length;
+  const oon     = filtered.filter(p=>p.procNet==='oon').length;
+  const ed      = filtered.filter(p=>p.edVisit).length;
+  const avgMTTA = filtered.filter(p=>p.mttaDays).reduce((s,p)=>s+p.mttaDays,0)/Math.max(1,filtered.filter(p=>p.mttaDays).length);
+
+  document.getElementById('hd-count').textContent = n.toLocaleString()+' patients';
+  document.getElementById('summary-strip').innerHTML = `
+    <div class="ss-stat">
+      <div class="ss-val">${n.toLocaleString()}</div>
+      <div class="ss-lbl">Total Referrals</div>
+    </div>
+    <div class="ss-div"></div>
+    <div class="ss-stat">
+      <div class="ss-val" style="color:var(--teal)">${visited.toLocaleString()}</div>
+      <div class="ss-lbl">Visit Completed (${Math.round(visited/Math.max(1,n)*100)}%)</div>
+    </div>
+    <div class="ss-div"></div>
+    <div class="ss-stat">
+      <div class="ss-val" style="color:var(--blue)">${Math.round(avgMTTA)}<span style="font-family:'DM Mono',monospace;font-size:13px">d</span></div>
+      <div class="ss-lbl">Avg MTTA</div>
+    </div>
+    <div class="ss-div"></div>
+    <div class="ss-stat">
+      <div class="ss-val" style="color:var(--purple)">${proc.toLocaleString()}</div>
+      <div class="ss-lbl">Procedures (${Math.round(proc/Math.max(1,n)*100)}%)</div>
+    </div>
+    <div class="ss-div"></div>
+    <div class="ss-stat">
+      <div class="ss-val" style="color:var(--rose)">${oon.toLocaleString()}</div>
+      <div class="ss-lbl">OON Procedures</div>
+    </div>
+    <div class="ss-div"></div>
+    <div class="ss-stat">
+      <div class="ss-val" style="color:var(--gold)">${ed.toLocaleString()}</div>
+      <div class="ss-lbl">ED Visits</div>
+    </div>
+  `;
+}
+
+// ── Table render ─────────────────────────────────────────────────────────────
+function renderTable(){
+  const tbody = document.getElementById('table-body');
+  const empty = document.getElementById('empty-state');
+  const more  = document.getElementById('load-more-wrap');
+  const shown = filtered.slice(0, shownCount);
+
+  if(filtered.length===0){
+    tbody.innerHTML=''; empty.style.display='flex'; more.style.display='none'; return;
+  }
+  empty.style.display='none';
+
+  tbody.innerHTML = shown.map(p=>rowHTML(p)).join('');
+
+  // Load more
+  if(filtered.length > shownCount){
+    more.style.display='block';
+    document.getElementById('load-more-label').textContent =
+      `Showing ${shownCount} of ${filtered.length.toLocaleString()}`;
+  } else { more.style.display='none'; }
+}
+
+function loadMore(){ shownCount+=PAGE_SIZE; renderTable(); }
+
+function rowHTML(p){
+  const isExp = expandedPid===p.pid;
+  const specPill = `<span class="pill ${SPEC_PILL[p.spec]}">${SPEC_LABEL[p.spec]}</span>`;
+  const srcTier  = `<span class="pill ${TIER_PILL[p.refTier]}">${p.refTier.toUpperCase()}</span>`;
+  const dstTier  = `<span class="pill ${TIER_PILL[p.destTier]}">${p.destTier.toUpperCase()}</span>`;
+  const ptypePill= `<span class="pill ${p.refPtype==='spec'?'pill-spec':'pill-pcp'}">${p.refPtype.toUpperCase()}</span>`;
+  const visitCell= p.visitDone
+    ? `<span style="color:var(--teal);font-weight:700;font-size:13px">✓</span>`
+    : `<span style="color:var(--text3);font-size:11px">—</span>`;
+  const mttaCell = p.mttaDays
+    ? `<span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:${p.mttaDays<=35?'var(--teal)':p.mttaDays<=60?'var(--gold)':'var(--rose)'}">${p.mttaDays}d</span>`
+    : `<span style="color:var(--text3);font-size:11px">—</span>`;
+  const edCell   = p.edVisit ? `<span class="flag-ed">⚠ ED</span>` : `<span style="color:var(--text3);font-size:11px">—</span>`;
+  const procCell = p.procDone
+    ? `<span style="font-size:10px;color:var(--text2);max-width:130px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.procName}">${p.procName}</span>`
+    : `<span style="color:var(--text3);font-size:11px">—</span>`;
+  const netCell  = p.procNet
+    ? `<span class="pill ${p.procNet==='in'?'pill-in':'pill-oon'}">${p.procNet==='in'?'In':'OON'}</span>`
+    : `<span style="color:var(--text3);font-size:11px">—</span>`;
+  const daysCell = p.daysFromRef
+    ? `<span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--purple)">${p.daysFromRef}d</span>`
+    : `<span style="color:var(--text3);font-size:11px">—</span>`;
+  const journey  = journeyBar(p);
+  const refDateFmt = p.refDate.slice(5).replace('-','/') + '/' + p.refDate.slice(2,4);
+
+  const row = `<tr onclick="toggleExpand('${p.pid}')" class="${isExp?'expanded':''}">
+    <td style="font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:var(--text3)">${p.pid}</td>
+    <td>${specPill}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text2)">${refDateFmt}</td>
+    <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;color:var(--text2);font-size:11px" title="${p.refSource}">${p.refSource}</td>
+    <td>${srcTier} ${ptypePill}</td>
+    <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:var(--text2)" title="${p.destPractice}">${p.destPractice}</td>
+    <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:var(--text)" title="${p.destPhysician}">${p.destPhysician}</td>
+    <td>${dstTier}</td>
+    <td>${visitCell}</td>
+    <td>${mttaCell}</td>
+    <td>${edCell}</td>
+    <td>${procCell}</td>
+    <td>${netCell}</td>
+    <td>${daysCell}</td>
+    <td>${journey}</td>
+  </tr>`;
+
+  if(!isExp) return row;
+  return row + expandedRowHTML(p);
+}
+
+function journeyBar(p){
+  const refDot  = `<div class="j-step j-done" title="Referral">${svgRef()}</div>`;
+  const line1   = `<div class="j-line ${p.visitDone?'j-line-done':'j-line-skip'}"></div>`;
+  const visitDot= `<div class="j-step ${p.visitDone?'j-done-blue':'j-skip'}" title="Specialist Visit">${svgVisit(p.visitDone)}</div>`;
+  const line2   = `<div class="j-line ${p.procDone?'j-line-gold':'j-line-skip'}"></div>`;
+  const procDot = `<div class="j-step ${p.procDone?(p.procNet==='oon'?'j-done-rose':'j-done-gold'):'j-skip'}" title="Procedure${p.procDone?' ('+p.procNet+')':''}">${svgProc(p.procDone)}</div>`;
+  const edDot   = p.edVisit ? `<div class="j-line j-line-skip" style="width:8px"></div><div class="j-step j-done-rose" title="ED Visit" style="width:16px;height:16px;margin-left:2px">${svgED()}</div>` : '';
+  return `<div class="journey-bar">${refDot}${line1}${visitDot}${line2}${procDot}${edDot}</div>`;
+}
+
+function svgRef(){ return `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>`; }
+function svgVisit(done){ return done ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="white" fill-opacity=".9"/><path d="M5 19c0-3.5 3.1-6 7-6s7 2.5 7 6" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity=".9"/></svg>` : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="rgba(15,30,60,.25)" stroke-width="2" fill="none"/><path d="M5 19c0-3.5 3.1-6 7-6s7 2.5 7 6" stroke="rgba(15,30,60,.25)" stroke-width="2" stroke-linecap="round" fill="none"/></svg>`; }
+function svgProc(done){ return done ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/></svg>` : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="rgba(15,30,60,.2)" stroke-width="2" fill="none"/></svg>`; }
+function svgED(){ return `<svg width="8" height="8" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>`; }
+
+function expandedRowHTML(p){
+  const fmtDate = d => d ? d.slice(5).replace('-','/')+ '/'+d.slice(2,4) : '—';
+  const timeline = `
+    <div style="grid-column:1/-1;margin-bottom:12px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Patient Journey Timeline</div>
+      <div class="journey-timeline">
+        <div class="jt-node">
+          <div class="jt-icon" style="background:var(--teal);color:#fff">${svgRef()}</div>
+          <div class="jt-label">Referral<br>Initiated</div>
+          <div class="jt-date">${fmtDate(p.refDate)}</div>
+        </div>
+        <div class="jt-connector ${p.visitDone?'jt-conn-done':'jt-conn-skip'}"></div>
+        <div class="jt-node">
+          <div class="jt-icon" style="background:${p.visitDone?'var(--blue)':'rgba(15,30,60,.1)'};color:${p.visitDone?'#fff':'var(--text3)'}">
+            ${svgVisit(p.visitDone)}
+          </div>
+          <div class="jt-label" style="color:${p.visitDone?'var(--text2)':'var(--text3)'}">Specialist<br>Visit</div>
+          <div class="jt-date">${fmtDate(p.visitDate)}</div>
+        </div>
+        <div class="jt-connector ${p.procDone?'jt-conn-done':'jt-conn-skip'}"></div>
+        <div class="jt-node">
+          <div class="jt-icon" style="background:${p.procDone?(p.procNet==='oon'?'var(--rose)':'var(--gold)'):'rgba(15,30,60,.1)'};color:${p.procDone?'#fff':'var(--text3)'}">
+            ${svgProc(p.procDone)}
+          </div>
+          <div class="jt-label" style="color:${p.procDone?'var(--text2)':'var(--text3)'}">Downstream<br>Procedure</div>
+          <div class="jt-date">${fmtDate(p.procDate)}</div>
+        </div>
+        ${p.edVisit ? `
+        <div class="jt-connector jt-conn-skip" style="background:var(--rose-lt)"></div>
+        <div class="jt-node">
+          <div class="jt-icon" style="background:var(--rose);color:#fff">${svgED()}</div>
+          <div class="jt-label" style="color:var(--rose)">ED<br>Visit</div>
+          <div class="jt-date">CY 2025</div>
+        </div>` : ''}
+      </div>
+    </div>`;
+
+  return `<tr class="exp-row"><td colspan="15">
+    <div class="exp-content">
+      ${timeline}
+      <div class="exp-section">
+        <div class="exp-sec-title">Patient & Referral</div>
+        <div class="exp-field"><div class="exp-key">Patient ID</div><div class="exp-val exp-val-mono">${p.pid}</div></div>
+        <div class="exp-field"><div class="exp-key">Specialty</div><div class="exp-val"><span class="pill ${SPEC_PILL[p.spec]}">${SPEC_LABEL[p.spec]}</span></div></div>
+        <div class="exp-field"><div class="exp-key">Referral Date</div><div class="exp-val exp-val-mono">${p.refDate}</div></div>
+        <div class="exp-field"><div class="exp-key">Referral Source</div><div class="exp-val">${p.refSource}</div></div>
+        <div class="exp-field"><div class="exp-key">Source Tier / Type</div><div class="exp-val"><span class="pill ${TIER_PILL[p.refTier]}">${p.refTier.toUpperCase()}</span> <span class="pill ${p.refPtype==='spec'?'pill-spec':'pill-pcp'}">${p.refPtype.toUpperCase()}</span></div></div>
+      </div>
+      <div class="exp-section">
+        <div class="exp-sec-title">Destination</div>
+        <div class="exp-field"><div class="exp-key">Practice</div><div class="exp-val">${p.destPractice}</div></div>
+        <div class="exp-field"><div class="exp-key">Physician</div><div class="exp-val">${p.destPhysician}</div></div>
+        <div class="exp-field"><div class="exp-key">Destination Tier</div><div class="exp-val"><span class="pill ${TIER_PILL[p.destTier]}">${TIER_LABEL[p.destTier]}</span></div></div>
+      </div>
+      <div class="exp-section">
+        <div class="exp-sec-title">Visit & Access</div>
+        <div class="exp-field"><div class="exp-key">Visit Completed</div><div class="exp-val" style="color:${p.visitDone?'var(--teal)':'var(--rose)'}">${p.visitDone?'Yes — '+fmtDate(p.visitDate):'No'}</div></div>
+        <div class="exp-field"><div class="exp-key">Time to Appt (MTTA)</div><div class="exp-val exp-val-mono" style="color:${p.mttaDays?(p.mttaDays<=35?'var(--teal)':p.mttaDays<=60?'var(--gold)':'var(--rose)'):'var(--text3)'}">${p.mttaDays?p.mttaDays+'d':'—'}</div></div>
+        <div class="exp-field"><div class="exp-key">ED Visit Flag</div><div class="exp-val">${p.edVisit?'<span class="flag-ed">⚠ ED Visit Occurred</span>':'—'}</div></div>
+      </div>
+      <div class="exp-section">
+        <div class="exp-sec-title">Procedure</div>
+        <div class="exp-field"><div class="exp-key">Procedure</div><div class="exp-val">${p.procName||'—'}</div></div>
+        <div class="exp-field"><div class="exp-key">CPT Code</div><div class="exp-val exp-val-mono">${p.procCode||'—'}</div></div>
+        <div class="exp-field"><div class="exp-key">Network</div><div class="exp-val">${p.procNet?'<span class="pill '+(p.procNet==='in'?'pill-in':'pill-oon')+'">'+(p.procNet==='in'?'In-Network':'Out-of-Network')+'</span>':'—'}</div></div>
+        <div class="exp-field"><div class="exp-key">Procedure Date</div><div class="exp-val exp-val-mono">${p.procDate||'—'}</div></div>
+        <div class="exp-field"><div class="exp-key">Days from Initial Ref</div><div class="exp-val exp-val-mono" style="color:var(--purple)">${p.daysFromRef?p.daysFromRef+'d':'—'}</div></div>
+      </div>
+    </div>
+  </td></tr>`;
+}
+
+function toggleExpand(pid){
+  expandedPid = expandedPid===pid ? null : pid;
+  renderTable();
+}
+
+// ── Sort ─────────────────────────────────────────────────────────────────────
+function sortBy(key){
+  if(sortKey===key) sortDir*=-1;
+  else { sortKey=key; sortDir=1; }
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.remove('sorted');
+    const icon=th.querySelector('.sort-icon');
+    if(icon) icon.textContent='↕';
+  });
+  const ths = document.querySelectorAll('thead th');
+  const keys=['pid','spec','refDate','refSource','refTier','destPractice','destPhysician','destTier','visitDone','mttaDays','edVisit','procDone','procNet','daysFromRef',''];
+  const idx=keys.indexOf(key);
+  if(idx>=0&&ths[idx]){
+    ths[idx].classList.add('sorted');
+    const icon=ths[idx].querySelector('.sort-icon');
+    if(icon) icon.textContent=sortDir===1?'↑':'↓';
+  }
+  applyFilters();
+}
+
+// ── Toggle filters ───────────────────────────────────────────────────────────
+function setToggle(filterKey, val, el){
+  filters[filterKey]=val;
+  const group=el.closest('[id^="tog-"]');
+  group.querySelectorAll('.f-toggle').forEach(t=>t.classList.remove('active','active-rose','active-blue','active-gold'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function clearFilters(){
+  Object.assign(filters,{
+    spec:'all',destTier:'all',refPtype:'all',status:'all',
+    procNet:'all',edVisit:'all',
+    destPid:'all',destPhysId:'all',refSourceId:'all',procCode:'all',
+    mttaMin:null,mttaMax:null,month:null,
+  });
+  document.querySelectorAll('.f-toggle').forEach(t=>{
+    t.classList.remove('active','active-rose','active-blue','active-gold');
+    if(t.dataset.val==='all') t.classList.add('active');
+  });
+  ['sel-practice','sel-physician','sel-source','sel-proc','sel-month']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='all';});
+  document.getElementById('mtta-min').value='';
+  document.getElementById('mtta-max').value='';
+  applyFilters();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+populateDropdowns();
+applyFilters();
+
+// ── Listen for filter state from Patient Insights or CarePath IQ ──
+window.addEventListener('message', function(e) {
+  if (!e.data || e.data.type !== 'apply-filters') return;
+  var fs = e.data.filterState || {};
+
+  // Reset all filters to 'all' first
+  clearFilters();
+
+  // Apply each filter from the message
+  var toggleMap = {
+    spec:      'tog-spec',
+    destTier:  'tog-tier',
+    refPtype:  'tog-ptype',
+    status:    'tog-status',
+    procNet:   'tog-procnet',
+    edVisit:   'tog-ed',
+  };
+
+  Object.keys(fs).forEach(function(key) {
+    var val = fs[key];
+    if (val === undefined || val === null) return;
+
+    if (toggleMap[key]) {
+      // Find the toggle button with matching data-val
+      var group = document.getElementById(toggleMap[key]);
+      if (group) {
+        var btn = group.querySelector('[data-val="' + val + '"]');
+        if (btn) {
+          // Deactivate all in group, activate this one
+          group.querySelectorAll('.f-toggle').forEach(function(t) {
+            t.classList.remove('active','active-rose','active-blue','active-gold');
+          });
+          btn.classList.add('active');
+        }
+      }
+      filters[key] = val;
+    } else if (key === 'mttaMin') {
+      filters.mttaMin = +val;
+      var minEl = document.getElementById('mtta-min');
+      if (minEl) minEl.value = val;
+    } else if (key === 'mttaMax') {
+      filters.mttaMax = +val;
+      var maxEl = document.getElementById('mtta-max');
+      if (maxEl) maxEl.value = val;
+    } else if (key === 'destPid') {
+      filters.destPid = val;
+      var selPrac = document.getElementById('sel-practice');
+      if (selPrac) selPrac.value = val;
+    } else if (key === 'destPhysId') {
+      filters.destPhysId = val;
+      var selPhys = document.getElementById('sel-physician');
+      if (selPhys) selPhys.value = val;
+    } else if (key === 'refTier') {
+      // refTier maps to refPtype toggle group loosely — just set the filter
+      filters.refTier = val;
+    }
+  });
+
+  // Re-run filters with updated state
+  applyFilters();
+
+  // Scroll to top of table
+  var wrap = document.querySelector('.table-wrap');
+  if (wrap) wrap.scrollTop = 0;
+});
+
+// Notify parent suite of this tab's system name for CTA widget
+(function() {
+  if (typeof SYS_NAME !== 'undefined') {
+    window.parent.postMessage({ type: 'sys-name', value: SYS_NAME }, '*');
+  }
+})();
+</script>
+</body>
+</html>

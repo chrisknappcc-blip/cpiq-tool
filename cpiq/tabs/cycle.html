@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarePath IQ Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f7f9fc;--surface:#fff;--sidebar:#f1f4f8;
+  --text:#0f1e2e;--text2:#4a6080;--text3:#8aa0b8;
+  --border:rgba(15,30,60,.09);--border2:rgba(15,30,60,.05);
+  --teal:#007d6e;--teal-lt:#e6f4f2;--teal-mid:#009e8c;
+  --gold:#b8720e;--gold-lt:#fdf3e2;
+  --rose:#c8354a;--rose-lt:#fdeef0;
+  --blue:#1a56b0;--blue-lt:#e8f0ff;
+  --purple:#6a42b8;--purple-lt:#f0eaff;
+  --shadow:0 1px 4px rgba(15,30,60,.07),0 4px 16px rgba(15,30,60,.04);
+  --shadow-sm:0 1px 3px rgba(15,30,60,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
+header{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);height:60px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.hd-left{display:flex;align-items:center;gap:14px}
+.prisma-logo{display:flex;align-items:center;gap:9px}
+.prisma-logo svg{width:32px;height:32px}
+.prisma-wordmark{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);letter-spacing:.01em}
+.prisma-wordmark span{color:var(--teal)}
+.hd-divider{width:1px;height:28px;background:var(--border);margin:0 4px}
+.hd-title{font-size:13px;color:var(--text2);font-weight:400}
+.hd-right{display:flex;align-items:center;gap:10px}
+.badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;font-family:'DM Mono',monospace}
+.badge-teal{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(0,125,110,.2)}
+.badge-blue{background:var(--blue-lt);color:var(--blue);border:1px solid rgba(26,86,176,.2)}
+.hd-period{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.shell{display:flex;min-height:calc(100vh - 60px)}
+aside{width:234px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);padding:14px 0;overflow-y:auto}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.s-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:0 14px;margin-bottom:7px}
+.s-divider{height:1px;background:var(--border);margin:10px 0}
+.spec-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 14px;border:1px solid transparent;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;background:transparent;margin-bottom:1px}
+.spec-btn:hover{background:rgba(0,125,110,.05)}
+.spec-btn.active{background:var(--teal-lt);border-left:3px solid var(--teal)}
+.spec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.spec-name{font-size:12px;font-weight:500;color:var(--text);text-align:left}
+.spec-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-left:auto}
+.filter-section{padding:0 14px;margin-bottom:10px}
+.filter-select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:6px;font-size:11px;font-family:'Outfit',sans-serif;appearance:none;cursor:pointer;box-shadow:var(--shadow-sm);margin-bottom:6px}
+.filter-select:focus{outline:none;border-color:var(--teal)}
+.chip-row{display:flex;flex-wrap:wrap;gap:4px;padding:0 14px;margin-bottom:8px}
+.chip{font-size:10px;padding:3px 8px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;font-weight:500}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.chip.active{background:var(--teal-lt);border-color:rgba(0,125,110,.3);color:var(--teal)}
+.chip.rose.active{background:var(--rose-lt);border-color:rgba(200,53,74,.3);color:var(--rose)}
+.chip.blue.active{background:var(--blue-lt);border-color:rgba(26,86,176,.3);color:var(--blue)}
+.chip.gold.active{background:var(--gold-lt);border-color:rgba(184,114,14,.3);color:var(--gold)}
+main{flex:1;padding:18px 22px;overflow-y:auto}
+
+/* KPI */
+.kpi-row{display:grid;gap:11px;margin-bottom:16px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px 16px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.c-teal::before{background:var(--teal)}
+.kpi-card.c-blue::before{background:var(--blue)}
+.kpi-card.c-gold::before{background:var(--gold)}
+.kpi-card.c-rose::before{background:var(--rose)}
+.kpi-card.c-purple::before{background:var(--purple)}
+.kpi-lbl{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:6px}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:24px;color:var(--text);line-height:1;margin-bottom:4px}
+.kpi-meta{font-size:11px;color:var(--text2)}
+.delta{font-size:10px;font-weight:700;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:3px}
+.d-up{color:var(--teal);background:var(--teal-lt)}
+.d-dn{color:var(--rose);background:var(--rose-lt)}
+
+/* LAYOUT */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.full{margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.card-title{font-family:'DM Serif Display',serif;font-size:14px;color:var(--text)}
+.card-subtitle{font-size:11px;color:var(--text2);margin-top:2px}
+.card-badge{font-size:10px;font-family:'DM Mono',monospace;color:var(--teal);background:var(--teal-lt);border:1px solid rgba(0,125,110,.18);padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+
+/* FLOW PANELS */
+.flow-grid{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;margin-bottom:14px;align-items:stretch}
+.flow-arrow{display:flex;align-items:center;justify-content:center;padding:0 10px;align-self:center;flex-direction:column;gap:3px}
+.flow-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.flow-panel-hd{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.flow-panel-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.flow-panel-vol{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--text)}
+.flow-item{display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s}
+.flow-item:last-child{border-bottom:none}
+.flow-item:hover{background:rgba(0,125,110,.04)}
+.flow-item.selected{background:var(--teal-lt);border-left:3px solid var(--teal)}
+.fi-name{font-size:11px;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.fi-sub{font-size:9px;color:var(--text3)}
+.fi-bar-wrap{width:48px;flex-shrink:0}
+.fi-bar-bg{height:4px;background:rgba(15,30,60,.07);border-radius:2px;overflow:hidden}
+.fi-bar-fill{height:100%;border-radius:2px}
+.fi-vol{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;min-width:38px;text-align:right;flex-shrink:0}
+
+/* SOURCE BARS */
+.src-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.src-name{font-size:11px;color:var(--text2);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-bar-bg{flex:1;height:6px;background:rgba(15,30,60,.07);border-radius:4px;overflow:hidden}
+.src-bar-fill{height:100%;border-radius:4px;transition:width .4s}
+.src-val{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;width:46px;text-align:right}
+.src-pct{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:32px;text-align:right}
+
+/* METRIC BAR */
+.met-bar-wrap{display:flex;align-items:center;gap:6px}
+.met-bar-bg{flex:1;height:5px;background:rgba(15,30,60,.07);border-radius:3px;overflow:hidden}
+.met-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.met-val{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;min-width:38px;text-align:right}
+
+/* TOGGLE */
+.toggle-row{display:flex;gap:2px;background:var(--sidebar);border-radius:7px;padding:3px;width:fit-content;margin-bottom:14px}
+.toggle-btn{padding:5px 14px;font-size:11px;font-weight:500;border-radius:5px;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all .15s;font-family:'Outfit',sans-serif}
+.toggle-btn.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);border:0.5px solid var(--border)}
+
+/* TABLE */
+.ref-table{width:100%;border-collapse:collapse}
+.ref-table th{text-align:left;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:0 10px 8px 0;border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:7px 10px 7px 0;font-size:11px;border-bottom:1px solid var(--border2);vertical-align:middle}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:rgba(0,125,110,.025)}
+.dr-name{font-weight:600;color:var(--text);font-size:12px}
+.dr-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.num{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--text)}
+.pill{font-size:9px;padding:2px 7px;border-radius:9px;font-weight:700;white-space:nowrap}
+.pill-t1{background:var(--teal-lt);color:var(--teal)}
+.pill-t2{background:var(--blue-lt);color:var(--blue)}
+.pill-ext{background:rgba(15,30,60,.07);color:var(--text2)}
+.mini-bar-bg{height:3px;background:rgba(15,30,60,.08);border-radius:2px;overflow:hidden;margin-top:3px;width:56px}
+.mini-bar{height:100%;border-radius:2px}
+.rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:16px;text-align:right}
+
+/* INSIGHT */
+.insight{border-radius:8px;padding:9px 13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:12px;line-height:1.65}
+.ins-teal{background:var(--teal-lt);border:1px solid rgba(0,125,110,.18);color:var(--text2)}
+.ins-rose{background:var(--rose-lt);border:1px solid rgba(200,53,74,.18);color:var(--text2)}
+.ins-gold{background:var(--gold-lt);border:1px solid rgba(184,114,14,.18);color:var(--text2)}
+.ins-blue{background:var(--blue-lt);border:1px solid rgba(26,86,176,.18);color:var(--text2)}
+.insight strong{color:var(--text);font-weight:600}
+
+/* SECTION HEADER */
+.section-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;margin-top:4px}
+.section-hd-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text)}
+.section-hd-sub{font-size:11px;color:var(--text2)}
+
+footer{border-top:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;font-size:10px;color:var(--text3);background:var(--surface)}
+.foot-logo{font-family:'DM Serif Display',serif;color:var(--teal)}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<script>
+/* CPIQ Data Shim */
+(function() {
+  function applyState(s) {
+    window.CPIQ = s;
+    window.SYS_NAME = s.meta ? s.meta.sysName : 'Health System';
+    window.COMPETITORS = (s.meta && s.meta.competitors) || [];
+    if (typeof window.__cpiqReady === 'function') window.__cpiqReady(s);
+  }
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cpiq-state') applyState(e.data.payload);
+    if (e.data && e.data.type === 'apply-filters' && typeof window.__applyFilters === 'function') window.__applyFilters(e.data.filterState);
+  });
+  if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
+})();
+</script></head>
+<body>
+
+<header>
+  <div class="hd-left">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain"></div>
+    </div>
+    <div class="hd-divider"></div>
+    <div class="hd-title">Referral Cycle Intelligence</div>
+  </div>
+  <div class="hd-right">
+    <span class="badge badge-teal">CIN Network Network</span>
+    <span class="badge badge-blue">Metro Market</span>
+    <span class="hd-period" id="hd-period">CY 2025 · ~48,000 Referrals</span>
+  </div>
+</header>
+
+<div class="shell">
+<aside>
+  <!-- SPECIALTY -->
+  <div style="padding:0 0 6px">
+    <div class="s-label" style="margin-bottom:8px">Specialty</div>
+    <button class="spec-btn active" id="sb-all" onclick="setSpec('all',this)">
+      <div class="spec-dot" style="background:linear-gradient(135deg,var(--gold),var(--rose),var(--teal))"></div>
+      <span class="spec-name">All Specialties</span>
+      <span class="spec-count" id="cnt-all">—</span>
+    </button>
+    <button class="spec-btn" id="sb-ortho" onclick="setSpec('ortho',this)">
+      <div class="spec-dot" style="background:var(--gold)"></div>
+      <span class="spec-name">Orthopedics</span>
+      <span class="spec-count" id="cnt-ortho">—</span>
+    </button>
+    <button class="spec-btn" id="sb-cardio" onclick="setSpec('cardio',this)">
+      <div class="spec-dot" style="background:var(--rose)"></div>
+      <span class="spec-name">Cardiology</span>
+      <span class="spec-count" id="cnt-cardio">—</span>
+    </button>
+    <button class="spec-btn" id="sb-gi" onclick="setSpec('gi',this)">
+      <div class="spec-dot" style="background:var(--teal)"></div>
+      <span class="spec-name">Gastroenterology</span>
+      <span class="spec-count" id="cnt-gi">—</span>
+    </button>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- TIME PERIOD -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:8px">Quarter</div>
+    <div class="chip-row" style="padding:0;margin-bottom:8px">
+      <div class="chip active" id="q-all" onclick="setQuarter('all',this)">All</div>
+      <div class="chip" id="q-q1" onclick="setQuarter('Q1',this)">Q1</div>
+      <div class="chip" id="q-q2" onclick="setQuarter('Q2',this)">Q2</div>
+      <div class="chip" id="q-q3" onclick="setQuarter('Q3',this)">Q3</div>
+      <div class="chip" id="q-q4" onclick="setQuarter('Q4',this)">Q4</div>
+    </div>
+    <div class="s-label" style="margin-bottom:6px">Month</div>
+    <select class="filter-select" id="sel-month" onchange="setMonth(this.value)">
+      <option value="all">All Months</option>
+      <option value="1">January</option><option value="2">February</option>
+      <option value="3">March</option><option value="4">April</option>
+      <option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option>
+      <option value="9">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- SOURCE TIER -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Referring Source Tier</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-src-all" onclick="setSrcTier('all',this)">All</div>
+      <div class="chip" id="ch-src-t1" onclick="setSrcTier('t1',this)">T1</div>
+      <div class="chip blue" id="ch-src-t2" onclick="setSrcTier('t2',this)">T2</div>
+      <div class="chip rose" id="ch-src-oon" onclick="setSrcTier('oon',this)">OON</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- SOURCE TYPE -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Referring Provider Type</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-ptype-all" onclick="setPtype('all',this)">All</div>
+      <div class="chip gold" id="ch-ptype-pcp" onclick="setPtype('pcp',this)">Primary Care</div>
+      <div class="chip" id="ch-ptype-spec" onclick="setPtype('spec',this)">Specialist</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- DEST TIER -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Destination Tier</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-dst-all" onclick="setDstTier('all',this)">All</div>
+      <div class="chip" id="ch-dst-t1" onclick="setDstTier('t1',this)">T1</div>
+      <div class="chip blue" id="ch-dst-t2" onclick="setDstTier('t2',this)">T2</div>
+      <div class="chip rose" id="ch-dst-oon" onclick="setDstTier('oon',this)">OON</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- SOURCE PRACTICE -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Referring Practice</div>
+    <select class="filter-select" id="sel-src-practice" onchange="setSrcPractice(this.value)">
+      <option value="all">All Referring Practices</option>
+    </select>
+  </div>
+
+  <!-- DEST PRACTICE -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Destination Practice</div>
+    <select class="filter-select" id="sel-dst-practice" onchange="setDstPractice(this.value)">
+      <option value="all">All Destination Practices</option>
+    </select>
+  </div>
+</aside>
+
+<main>
+  <div id="main-area"></div>
+</main>
+</div>
+
+<footer>
+  <span class="foot-logo">Health System</span>
+  <span>Referral Cycle Intelligence · CY 2025 · Metro Market SC</span>
+  <span>Analytics &amp; Strategy</span>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   REFERRING PHYSICIANS (source) — 108 physicians
+   tier: t1=T1 · Employed (replace SYS_NAME), t2=CIN Network, oon=Out-of-Network
+   ptype: pcp | spec
+   refs: annual volume sent {ortho, cardio, gi}
+══════════════════════════════════════════════════════════════ */
+const referrers = [
+  {id:'r001',name:'Dr. Kevin T. Brady',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:420,cardio:396,gi:472}},
+  {id:'r002',name:'Dr. Melissa J. Thornton',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:390,cardio:364,gi:432}},
+  {id:'r003',name:'Dr. Anthony R. Davis',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:356,cardio:336,gi:396}},
+  {id:'r004',name:'Dr. Stephanie L. Martin',practice:'Competitor Primary Care – City B',pid:'ph-fm-simp',tier:'t1',ptype:'pcp',refs:{ortho:324,cardio:376,gi:408}},
+  {id:'r005',name:'Dr. Ronald G. Barnes',practice:'Competitor Primary Care – City B',pid:'ph-fm-simp',tier:'t1',ptype:'pcp',refs:{ortho:296,cardio:344,gi:376}},
+  {id:'r006',name:'Dr. Catherine P. Morrison',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:276,cardio:390,gi:448}},
+  {id:'r007',name:'Dr. James A. Wilson',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:250,cardio:360,gi:420}},
+  {id:'r008',name:'Dr. Laura M. Hendricks',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:224,cardio:330,gi:384}},
+  {id:'r009',name:'Dr. Nathan P. Coleman',practice:'Health System Primary Care – City C',pid:'ph-pc-greer',tier:'t1',ptype:'pcp',refs:{ortho:290,cardio:264,gi:312}},
+  {id:'r010',name:'Dr. Cheryl A. Griffin',practice:'Health System Primary Care – City C',pid:'ph-pc-greer',tier:'t1',ptype:'pcp',refs:{ortho:264,cardio:240,gi:280}},
+  {id:'r011',name:'Dr. Barry T. Hollis',practice:'Health System Family Medicine – City D',pid:'ph-fm-laurens',tier:'t1',ptype:'pcp',refs:{ortho:236,cardio:216,gi:256}},
+  {id:'r012',name:'Dr. Virginia E. Foster',practice:'Health System Family Medicine – City D',pid:'ph-fm-laurens',tier:'t1',ptype:'pcp',refs:{ortho:210,cardio:192,gi:228}},
+  {id:'r013',name:'Dr. Lawrence T. Webb',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:256,cardio:296,gi:352}},
+  {id:'r014',name:'Dr. Deborah A. Sutton',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:230,cardio:270,gi:320}},
+  {id:'r015',name:'Dr. Calvin J. Reed',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:204,cardio:244,gi:288}},
+  {id:'r016',name:'Dr. Rosemary K. Nash',practice:'Health System Family Medicine – City F',pid:'ph-fm-lex',tier:'t1',ptype:'pcp',refs:{ortho:276,cardio:250,gi:296}},
+  {id:'r017',name:'Dr. Frederick H. Grant',practice:'Health System Family Medicine – City F',pid:'ph-fm-lex',tier:'t1',ptype:'pcp',refs:{ortho:244,cardio:224,gi:264}},
+  {id:'r018',name:'Dr. Irene C. Barrett',practice:'Health System Internal Medicine – City G',pid:'ph-im-spart',tier:'t1',ptype:'pcp',refs:{ortho:230,cardio:264,gi:312}},
+  {id:'r019',name:'Dr. Leonard W. Dixon',practice:'Health System Internal Medicine – City G',pid:'ph-im-spart',tier:'t1',ptype:'pcp',refs:{ortho:210,cardio:244,gi:288}},
+  {id:'r020',name:'Dr. Karen B. Singh',practice:'Health System Cardiology – City A',pid:'ph-cardio-gvm',tier:'t1',ptype:'spec',refs:{ortho:2386,cardio:0,gi:881}},
+  {id:'r021',name:'Dr. Mark T. Bhatt',practice:'Health System Cardiology – City B',pid:'ph-cardio-spart',tier:'t1',ptype:'spec',refs:{ortho:1762,cardio:0,gi:587}},
+  {id:'r022',name:'Dr. Robert P. Kimbrell',practice:'Health System Heart & Vascular – City A',pid:'ph-cardio-col',tier:'t1',ptype:'spec',refs:{ortho:1542,cardio:0,gi:587}},
+  {id:'r023',name:'Dr. Benjamin T. Mauldin',practice:'Health System Digestive Health – City B',pid:'ph-gi-gvl',tier:'t1',ptype:'spec',refs:{ortho:1175,cardio:1322,gi:0}},
+  {id:'r024',name:'Dr. Kenneth J. Vega',practice:'Health System Digestive Health – City A',pid:'ph-gi-col',tier:'t1',ptype:'spec',refs:{ortho:1028,cardio:1175,gi:0}},
+  {id:'r025',name:'Dr. Robert H. Stokes',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:390,cardio:356,gi:408}},
+  {id:'r026',name:'Dr. Charles W. Duncan',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:364,cardio:330,gi:380}},
+  {id:'r027',name:'Dr. Patricia L. Morrison',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:336,cardio:304,gi:352}},
+  {id:'r028',name:'Dr. Thomas J. Watkins',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:310,cardio:280,gi:320}},
+  {id:'r029',name:'Dr. Nancy B. Crawford',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:296,cardio:268,gi:312}},
+  {id:'r030',name:'Dr. Michael T. Garrett',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:276,cardio:248,gi:288}},
+  {id:'r031',name:'Dr. Leslie A. Freeman',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:250,cardio:224,gi:260}},
+  {id:'r032',name:'Dr. James W. Richardson',practice:'CIN Partner Primary Care – City C',pid:'medlife',tier:'t2',ptype:'pcp',refs:{ortho:236,cardio:276,gi:288}},
+  {id:'r033',name:'Dr. Priya R. Mehta',practice:'CIN Partner Primary Care – City C',pid:'medlife',tier:'t2',ptype:'pcp',refs:{ortho:216,cardio:256,gi:264}},
+  {id:'r034',name:'Dr. David A. Reynolds',practice:'CIN Partner Primary Care – City D',pid:'anmed-phy',tier:'t2',ptype:'pcp',refs:{ortho:230,cardio:264,gi:272}},
+  {id:'r035',name:'Dr. Carol S. Hendrix',practice:'CIN Partner Primary Care – City D',pid:'anmed-phy',tier:'t2',ptype:'pcp',refs:{ortho:210,cardio:240,gi:248}},
+  {id:'r036',name:'Dr. Frances L. Cannon',practice:'CIN Partner Primary Care – City F',pid:'midlands-pc',tier:'t2',ptype:'pcp',refs:{ortho:264,cardio:296,gi:328}},
+  {id:'r037',name:'Dr. Herbert J. Norwood',practice:'CIN Partner Primary Care – City F',pid:'midlands-pc',tier:'t2',ptype:'pcp',refs:{ortho:236,cardio:270,gi:300}},
+  {id:'r038',name:'Dr. Arthur P. Cunningham',practice:'CIN Partner Primary Care – City M',pid:'palmetto-pc',tier:'t2',ptype:'pcp',refs:{ortho:250,cardio:284,gi:312}},
+  {id:'r039',name:'Dr. Judith R. Flowers',practice:'CIN Partner Primary Care – City M',pid:'palmetto-pc',tier:'t2',ptype:'pcp',refs:{ortho:224,cardio:256,gi:280}},
+  {id:'r040',name:'Dr. Patrick W. Hamilton',practice:'CIN Partner Cardiology – City G',pid:'foothill-cardio',tier:'t2',ptype:'spec',refs:{ortho:2276,cardio:0,gi:808}},
+  {id:'r041',name:'Dr. Anita J. Patel',practice:'CIN Partner Gastroenterology – City M',pid:'upstate-gi',tier:'t2',ptype:'spec',refs:{ortho:881,cardio:955,gi:0}},
+  {id:'r042',name:'Dr. Russell A. Bowen',practice:'CIN Partner Cardiology – City H',pid:'midlands-cardio',tier:'t2',ptype:'spec',refs:{ortho:1909,cardio:0,gi:661}},
+  {id:'r043',name:'Dr. Timothy J. Norris',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:376,cardio:344,gi:392}},
+  {id:'r044',name:'Dr. Jennifer A. Wallace',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:350,cardio:316,gi:360}},
+  {id:'r045',name:'Dr. Christopher L. Owens',practice:'Health System Medical Group',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:324,cardio:296,gi:336}},
+  {id:'r046',name:'Dr. Angela M. Brooks',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:310,cardio:280,gi:320}},
+  {id:'r047',name:'Dr. Marcus D. Fleming',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:296,cardio:264,gi:304}},
+  {id:'r048',name:'Dr. Sandra R. Phillips',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:276,cardio:244,gi:280}},
+  {id:'r049',name:'Dr. George T. Williamson',practice:'Academic Medical Primary Care – City A',pid:'sc-ima',tier:'oon',ptype:'pcp',refs:{ortho:256,cardio:228,gi:260}},
+  {id:'r050',name:'Dr. Diana K. Lewis',practice:'Academic Medical Primary Care – City A',pid:'sc-ima',tier:'oon',ptype:'pcp',refs:{ortho:236,cardio:210,gi:240}},
+  {id:'r051',name:'Dr. Robert W. Hawkins',practice:'Regional Health Primary Care – City A',pid:'parkside',tier:'oon',ptype:'pcp',refs:{ortho:184,cardio:210,gi:216}},
+  {id:'r052',name:'Dr. Linda S. Chambers',practice:'Regional Health Primary Care – City A',pid:'parkside',tier:'oon',ptype:'pcp',refs:{ortho:170,cardio:192,gi:200}},
+  {id:'r053',name:'Dr. Gary W. Simpson',practice:'Competitor Orthopedic Associates – City B',pid:'carolina-ortho',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:734,gi:514}},
+  {id:'r054',name:'Dr. Douglas P. Holt',practice:'Academic Medical Cardiology – City A',pid:'bon-cardio',tier:'oon',ptype:'spec',refs:{ortho:2019,cardio:0,gi:734}},
+  {id:'r055',name:'Dr. Vivian N. Pearce',practice:'Health System Digestive Health – City A',pid:'carolina-gi',tier:'oon',ptype:'spec',refs:{ortho:808,cardio:881,gi:0}},
+  {id:'r056',name:'Dr. Sarah A. Smith',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r057',name:'Dr. Joseph E. White',practice:'Health System Family Medicine – City A',pid:'ph-fm-gvl',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r058',name:'Dr. Anthony J. Torres',practice:'Competitor Primary Care – City B',pid:'ph-fm-simp',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r059',name:'Dr. Carol N. Turner',practice:'Competitor Primary Care – City B',pid:'ph-fm-simp',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r060',name:'Dr. Timothy T. Perry',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r061',name:'Dr. Ryan C. Griffin',practice:'Health System Internal Medicine – City A',pid:'ph-im-gvl',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r062',name:'Dr. Alexander G. Reynolds',practice:'Health System Primary Care – City C',pid:'ph-pc-greer',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r063',name:'Dr. Douglas L. Webb',practice:'Health System Primary Care – City C',pid:'ph-pc-greer',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r064',name:'Dr. Carl R. Warren',practice:'Health System Family Medicine – City D',pid:'ph-fm-laurens',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r065',name:'Dr. Scott A. Palmer',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r066',name:'Dr. Dorothy E. Gardner',practice:'Health System Internal Medicine – City E',pid:'ph-im-col',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r067',name:'Dr. Catherine J. Snyder',practice:'Health System Family Medicine – City F',pid:'ph-fm-lex',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r068',name:'Dr. Carolyn N. Greene',practice:'Health System Family Medicine – City F',pid:'ph-fm-lex',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r069',name:'Dr. Olivia T. Mendoza',practice:'Health System Internal Medicine – City G',pid:'ph-im-spart',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r070',name:'Dr. Joan C. Carr',practice:'Health System Internal Medicine – City G',pid:'ph-im-spart',tier:'t1',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r071',name:'Dr. Paula G. Duran',practice:'Health System Cardiology – City A',pid:'ph-cardio-gvm',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r072',name:'Dr. Crystal L. Gilbert',practice:'Health System Cardiology – City A',pid:'ph-cardio-gvm',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r073',name:'Dr. Kathy R. Henderson',practice:'Health System Cardiology – City A',pid:'ph-cardio-gvm',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r074',name:'Dr. Richard A. Miller',practice:'Health System Cardiology – City B',pid:'ph-cardio-spart',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r075',name:'Dr. Margaret E. Lewis',practice:'Health System Cardiology – City B',pid:'ph-cardio-spart',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r076',name:'Dr. Emily J. Nelson',practice:'Health System Heart & Vascular – City A',pid:'ph-cardio-col',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r077',name:'Dr. Kevin N. Sanders',practice:'Health System Heart & Vascular – City A',pid:'ph-cardio-col',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r078',name:'Dr. Cynthia T. Butler',practice:'Health System Digestive Health – City B',pid:'ph-gi-gvl',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r079',name:'Dr. Brandon C. Graham',practice:'Health System Digestive Health – City B',pid:'ph-gi-gvl',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r080',name:'Dr. Tyler G. Cruz',practice:'Health System Digestive Health – City A',pid:'ph-gi-col',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r081',name:'Dr. Kyle L. Hicks',practice:'Health System Digestive Health – City A',pid:'ph-gi-col',tier:'t1',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r082',name:'Dr. Jonathan R. Shaw',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r083',name:'Dr. Charles A. Rose',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r084',name:'Dr. Virginia E. Arnold',practice:'CIN Partner Primary Care – City A',pid:'fam-spart',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r085',name:'Dr. Joyce J. Ruiz',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r086',name:'Dr. Doris N. Peters',practice:'CIN Partner Primary Care – City B',pid:'pca-anderson',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r087',name:'Dr. Alice T. Guerrero',practice:'CIN Partner Primary Care – City C',pid:'medlife',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r088',name:'Dr. Diana C. Conner',practice:'CIN Partner Primary Care – City C',pid:'medlife',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r089',name:'Dr. Mildred G. Floyd',practice:'CIN Partner Primary Care – City D',pid:'anmed-phy',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r090',name:'Dr. Amber L. Guy',practice:'CIN Partner Primary Care – City D',pid:'anmed-phy',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r091',name:'Dr. Jessica R. Howell',practice:'CIN Partner Primary Care – City F',pid:'midlands-pc',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r092',name:'Dr. Lisa A. Jackson',practice:'CIN Partner Primary Care – City F',pid:'midlands-pc',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r093',name:'Dr. Matthew E. Scott',practice:'CIN Partner Primary Care – City M',pid:'palmetto-pc',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r094',name:'Dr. Andrew J. Roberts',practice:'CIN Partner Primary Care – City M',pid:'palmetto-pc',tier:'t2',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r095',name:'Dr. George N. Jenkins',practice:'CIN Partner Cardiology – City G',pid:'foothill-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r096',name:'Dr. Amy T. Russell',practice:'CIN Partner Cardiology – City G',pid:'foothill-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r097',name:'Dr. Frank C. Owens',practice:'CIN Partner Cardiology – City G',pid:'foothill-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r098',name:'Dr. Nathan G. Wells',practice:'CIN Partner Gastroenterology – City M',pid:'upstate-gi',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r099',name:'Dr. Jeremy L. Kennedy',practice:'CIN Partner Gastroenterology – City M',pid:'upstate-gi',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r100',name:'Dr. Justin R. Daniels',practice:'CIN Partner Cardiology – City H',pid:'midlands-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r101',name:'Dr. Margaret A. Spencer',practice:'CIN Partner Cardiology – City H',pid:'midlands-cardio',tier:'t2',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r102',name:'Dr. Janet E. Duncan',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r103',name:'Dr. Madison J. Weaver',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r104',name:'Dr. Lauren N. Silva',practice:'Health System Family Medicine – City A',pid:'bon-secours',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r105',name:'Dr. Christina T. Bruno',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r106',name:'Dr. Evelyn C. Duke',practice:'Competitor Primary Care – City B',pid:'spart-reg',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r107',name:'Dr. Robin G. Garrett',practice:'Academic Medical Primary Care – City A',pid:'sc-ima',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r108',name:'Dr. Tammy L. Heath',practice:'Academic Medical Primary Care – City A',pid:'sc-ima',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r109',name:'Dr. Elizabeth R. Garcia',practice:'Regional Health Primary Care – City A',pid:'parkside',tier:'oon',ptype:'pcp',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r110',name:'Dr. Christopher A. Robinson',practice:'Competitor Orthopedic Associates – City B',pid:'carolina-ortho',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r111',name:'Dr. Donald E. Adams',practice:'Competitor Orthopedic Associates – City B',pid:'carolina-ortho',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r112',name:'Dr. Melissa J. Kelly',practice:'Academic Medical Cardiology – City A',pid:'bon-cardio',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r113',name:'Dr. Edward N. Washington',practice:'Academic Medical Cardiology – City A',pid:'bon-cardio',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r114',name:'Dr. Jacob T. Hamilton',practice:'Health System Digestive Health – City A',pid:'carolina-gi',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}},
+  {id:'r115',name:'Dr. Dennis C. McDonald',practice:'Health System Digestive Health – City A',pid:'carolina-gi',tier:'oon',ptype:'spec',refs:{ortho:0,cardio:0,gi:0}}
+];
+
+/* ══════════════════════════════════════════════════════════════
+   RECEIVING SPECIALISTS (destination) — 63 physicians
+   convRate: referral completion rate (%)
+   mttaDays: median time to appointment
+   procRate: fraction with downstream procedure within 120d
+   procNetSplit: fraction of procedures done in-network
+══════════════════════════════════════════════════════════════ */
+const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+
+/* ══════════════════════════════════════════════════════
+   REFERRAL TRANSACTION TABLE
+   Build a join between referrers and specialists.
+   Each referrer distributes their annual volume across
+   same-specialty specialists weighted by specialist volume.
+   Produces records: {rid, sid, spec, month, vol}
+   This is the single source of truth for all cross-filtering.
+══════════════════════════════════════════════════════ */
+const MW = {
+  ortho:  [0.07,0.07,0.08,0.09,0.09,0.10,0.10,0.09,0.09,0.08,0.08,0.06],
+  cardio: [0.10,0.09,0.09,0.08,0.08,0.07,0.07,0.07,0.08,0.09,0.09,0.09],
+  gi:     [0.08,0.08,0.08,0.08,0.08,0.09,0.09,0.09,0.08,0.09,0.08,0.08],
+};
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const QM = {1:'Q1',2:'Q1',3:'Q1',4:'Q2',5:'Q2',6:'Q2',7:'Q3',8:'Q3',9:'Q3',10:'Q4',11:'Q4',12:'Q4'};
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const rMap = Object.fromEntries(referrers.map(r=>[r.id,r]));
+const sMap = Object.fromEntries(specialists.map(s=>[s.id,s]));
+const PROC_CATALOG = {
+  ortho:[
+    {code:'27447',name:'Total Knee Arthroplasty',         network:'in',  wt:0.22},
+    {code:'27130',name:'Total Hip Arthroplasty',           network:'in',  wt:0.18},
+    {code:'29881',name:'Knee Arthroscopy w/ Meniscectomy', network:'in',  wt:0.14},
+    {code:'29827',name:'Shoulder Arthroscopy / Rotator Cuff Repair',network:'in',wt:0.10},
+    {code:'22612',name:'Lumbar Spinal Fusion',             network:'in',  wt:0.08},
+    {code:'27487',name:'Revision Total Knee Arthroplasty', network:'in',  wt:0.06},
+    {code:'29823',name:'Shoulder Arthroscopy Débridement', network:'in',  wt:0.05},
+    {code:'27486',name:'Revision Total Hip Arthroplasty',  network:'oon', wt:0.05},
+    {code:'20610',name:'Joint Aspiration / Injection',      network:'oon', wt:0.07},
+    {code:'64483',name:'Transforaminal Epidural Injection', network:'oon', wt:0.05},
+  ],
+  cardio:[
+    {code:'93458',name:'Left Heart Catheterization',         network:'in',  wt:0.20},
+    {code:'92928',name:'Percutaneous Coronary Intervention', network:'in',  wt:0.16},
+    {code:'33533',name:'CABG — Arterial',                   network:'in',  wt:0.10},
+    {code:'93306',name:'Echocardiography w/ Doppler',        network:'in',  wt:0.14},
+    {code:'93018',name:'Cardiovascular Stress Test',         network:'in',  wt:0.09},
+    {code:'33249',name:'ICD Implantation',                   network:'in',  wt:0.06},
+    {code:'93650',name:'AV Node Ablation',                   network:'in',  wt:0.05},
+    {code:'93621',name:'Electrophysiology Study',            network:'oon', wt:0.07},
+    {code:'33208',name:'Permanent Pacemaker Implantation',   network:'oon', wt:0.08},
+    {code:'93797',name:'Cardiac Rehabilitation',             network:'oon', wt:0.05},
+  ],
+  gi:[
+    {code:'45378',name:'Diagnostic Colonoscopy',             network:'in',  wt:0.28},
+    {code:'45380',name:'Colonoscopy w/ Biopsy',              network:'in',  wt:0.20},
+    {code:'43239',name:'Upper GI Endoscopy w/ Biopsy',       network:'in',  wt:0.14},
+    {code:'43270',name:'Upper Endoscopy w/ Ablation',        network:'in',  wt:0.08},
+    {code:'45385',name:'Colonoscopy w/ Polypectomy',         network:'in',  wt:0.10},
+    {code:'43760',name:'Percutaneous Gastrostomy Tube',      network:'in',  wt:0.04},
+    {code:'47562',name:'Laparoscopic Cholecystectomy',       network:'oon', wt:0.07},
+    {code:'43281',name:'Laparoscopic Hiatal Hernia Repair',  network:'oon', wt:0.05},
+    {code:'45990',name:'Anorectal Procedure',                network:'oon', wt:0.04},
+  ],
+};
+
+const REFERRALS = (function(){
+  const rows = [];
+  const specs = ['ortho','cardio','gi'];
+  specs.forEach(sp=>{
+    const dsts = specialists.filter(s=>s.spec===sp);
+    const dstTotalAnnual = dsts.reduce((s,d)=>s+d.refs[sp],0);
+    if(!dstTotalAnnual) return;
+    referrers.forEach(r=>{
+      const annual = r.refs[sp];
+      if(!annual) return;
+      dsts.forEach(d=>{
+        const dstShare = d.refs[sp]/dstTotalAnnual;
+        for(let m=1;m<=12;m++){
+          const vol = Math.round(annual * MW[sp][m-1] * dstShare);
+          if(vol>0) rows.push({rid:r.id,sid:d.id,spec:sp,month:m,vol});
+        }
+      });
+    });
+  });
+  return rows;
+})();
+
+/* ══════════════════════════════════════════════════════
+   PROCEDURES TABLE
+   Subset of referrals that generate a downstream procedure.
+   Each row: {rid, sid, spec, month, vol, procCode}
+   vol = number of that specific procedure from this referrer→specialist pair.
+   Built by: for each specialist, aggregate referral vol, apply procRate,
+   then distribute procedure volume across catalog items by wt,
+   then attribute back to referrers proportionally.
+   Aggregates at specialist level first to avoid double-rounding.
+══════════════════════════════════════════════════════ */
+const PROCEDURES = (function(){
+  const rows = [];
+  const specs = ['ortho','cardio','gi'];
+  specs.forEach(sp=>{
+    // Group referral rows by specialist
+    const refsBySid = {};
+    REFERRALS.filter(r=>r.spec===sp).forEach(r=>{
+      if(!refsBySid[r.sid]) refsBySid[r.sid] = [];
+      refsBySid[r.sid].push(r);
+    });
+    const catalog = PROC_CATALOG[sp]||[];
+    Object.entries(refsBySid).forEach(([sid, sidRows])=>{
+      const s = sMap[sid];
+      const totalRefVol = sidRows.reduce((sum,r)=>sum+r.vol,0);
+      if(!totalRefVol) return;
+      // Total procedures from this specialist
+      const totalProcVol = Math.round(totalRefVol * s.procRate);
+      if(!totalProcVol) return;
+      catalog.forEach(proc=>{
+        // Procedures of this type from this specialist
+        const procVol = Math.round(totalProcVol * proc.wt);
+        if(!procVol) return;
+        // Distribute back to referrers proportionally
+        sidRows.forEach(refRow=>{
+          const share = refRow.vol / totalRefVol;
+          const vol = procVol * share; // keep as float, aggregate at display time
+          if(vol > 0){
+            rows.push({
+              rid:   refRow.rid,
+              sid:   sid,
+              spec:  sp,
+              month: refRow.month,
+              vol:   vol,           // float — sum to integer at display
+              procCode: proc.code,
+            });
+          }
+        });
+      });
+    });
+  });
+  return rows;
+})();
+
+const state = {
+  spec:'all', quarter:'all', month:'all',
+  srcTier:'all', ptype:'all', dstTier:'all',
+  srcPractice:'all', dstPractice:'all',
+  selectedSrc:null, selectedDst:null, selectedProc:null,
+  tableMode:'dest'
+};
+let chartInstances = {};
+function destroyCharts(){ Object.values(chartInstances).forEach(c=>{try{c.destroy()}catch(e){}}); chartInstances={}; }
+
+const SPEC_META = {
+  all:    {label:'All Specialties', hex:'#4a6080',color:'var(--text2)'},
+  ortho:  {label:'Orthopedics',     hex:'#b8720e',color:'var(--gold)'},
+  cardio: {label:'Cardiology',      hex:'#c8354a',color:'var(--rose)'},
+  gi:     {label:'Gastroenterology',hex:'#007d6e',color:'var(--teal)'},
+};
+const CT = {
+  legend:{color:'#4a6080',font:{family:'Outfit',size:10},boxWidth:9,boxHeight:9},
+  tooltip:{backgroundColor:'#fff',titleColor:'#0f1e2e',bodyColor:'#4a6080',borderColor:'rgba(15,30,60,.12)',borderWidth:1,padding:10},
+  tick:'#8aa0b8',grid:'rgba(15,30,60,.07)',
+};
+
+/* ══════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════ */
+function activeMonths(){
+  if(state.month!=='all') return [parseInt(state.month)];
+  if(state.quarter!=='all') return [1,2,3,4,5,6,7,8,9,10,11,12].filter(m=>QM[m]===state.quarter);
+  return [1,2,3,4,5,6,7,8,9,10,11,12];
+}
+function fmt(n){ return Math.round(n).toLocaleString(); }
+function pct(n,d){ return d?Math.round(n/d*100):0; }
+function fmtPct(r){ return Math.round(r*100)+'%'; }
+function convColor(r){ return r>=0.68?'var(--teal)':r>=0.52?'var(--gold)':'var(--rose)'; }
+function mttaColor(d){ return d<=28?'var(--teal)':d<=45?'var(--gold)':'var(--rose)'; }
+function procColor(r){ return r>=0.25?'var(--teal)':r>=0.14?'var(--gold)':'var(--rose)'; }
+function oonProcColor(s){ return s<=0.30?'var(--rose)':s<=0.70?'var(--gold)':'var(--teal)'; }
+
+/* ══════════════════════════════════════════════════════
+   FILTER ENGINE — single table, true cross-filtering
+══════════════════════════════════════════════════════ */
+// Index lookups
+
+
+function filteredRows(){
+  const mos = new Set(activeMonths());
+  return REFERRALS.filter(row=>{
+    if(state.spec !== 'all' && row.spec !== state.spec) return false;
+    if(!mos.has(row.month)) return false;
+    const r = rMap[row.rid];
+    const s = sMap[row.sid];
+    if(state.srcTier     !=='all' && r.tier  !==state.srcTier)     return false;
+    if(state.ptype       !=='all' && r.ptype !==state.ptype)        return false;
+    if(state.dstTier     !=='all' && s.tier  !==state.dstTier)      return false;
+    if(state.srcPractice !=='all' && r.pid   !==state.srcPractice)  return false;
+    if(state.dstPractice !=='all' && s.pid   !==state.dstPractice)  return false;
+    if(state.selectedSrc && r.pid !== state.selectedSrc)            return false;
+    if(state.selectedDst && s.pid !== state.selectedDst)            return false;
+    return true;
+  });
+}
+
+// Aggregate filtered rows into source practice summaries
+function aggSrcPractices(rows){
+  const map={};
+  rows.forEach(row=>{
+    const r=rMap[row.rid];
+    if(!map[r.pid]) map[r.pid]={pid:r.pid,name:r.practice,tier:r.tier,vol:0,count:new Set()};
+    map[r.pid].vol+=row.vol;
+    map[r.pid].count.add(r.id);
+  });
+  return Object.values(map).map(p=>({...p,count:p.count.size})).sort((a,b)=>b.vol-a.vol);
+}
+
+// Aggregate filtered rows into destination practice summaries
+function aggDstPractices(rows){
+  const map={};
+  rows.forEach(row=>{
+    const s=sMap[row.sid];
+    if(!map[s.pid]) map[s.pid]={pid:s.pid,name:s.practice,tier:s.tier,vol:0,convSum:0,mttaSum:0,count:new Set(),sids:{}};
+    map[s.pid].vol      +=row.vol;
+    map[s.pid].convSum  +=s.convRate*row.vol;
+    map[s.pid].mttaSum  +=s.mttaDays*row.vol;
+    map[s.pid].count.add(s.id);
+    map[s.pid].sids[s.id]=(map[s.pid].sids[s.id]||0)+row.vol;
+  });
+  return Object.values(map).map(p=>{
+    // Apply proc rates on aggregated vol per specialist to avoid double-rounding
+    let procVol=0, oonProcVol=0;
+    Object.entries(p.sids).forEach(([sid,v])=>{
+      const sp=sMap[sid];
+      procVol    +=Math.round(v*sp.procRate);
+      oonProcVol +=Math.round(v*sp.procRate*(1-sp.procNetSplit));
+    });
+    return {...p,
+      count:p.count.size,
+      convRate:p.vol?p.convSum/p.vol:0,
+      mttaDays:p.vol?p.mttaSum/p.vol:0,
+      procRate:p.vol?procVol/p.vol:0,
+      oonProcRate:procVol?oonProcVol/procVol:0,
+    };
+  }).sort((a,b)=>b.vol-a.vol);
+}
+
+// Aggregate filtered rows by referrer (for physician table)
+function aggReferrers(rows){
+  const map={};
+  rows.forEach(row=>{
+    const r=rMap[row.rid];
+    if(!map[r.id]) map[r.id]={...r,vol:0};
+    map[r.id].vol+=row.vol;
+  });
+  return Object.values(map).sort((a,b)=>b.vol-a.vol);
+}
+
+// Aggregate filtered rows by specialist (for physician table)
+function aggSpecialists(rows){
+  const map={};
+  rows.forEach(row=>{
+    const s=sMap[row.sid];
+    if(!map[s.id]) map[s.id]={...s,vol:0};
+    map[s.id].vol+=row.vol;
+  });
+  return Object.values(map).sort((a,b)=>b.vol-a.vol);
+}
+
+/* ══════════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════════ */
+function setSpec(s,el){
+  state.spec=s; state.selectedSrc=null; state.selectedDst=null; state.selectedProc=null;
+  document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}function setQuarter(q,el){
+  state.quarter=q; state.month='all';
+  document.getElementById('sel-month').value='all';
+  ['q-all','q-q1','q-q2','q-q3','q-q4'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setMonth(v){
+  state.month=v;
+  if(v!=='all'){ state.quarter='all'; ['q-all','q-q1','q-q2','q-q3','q-q4'].forEach(id=>document.getElementById(id).classList.remove('active')); document.getElementById('q-all').classList.add('active'); }
+  renderAll();
+}
+function setSrcTier(t,el){
+  state.srcTier=t; state.selectedSrc=null;
+  ['ch-src-all','ch-src-t1','ch-src-t2','ch-src-oon'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setPtype(p,el){
+  state.ptype=p;
+  ['ch-ptype-all','ch-ptype-pcp','ch-ptype-spec'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setDstTier(t,el){
+  state.dstTier=t; state.selectedDst=null;
+  ['ch-dst-all','ch-dst-t1','ch-dst-t2','ch-dst-oon'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setSrcPractice(v){ state.srcPractice=v; state.selectedSrc=null; renderAll(); }
+function setDstPractice(v){ state.dstPractice=v; state.selectedDst=null; renderAll(); }
+function clickSrc(pid){ state.selectedSrc=state.selectedSrc===pid?null:pid; renderAll(); }
+function clickDst(pid){ state.selectedDst=state.selectedDst===pid?null:pid; renderAll(); }
+function clickProc(code){ state.selectedProc=state.selectedProc===code?null:code; renderAll(); }
+function setTableMode(m){ state.tableMode=m; renderAll(); }
+
+function populateDropdowns(){
+  const k=state.spec;
+  // Use all REFERRALS when spec='all', otherwise filter by spec
+  const allRows = k==='all' ? REFERRALS : REFERRALS.filter(row=>row.spec===k);
+  const srcPidMap={}, dstPidMap={};
+  allRows.forEach(row=>{ const r=rMap[row.rid]; srcPidMap[r.pid]=r.practice; });
+  allRows.forEach(row=>{ const s=sMap[row.sid]; dstPidMap[s.pid]=s.practice; });
+  const sp=document.getElementById('sel-src-practice');
+  const curSp=sp.value;
+  sp.innerHTML='<option value="all">All Referring Practices</option>';
+  Object.entries(srcPidMap).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([pid,name])=>{ const o=document.createElement('option'); o.value=pid; o.textContent=name; if(pid===curSp)o.selected=true; sp.appendChild(o); });
+  const dp=document.getElementById('sel-dst-practice');
+  const curDp=dp.value;
+  dp.innerHTML='<option value="all">All Destination Practices</option>';
+  Object.entries(dstPidMap).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([pid,name])=>{ const o=document.createElement('option'); o.value=pid; o.textContent=name; if(pid===curDp)o.selected=true; dp.appendChild(o); });
+}
+
+function updateSidebarCounts(){
+  const mos=new Set(activeMonths());
+  let allVol=0;
+  ['ortho','cardio','gi'].forEach(sp=>{
+    const vol=specialists.filter(s=>s.spec===sp)
+      .reduce((t,s)=>t+Math.round(s.refs[sp]*[...mos].reduce((mw,m)=>mw+MW[sp][m-1],0)),0);
+    allVol+=vol;
+    const el=document.getElementById('cnt-'+sp);
+    if(el) el.textContent=vol.toLocaleString();
+  });
+  const allEl=document.getElementById('cnt-all');
+  if(allEl) allEl.textContent=allVol.toLocaleString();
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════ */
+function renderAll(){
+  destroyCharts();
+  updateSidebarCounts();
+  populateDropdowns();
+  const k=state.spec;
+  const sm=SPEC_META[k]||SPEC_META.all;
+
+  // Base referral rows — all sidebar filters applied
+  const rows = filteredRows();
+
+  // PROCEDURES table query — when a procedure is selected, filter PROCEDURES table
+  // (which already has the referrer→specialist→procedure three-way join built in)
+  const mos = new Set(activeMonths());
+  const filteredProcs = state.selectedProc ? PROCEDURES.filter(row=>{
+    if(!mos.has(row.month))                                              return false;
+    if(row.procCode !== state.selectedProc)                              return false;
+    if(state.spec !== 'all' && row.spec !== state.spec)                  return false;
+    const r=rMap[row.rid], s=sMap[row.sid];
+    if(state.srcTier     !=='all' && r.tier !==state.srcTier)            return false;
+    if(state.ptype       !=='all' && r.ptype!==state.ptype)              return false;
+    if(state.dstTier     !=='all' && s.tier !==state.dstTier)            return false;
+    if(state.srcPractice !=='all' && r.pid  !==state.srcPractice)        return false;
+    if(state.dstPractice !=='all' && s.pid  !==state.dstPractice)        return false;
+    if(state.selectedSrc && r.pid !== state.selectedSrc)                 return false;
+    if(state.selectedDst && s.pid !== state.selectedDst)                 return false;
+    return true;
+  }) : null;
+
+  // activeRows: procedure rows (float vols) when proc selected, integer referral rows otherwise
+  const activeRows = filteredProcs || rows;
+  const isProc = !!filteredProcs;
+  const volLabel = isProc ? 'procedures' : 'referrals';
+
+  // Determine catalog for procedure panel
+  const rowSpecs = [...new Set(rows.map(row=>sMap[row.sid].spec))];
+  const catalogSpec = rowSpecs.length===1 ? rowSpecs[0] : (k!=='all' ? k : null);
+  const activeCatalog = catalogSpec
+    ? (PROC_CATALOG[catalogSpec]||[])
+    : [...PROC_CATALOG.ortho,...PROC_CATALOG.cardio,...PROC_CATALOG.gi];
+
+  // Inline aggregation helpers that round at practice/physician level (not row level)
+  function aggSrcPrac(rowSet){
+    const map={};
+    rowSet.forEach(row=>{
+      const r=rMap[row.rid];
+      if(!map[r.pid]) map[r.pid]={pid:r.pid,name:r.practice,tier:r.tier,vol:0,count:new Set()};
+      map[r.pid].vol+=row.vol; map[r.pid].count.add(r.id);
+    });
+    return Object.values(map).map(p=>({...p,vol:Math.round(p.vol),count:p.count.size})).sort((a,b)=>b.vol-a.vol);
+  }
+  function aggDstPrac(rowSet){
+    const map={};
+    rowSet.forEach(row=>{
+      const s2=sMap[row.sid];
+      if(!map[s2.pid]) map[s2.pid]={pid:s2.pid,name:s2.practice,tier:s2.tier,vol:0,convSum:0,mttaSum:0,count:new Set(),sids:{}};
+      map[s2.pid].vol+=row.vol; map[s2.pid].convSum+=s2.convRate*row.vol;
+      map[s2.pid].mttaSum+=s2.mttaDays*row.vol; map[s2.pid].count.add(s2.id);
+      map[s2.pid].sids[s2.id]=(map[s2.pid].sids[s2.id]||0)+row.vol;
+    });
+    return Object.values(map).map(p=>{
+      let pv=0,ov=0;
+      Object.entries(p.sids).forEach(([sid,v])=>{
+        const sp=sMap[sid];
+        if(isProc){ pv+=v; ov+=v*(1-sp.procNetSplit); }
+        else{ pv+=Math.round(v*sp.procRate); ov+=Math.round(v*sp.procRate*(1-sp.procNetSplit)); }
+      });
+      return {...p,vol:Math.round(p.vol),count:p.count.size,
+        convRate:p.vol?p.convSum/p.vol:0,mttaDays:p.vol?p.mttaSum/p.vol:0,
+        procRate:p.vol?pv/p.vol:0,oonProcRate:pv>0?ov/pv:0};
+    }).sort((a,b)=>b.vol-a.vol);
+  }
+
+  const srcPracs = aggSrcPrac(activeRows);
+  const dstPracs = aggDstPrac(activeRows);
+  const maxSrcVol = srcPracs.length?srcPracs[0].vol:1;
+  const maxDstVol = dstPracs.length?dstPracs[0].vol:1;
+  const dstVol = Math.round(activeRows.reduce((s,r)=>s+r.vol,0));
+  // KPI card uses canonical specialist refs to match sidebar and other dashboards
+  const kpiTotal = (()=>{
+    const mos=activeMonths();
+    const specs=state.spec==='all'?['ortho','cardio','gi']:[state.spec];
+    return specs.reduce((t,sp)=>{
+      const mw=mos.reduce((s,m)=>s+MW[sp][m-1],0);
+      return t+specialists.filter(s=>s.spec===sp).reduce((s2,s)=>s2+Math.round((s.refs[sp]||0)*mw),0);
+    },0);
+  })();
+  const srcVol = dstVol;
+
+  // Procedure totals from REFERRALS rows (not activeRows)
+  const volBySid={};
+  rows.forEach(row=>{ volBySid[row.sid]=(volBySid[row.sid]||0)+row.vol; });
+  const sidEntries = Object.entries(volBySid);
+  const totProc = isProc
+    ? dstVol
+    : Math.round(sidEntries.reduce((s,[sid,v])=>s+Math.round(v*sMap[sid].procRate),0));
+  const totProcOon = isProc
+    ? Math.round(activeRows.reduce((s,r)=>s+r.vol*(1-sMap[r.sid].procNetSplit),0))
+    : Math.round(sidEntries.reduce((s,[sid,v])=>{ const sp=sMap[sid]; return s+Math.round(v*sp.procRate*(1-sp.procNetSplit)); },0));
+  const oonProcRate = totProc?totProcOon/totProc:0;
+
+  // Referral metrics always from REFERRALS rows
+  const rawVol = rows.reduce((s,r)=>s+r.vol,0);
+  const completedVisits = sidEntries.reduce((s,[sid,v])=>s+Math.round(v*sMap[sid].convRate),0);
+  const avgConv = rawVol?rows.reduce((s,r)=>s+sMap[r.sid].convRate*r.vol,0)/rawVol:0;
+  const avgMTTA = rawVol?rows.reduce((s,r)=>s+sMap[r.sid].mttaDays*r.vol,0)/rawVol:0;
+  const avgProc = rawVol?sidEntries.reduce((s,[sid,v])=>s+sMap[sid].procRate*v,0)/rawVol:0;
+
+  // Tier summaries from activeRows
+  const t1Src  = Math.round(activeRows.filter(r=>rMap[r.rid].tier==='t1').reduce((s,r)=>s+r.vol,0));
+  const t2Src  = Math.round(activeRows.filter(r=>rMap[r.rid].tier==='t2').reduce((s,r)=>s+r.vol,0));
+  const oonSrc = Math.round(activeRows.filter(r=>rMap[r.rid].tier==='oon').reduce((s,r)=>s+r.vol,0));
+  const t1Dst  = Math.round(activeRows.filter(r=>sMap[r.sid].tier==='t1').reduce((s,r)=>s+r.vol,0));
+  const t2Dst  = Math.round(activeRows.filter(r=>sMap[r.sid].tier==='t2').reduce((s,r)=>s+r.vol,0));
+  const oonDst = Math.round(activeRows.filter(r=>sMap[r.sid].tier==='oon').reduce((s,r)=>s+r.vol,0));
+
+  // Physician lists
+  const refList=(()=>{ const map={}; activeRows.forEach(row=>{ const r=rMap[row.rid]; if(!map[r.id]) map[r.id]={...r,vol:0}; map[r.id].vol+=row.vol; }); return Object.values(map).map(p=>({...p,vol:Math.round(p.vol)})).sort((a,b)=>b.vol-a.vol); })();
+  const specList=(()=>{ const map={}; activeRows.forEach(row=>{ const s2=sMap[row.sid]; if(!map[s2.id]) map[s2.id]={...s2,vol:0}; map[s2.id].vol+=row.vol; }); return Object.values(map).map(p=>({...p,vol:Math.round(p.vol)})).sort((a,b)=>b.vol-a.vol); })();
+
+  // Period label
+  let periodLabel='CY 2025';
+  if(state.month!=='all') periodLabel=MN[parseInt(state.month)-1]+' 2025';
+  else if(state.quarter!=='all') periodLabel=state.quarter+' 2025';
+  document.getElementById('hd-period').textContent=periodLabel+' · ~48,000 Referrals';
+
+  // Procedure locations
+  const totProcIn2 = totProc - totProcOon;
+
+  // Build procedure name rows — always compute per specialty so wt is applied within-specialty only
+  const procRows = (() => {
+    const result = [];
+    const specs = k === 'all' ? ['ortho','cardio','gi'] : [k];
+    specs.forEach(sp => {
+      const catalog = PROC_CATALOG[sp] || [];
+      // Proc total for THIS specialty only
+      const spProcTotal = sidEntries
+        .filter(([sid]) => sMap[sid].spec === sp)
+        .reduce((s,[sid,v]) => s + Math.round(v * sMap[sid].procRate), 0);
+      const spOonTotal = sidEntries
+        .filter(([sid]) => sMap[sid].spec === sp)
+        .reduce((s,[sid,v]) => { const sp2=sMap[sid]; return s + Math.round(v*sp2.procRate*(1-sp2.procNetSplit)); }, 0);
+      const oonWtSum = catalog.filter(q=>q.network==='oon').reduce((s,q)=>s+q.wt,0) || 0.01;
+      catalog.forEach(p => {
+        const vol    = Math.round(spProcTotal * p.wt);
+        const oonVol = p.network === 'oon'
+          ? Math.round(spOonTotal * p.wt / oonWtSum)
+          : Math.round(vol * 0.12);
+        result.push({...p, vol, oonVol, inVol: vol - oonVol});
+      });
+    });
+    return result.sort((a,b) => b.vol - a.vol);
+  })();
+  const maxProcVol = procRows.length ? procRows[0].vol : 1;
+
+  const kpiColor = k==='ortho'?'gold':k==='cardio'?'rose':k==='gi'?'teal':'blue';
+
+  document.getElementById('main-area').innerHTML = `
+  <!-- KPI ROW -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px">
+    <div class="kpi-card c-${kpiColor}">
+      <div class="kpi-lbl">${sm.label} Referrals</div>
+      <div class="kpi-val">${fmt(kpiTotal)}</div>
+      <div class="kpi-meta">${specList.length} destination specialists</div>
+    </div>
+    <div class="kpi-card c-teal">
+      <div class="kpi-lbl">Completion Rate</div>
+      <div class="kpi-val" style="color:${convColor(avgConv)}">${fmtPct(avgConv)}</div>
+      <div class="kpi-meta">${fmt(completedVisits)} visits completed</div>
+    </div>
+    <div class="kpi-card c-gold">
+      <div class="kpi-lbl">Median Time to Appt</div>
+      <div class="kpi-val" style="color:${mttaColor(avgMTTA)}">${Math.round(avgMTTA)}d</div>
+      <div class="kpi-meta">referral → appointment</div>
+    </div>
+    <div class="kpi-card c-purple">
+      <div class="kpi-lbl">Procedure Rate</div>
+      <div class="kpi-val" style="color:${procColor(avgProc)}">${fmtPct(avgProc)}</div>
+      <div class="kpi-meta">${fmt(totProc)} procedures within 120d</div>
+    </div>
+    <div class="kpi-card c-rose">
+      <div class="kpi-lbl">OON Procedure Rate</div>
+      <div class="kpi-val" style="color:${oonProcColor(1-oonProcRate)}">${fmtPct(oonProcRate)}</div>
+      <div class="kpi-meta">${fmt(totProcOon)} OON procedures</div>
+    </div>
+  </div>
+
+  <!-- FLOW PANELS: Source → Destination → Procedure Location -->
+  <div class="section-hd">
+    <div class="section-hd-title">Referral Network Conversion</div>
+    <div class="section-hd-sub">Click any practice or procedure to cross-filter · Source → Destination → Procedure${state.selectedSrc?' · Source active':''}${state.selectedDst?' · Destination active':''}${state.selectedProc?' · Procedure active':''}</div>
+  </div>
+  <div class="flow-grid full">
+    <!-- SOURCE -->
+    <div class="flow-panel">
+      <div class="flow-panel-hd">
+        <span class="flow-panel-label" style="color:var(--teal)">Referring Source</span>
+        <span class="flow-panel-vol">${fmt(srcVol)} ${volLabel}</span>
+      </div>
+      ${srcPracs.slice(0,10).map(p=>{
+        const pc=p.tier==='t1'?'#007d6e':p.tier==='t2'?'#1a56b0':'#c8354a';
+        const isSelected=state.selectedSrc===p.pid;
+        return `<div class="flow-item ${isSelected?'selected':''}" onclick="clickSrc('${p.pid}')">
+          <div style="min-width:0;flex:1">
+            <div class="fi-name">${p.name}</div>
+            <div class="fi-sub">${p.count} physician${p.count>1?'s':''} · <span style="color:${pc};font-weight:600">${p.tier==='t1'?'T1':p.tier==='t2'?'T2':'OON'}</span></div>
+          </div>
+          <div class="fi-bar-wrap"><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:${p.vol/maxSrcVol*100}%;background:${pc}"></div></div></div>
+          <div class="fi-vol" style="color:${pc}">${fmt(p.vol)}</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="flow-arrow">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="13" fill="rgba(15,30,60,.06)" stroke="rgba(15,30,60,.10)" stroke-width="1"/>
+        <path d="M9 14h10M15 10l4 4-4 4" stroke="#4a6080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- DESTINATION -->
+    <div class="flow-panel">
+      <div class="flow-panel-hd">
+        <span class="flow-panel-label" style="color:var(--blue)">Specialist Destination</span>
+        <span class="flow-panel-vol">${fmt(dstVol)} ${volLabel}</span>
+      </div>
+      ${dstPracs.slice(0,10).map(p=>{
+        const pc=p.tier==='t1'?'#007d6e':p.tier==='t2'?'#1a56b0':'#c8354a';
+        const isSelected=state.selectedDst===p.pid;
+        return `<div class="flow-item ${isSelected?'selected':''}" onclick="clickDst('${p.pid}')">
+          <div style="min-width:0;flex:1">
+            <div class="fi-name">${p.name}</div>
+            <div class="fi-sub">${fmtPct(p.convRate)} conv · ${Math.round(p.mttaDays)}d MTTA</div>
+          </div>
+          <div class="fi-bar-wrap"><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:${p.vol/maxDstVol*100}%;background:${pc}"></div></div></div>
+          <div class="fi-vol" style="color:${pc}">${fmt(p.vol)}</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="flow-arrow">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="13" fill="rgba(15,30,60,.06)" stroke="rgba(15,30,60,.10)" stroke-width="1"/>
+        <path d="M9 14h10M15 10l4 4-4 4" stroke="#4a6080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- PROCEDURE NAMES -->
+    <div class="flow-panel">
+      <div class="flow-panel-hd">
+        <span class="flow-panel-label" style="color:var(--purple)">Downstream Procedures</span>
+        <span class="flow-panel-vol">${state.selectedProc ? fmt(totProc)+' procedures' : fmt(totProc)+' procedures'}</span>
+      </div>
+      ${(state.selectedProc ? procRows.filter(p=>p.code===state.selectedProc) : procRows.slice(0,10)).map(proc=>{
+        const isSelected = state.selectedProc===proc.code;
+        const pc = proc.network==='in'?'#007d6e':'#c8354a';
+        return `<div class="flow-item ${isSelected?'selected':''}" onclick="clickProc('${proc.code}')">
+          <div style="min-width:0;flex:1">
+            <div class="fi-name">${proc.name}</div>
+            <div class="fi-sub">CPT ${proc.code} · <span style="color:${pc};font-weight:600">${proc.network==='in'?'In-Net':'OON'}</span>${proc.oonVol>0?' · '+fmt(proc.oonVol)+' OON':''}</div>
+          </div>
+          <div class="fi-bar-wrap"><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:${proc.vol/maxProcVol*100}%;background:${pc}"></div></div></div>
+          <div class="fi-vol" style="color:${pc}">${fmt(proc.vol)}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <!-- TIER BREAKDOWN ROW -->
+  <div class="grid-2 full">
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Source Volume by Tier</div><div class="card-subtitle">Where ${sm.label} referrals originate</div></div>
+        <span class="card-badge">${fmt(srcVol)} total</span>
+      </div>
+      <div class="src-row"><div class="src-name">T1 · Employed</div><div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(t1Src,srcVol)}%;background:var(--teal)"></div></div><div class="src-val">${fmt(t1Src)}</div><div class="src-pct">${pct(t1Src,srcVol)}%</div></div>
+      <div class="src-row"><div class="src-name">T2 · CIN Network</div><div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(t2Src,srcVol)}%;background:var(--blue)"></div></div><div class="src-val">${fmt(t2Src)}</div><div class="src-pct">${pct(t2Src,srcVol)}%</div></div>
+      <div class="src-row"><div class="src-name">Out-of-Network</div><div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(oonSrc,srcVol)}%;background:var(--rose)"></div></div><div class="src-val">${fmt(oonSrc)}</div><div class="src-pct">${pct(oonSrc,srcVol)}%</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Destination Volume by Tier</div><div class="card-subtitle">Where ${sm.label} referrals are directed</div></div>
+        <span class="card-badge">${fmt(dstVol)} total</span>
+      </div>
+      <div class="src-row"><div class="src-name">T1 · Employed</div><div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(t1Dst,dstVol)}%;background:var(--teal)"></div></div><div class="src-val">${fmt(t1Dst)}</div><div class="src-pct">${pct(t1Dst,dstVol)}%</div></div>
+      <div class="src-row"><div class="src-name">T2 · CIN Network</div><div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(t2Dst,dstVol)}%;background:var(--blue)"></div></div><div class="src-val">${fmt(t2Dst)}</div><div class="src-pct">${pct(t2Dst,dstVol)}%</div></div>
+      <div class="src-row"><div class="src-name">Out-of-Network</div><div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(oonDst,dstVol)}%;background:var(--rose)"></div></div><div class="src-val">${fmt(oonDst)}</div><div class="src-pct">${pct(oonDst,dstVol)}%</div></div>
+    </div>
+  </div>
+
+  <!-- METRIC VARIABILITY CHARTS -->
+  <div class="section-hd">
+    <div class="section-hd-title">Referral Conversion Metrics by Specialty Practice</div>
+    <div class="section-hd-sub">All four cycle metrics · Sorted by referral volume</div>
+  </div>
+  <div class="grid-2 full">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Completion Rate &amp; MTTA</div><div class="card-subtitle">By destination practice · Variability highlighted</div></div></div>
+      ${dstPracs.map(p=>{
+        const cc=convColor(p.convRate); const mc=mttaColor(p.mttaDays);
+        const pc=p.tier==='t1'?'var(--teal)':p.tier==='t2'?'var(--blue)':'var(--rose)';
+        return `<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+            <span style="font-size:11px;font-weight:600;color:var(--text)">${p.name}</span>
+            <span style="font-family:'DM Mono',monospace;font-size:10px;color:${mc}">${Math.round(p.mttaDays)}d MTTA</span>
+          </div>
+          <div class="met-bar-wrap">
+            <div class="met-bar-bg"><div class="met-bar-fill" style="width:${Math.round(p.convRate*100)}%;background:${cc}"></div></div>
+            <span class="met-val" style="color:${cc}">${fmtPct(p.convRate)}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Procedure Rate &amp; OON Procedure Rate</div><div class="card-subtitle">By destination practice · OON exposure highlighted</div></div></div>
+      ${dstPracs.map(p=>{
+        const rc=procColor(p.procRate);
+        const oonR = p.vol?p.oonProcRate:0;
+        const oc=oonR>0.25?'var(--rose)':oonR>0.12?'var(--gold)':'var(--teal)';
+        return `<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+            <span style="font-size:11px;font-weight:600;color:var(--text)">${p.name}</span>
+            <span style="font-family:'DM Mono',monospace;font-size:10px;color:${oonR>0.20?'var(--rose)':'var(--text3)'}">OON: ${fmtPct(oonR)}</span>
+          </div>
+          <div class="met-bar-wrap">
+            <div class="met-bar-bg"><div class="met-bar-fill" style="width:${p.procRate/0.40*100}%;background:${rc}"></div></div>
+            <span class="met-val" style="color:${rc}">${fmtPct(p.procRate)}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <!-- PHYSICIAN DETAIL TABLE with toggle -->
+  <div class="section-hd">
+    <div class="section-hd-title">Physician Detail</div>
+    <div class="section-hd-sub">All four metrics · Toggle between referring and destination physicians</div>
+  </div>
+  <div class="toggle-row">
+    <button class="toggle-btn ${state.tableMode==='source'?'active':''}" onclick="setTableMode('source')">Referring Physicians</button>
+    <button class="toggle-btn ${state.tableMode==='dest'?'active':''}" onclick="setTableMode('dest')">Destination Specialists</button>
+  </div>
+
+  ${state.tableMode==='source' ? `
+  <div class="card full">
+    <div class="card-header">
+      <div><div class="card-title">Referring Physician Scorecard</div><div class="card-subtitle">${sm.label} · ${refList.length} physicians · Ranked by referral volume sent</div></div>
+      <span class="card-badge">Source view</span>
+    </div>
+    <table class="ref-table">
+      <thead><tr>
+        <th>#</th><th>Physician</th><th>Practice</th><th>Tier</th><th>Type</th>
+        <th style="text-align:right">Referrals Sent</th><th style="text-align:right">% of Total</th>
+      </tr></thead>
+      <tbody>
+        ${refList.slice(0,20).map((r,i)=>{
+          const maxV=refList[0]?refList[0].vol:1;
+          const pc=r.tier==='t1'?'var(--teal)':r.tier==='t2'?'var(--blue)':'var(--rose)';
+          return `<tr>
+            <td class="rank">${i+1}</td>
+            <td><div class="dr-name">${r.name}</div></td>
+            <td><div class="dr-sub">${r.practice}</div></td>
+            <td>${r.tier==='t1'?'<span class="pill pill-t1">T1</span>':r.tier==='t2'?'<span class="pill pill-t2">T2</span>':'<span class="pill pill-ext">OON</span>'}</td>
+            <td><span style="font-size:10px;font-weight:600;color:${r.ptype==='pcp'?'var(--gold)':'var(--purple)'}">${r.ptype==='pcp'?'Primary Care':'Specialist'}</span></td>
+            <td style="text-align:right">
+              <div class="num">${fmt(r.vol)}</div>
+              <div class="mini-bar-bg" style="margin-left:auto"><div class="mini-bar" style="width:${r.vol/maxV*100}%;background:${(SPEC_META[k]||SPEC_META.all).hex}"></div></div>
+            </td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${dstVol>0?(r.vol/dstVol*100).toFixed(1):0}%</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>` : `
+  <div class="card full">
+    <div class="card-header">
+      <div><div class="card-title">Destination Specialist Scorecard</div><div class="card-subtitle">${sm.label} · ${specList.length} specialists · All four cycle metrics</div></div>
+      <span class="card-badge">Destination view</span>
+    </div>
+    <table class="ref-table">
+      <thead><tr>
+        <th>#</th><th>Specialist</th><th>Practice</th><th>Tier</th>
+        <th style="text-align:right">Referrals</th>
+        <th style="min-width:110px">Completion Rate</th>
+        <th style="min-width:90px">MTTA</th>
+        <th style="min-width:110px">Procedure Rate</th>
+        <th style="min-width:110px">OON Proc Rate</th>
+      </tr></thead>
+      <tbody>
+        ${specList.slice(0,20).map((s,i)=>{
+          const maxV=specList[0]?specList[0].vol:1;
+          const cc=convColor(s.convRate); const mc=mttaColor(s.mttaDays);
+          const rc=procColor(s.procRate);
+          const oonPR=1-s.procNetSplit;
+          const oc=oonPR>0.25?'var(--rose)':oonPR>0.12?'var(--gold)':'var(--teal)';
+          return `<tr>
+            <td class="rank">${i+1}</td>
+            <td><div class="dr-name">${s.name}</div></td>
+            <td><div class="dr-sub">${s.practice}</div></td>
+            <td>${s.tier==='t1'?'<span class="pill pill-t1">T1</span>':s.tier==='t2'?'<span class="pill pill-t2">T2</span>':'<span class="pill pill-ext">OON</span>'}</td>
+            <td style="text-align:right">
+              <div class="num">${fmt(s.vol)}</div>
+              <div class="mini-bar-bg" style="margin-left:auto"><div class="mini-bar" style="width:${s.vol/maxV*100}%;background:${(SPEC_META[k]||SPEC_META.all).hex}"></div></div>
+            </td>
+            <td><div class="met-bar-wrap"><div class="met-bar-bg"><div class="met-bar-fill" style="width:${Math.round(s.convRate*100)}%;background:${cc}"></div></div><span class="met-val" style="color:${cc}">${fmtPct(s.convRate)}</span></div></td>
+            <td><span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:${mc}">${s.mttaDays}d</span></td>
+            <td><div class="met-bar-wrap"><div class="met-bar-bg"><div class="met-bar-fill" style="width:${s.procRate/0.40*100}%;background:${rc}"></div></div><span class="met-val" style="color:${rc}">${fmtPct(s.procRate)}</span></div></td>
+            <td><div class="met-bar-wrap"><div class="met-bar-bg"><div class="met-bar-fill" style="width:${oonPR*100}%;background:${oc}"></div></div><span class="met-val" style="color:${oc}">${fmtPct(oonPR)}</span></div></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`}
+
+  <!-- Insights -->
+  <div class="full">
+    <div class="insight ins-teal"><span style="font-size:14px;flex-shrink:0">✓</span><span><strong>Cycle summary:</strong> ${fmt(dstVol)} ${sm.label} referrals from ${refList.length} referring physicians directed to ${specList.length} specialists. <strong>${fmtPct(avgConv)}</strong> converted to completed visits (${fmt(completedVisits)} visits) with a median wait of <strong>${Math.round(avgMTTA)} days</strong>.</span></div>
+    <div class="insight ins-${oonProcRate>0.35?'rose':'gold'}"><span style="font-size:14px;flex-shrink:0">${oonProcRate>0.35?'⚠':'△'}</span><span><strong>Procedure leakage:</strong> Of ${fmt(totProc)} downstream procedures generated, <strong>${fmt(totProcOon)} (${fmtPct(oonProcRate)})</strong> were performed out-of-network. ${oonProcRate>0.35?'This significantly exceeds the 35% threshold — a high-priority steerage and network retention target.':'Network steerage initiatives could reduce OON procedure leakage further.'}</span></div>
+    <div class="insight ins-blue"><span style="font-size:14px;flex-shrink:0">◎</span><span><strong>Variability opportunity:</strong> The ${sm.label} specialist cohort shows wide variability — Completion Rate (${fmtPct(Math.min(...specList.map(s=>s.convRate)))}–${fmtPct(Math.max(...specList.map(s=>s.convRate)))}), MTTA (${Math.min(...specList.map(s=>s.mttaDays))}–${Math.max(...specList.map(s=>s.mttaDays))} days), Procedure Rate (${fmtPct(Math.min(...specList.map(s=>s.procRate)))}–${fmtPct(Math.max(...specList.map(s=>s.procRate)))}). Use the filters and flow panels to identify outliers.</span></div>
+  </div>
+  `;
+}
+
+renderAll();
+
+// Notify parent suite of this tab's system name for CTA widget
+(function() {
+  if (typeof SYS_NAME !== 'undefined') {
+    window.parent.postMessage({ type: 'sys-name', value: SYS_NAME }, '*');
+  }
+})();
+</script>
+</body>
+</html>

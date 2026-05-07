@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarePath IQ Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#f7f9fc; --surface:#fff; --sidebar:#f1f4f8;
+  --text:#0f1e2e; --text2:#4a6080; --text3:#8aa0b8;
+  --border:rgba(15,30,60,.09); --border2:rgba(15,30,60,.05);
+  --teal:#007d6e; --teal-lt:#e6f4f2; --teal-mid:#009e8c;
+  --gold:#b8720e; --gold-lt:#fdf3e2;
+  --rose:#c8354a; --rose-lt:#fdeef0;
+  --blue:#1a56b0; --blue-lt:#e8f0ff;
+  --purple:#6a42b8; --purple-lt:#f0eaff;
+  --shadow:0 1px 4px rgba(15,30,60,.07),0 4px 16px rgba(15,30,60,.04);
+  --shadow-sm:0 1px 3px rgba(15,30,60,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
+header{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);height:60px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.hd-left{display:flex;align-items:center;gap:14px}
+.prisma-logo{display:flex;align-items:center;gap:9px}
+.prisma-logo svg{width:32px;height:32px}
+.prisma-wordmark{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);letter-spacing:.01em}
+.prisma-wordmark span{color:var(--teal)}
+.hd-divider{width:1px;height:28px;background:var(--border);margin:0 4px}
+.hd-title{font-size:13px;color:var(--text2);font-weight:400}
+.hd-right{display:flex;align-items:center;gap:10px}
+.badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;font-family:'DM Mono',monospace}
+.badge-teal{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(0,125,110,.2)}
+.badge-blue{background:var(--blue-lt);color:var(--blue);border:1px solid rgba(26,86,176,.2)}
+.hd-period{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.shell{display:flex;min-height:calc(100vh - 60px)}
+aside{width:230px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);padding:14px 0;overflow-y:auto;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.s-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:0 14px;margin-bottom:7px}
+.s-divider{height:1px;background:var(--border);margin:10px 0}
+.spec-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 14px;border:1px solid transparent;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;background:transparent;margin-bottom:1px}
+.spec-btn:hover{background:rgba(0,125,110,.05)}
+.spec-btn.active{background:var(--teal-lt);border-left:3px solid var(--teal)}
+.spec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.spec-name{font-size:12px;font-weight:500;color:var(--text);text-align:left}
+.spec-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-left:auto}
+.filter-section{padding:0 14px;margin-bottom:10px}
+.filter-select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:6px;font-size:11px;font-family:'Outfit',sans-serif;appearance:none;cursor:pointer;box-shadow:var(--shadow-sm);margin-bottom:6px}
+.filter-select:focus{outline:none;border-color:var(--teal)}
+.chip-row{display:flex;flex-wrap:wrap;gap:4px;padding:0 14px;margin-bottom:8px}
+.chip{font-size:10px;padding:3px 8px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;font-weight:500}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.chip.active{background:var(--teal-lt);border-color:rgba(0,125,110,.3);color:var(--teal)}
+.chip.gold.active{background:var(--gold-lt);border-color:rgba(184,114,14,.3);color:var(--gold)}
+.chip.rose.active{background:var(--rose-lt);border-color:rgba(200,53,74,.3);color:var(--rose)}
+.chip.blue.active{background:var(--blue-lt);border-color:rgba(26,86,176,.3);color:var(--blue)}
+main{flex:1;padding:18px 22px;overflow-y:auto}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px 16px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .2s}
+.kpi-card:hover{box-shadow:0 4px 20px rgba(15,30,60,.1)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.c-teal::before{background:var(--teal)}
+.kpi-card.c-blue::before{background:var(--blue)}
+.kpi-card.c-gold::before{background:var(--gold)}
+.kpi-card.c-rose::before{background:var(--rose)}
+.kpi-card.c-purple::before{background:var(--purple)}
+.kpi-lbl{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:6px}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);line-height:1;margin-bottom:4px}
+.kpi-meta{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px}
+.delta{font-size:10px;font-weight:700;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:3px}
+.d-up{color:var(--teal);background:var(--teal-lt)}
+.d-dn{color:var(--rose);background:var(--rose-lt)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.full{margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);transition:box-shadow .2s}
+.card:hover{box-shadow:0 4px 20px rgba(15,30,60,.1)}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.card-title{font-family:'DM Serif Display',serif;font-size:14px;color:var(--text)}
+.card-subtitle{font-size:11px;color:var(--text2);margin-top:2px}
+.card-badge{font-size:10px;font-family:'DM Mono',monospace;color:var(--teal);background:var(--teal-lt);border:1px solid rgba(0,125,110,.18);padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.source-bars{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.src-row{display:flex;align-items:center;gap:8px}
+.src-name{font-size:11px;color:var(--text2);width:170px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-bar-bg{flex:1;height:7px;background:rgba(15,30,60,.07);border-radius:4px;overflow:hidden;min-width:30px}
+.src-bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.src-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);width:46px;text-align:right;font-weight:600}
+.src-pct{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:34px;text-align:right}
+/* CONVERSION METER */
+.conv-bar-wrap{display:flex;align-items:center;gap:8px}
+.conv-bar-bg{flex:1;height:6px;background:rgba(15,30,60,.07);border-radius:4px;overflow:hidden}
+.conv-bar-fill{height:100%;border-radius:4px;transition:width .4s}
+.conv-pct{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;min-width:34px;text-align:right}
+/* MTTA — green ≤28d, amber 29–45d, red >45d (reuses conv-bar-wrap) */
+/* TABLE */
+.ref-table{width:100%;border-collapse:collapse}
+.ref-table th{text-align:left;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:0 10px 8px 0;border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:7px 10px 7px 0;font-size:11px;border-bottom:1px solid var(--border2);vertical-align:middle}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:rgba(0,125,110,.025)}
+.dr-name{font-weight:600;color:var(--text);font-size:12px}
+.dr-spec{font-size:10px;color:var(--text3);margin-top:1px}
+.dr-practice{font-size:10px;color:var(--text2)}
+.num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);font-weight:600}
+.pill{font-size:9px;padding:2px 7px;border-radius:9px;font-weight:700;white-space:nowrap}
+.pill-t1{background:var(--teal-lt);color:var(--teal)}
+.pill-t2{background:var(--blue-lt);color:var(--blue)}
+.pill-ext{background:rgba(15,30,60,.07);color:var(--text2)}
+.pill-ortho{background:var(--gold-lt);color:var(--gold)}
+.pill-cardio{background:var(--rose-lt);color:var(--rose)}
+.pill-gi{background:var(--teal-lt);color:var(--teal)}
+.mini-bar-bg{height:3px;background:rgba(15,30,60,.08);border-radius:2px;overflow:hidden;margin-top:3px;width:60px}
+.mini-bar{height:100%;border-radius:2px}
+.rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:16px;text-align:right}
+/* PRACTICE GRID */
+.practice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.practice-card{border-radius:8px;padding:9px 11px;border:1px solid;cursor:pointer;transition:all .15s}
+.practice-card:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.practice-card.selected{box-shadow:0 0 0 2px var(--teal)}
+.pc-name{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px;line-height:1.3}
+.pc-sub{font-size:9px;color:var(--text2);margin-bottom:4px}
+.pc-bar{height:3px;background:rgba(15,30,60,.08);border-radius:2px;overflow:hidden;margin-bottom:3px}
+.pc-bar-fill{height:100%;border-radius:2px}
+.pc-meta{display:flex;justify-content:space-between;align-items:center}
+.pc-vol{font-family:'DM Mono',monospace;font-size:11px;font-weight:700}
+.pc-conv{font-size:9px;font-weight:700}
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-legend{flex:1;display:flex;flex-direction:column;gap:5px}
+.dl-row{display:flex;align-items:center;gap:7px;font-size:11px;padding:2px 4px;border-radius:4px;transition:background .1s}
+.dl-row:hover{background:rgba(15,30,60,.04)}
+.dl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.dl-name{color:var(--text2);flex:1}
+.dl-val{font-family:'DM Mono',monospace;color:var(--text);font-size:11px;font-weight:600}
+.dl-pct{font-family:'DM Mono',monospace;color:var(--text3);font-size:10px;width:30px;text-align:right}
+/* INSIGHT */
+.insight{border-radius:8px;padding:9px 13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:12px;line-height:1.65}
+.ins-teal{background:var(--teal-lt);border:1px solid rgba(0,125,110,.18);color:var(--text2)}
+.ins-rose{background:var(--rose-lt);border:1px solid rgba(200,53,74,.18);color:var(--text2)}
+.ins-gold{background:var(--gold-lt);border:1px solid rgba(184,114,14,.18);color:var(--text2)}
+.ins-blue{background:var(--blue-lt);border:1px solid rgba(26,86,176,.18);color:var(--text2)}
+.insight strong{color:var(--text);font-weight:600}
+/* CONVERSION GAUGE INLINE */
+.conv-inline{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:11px}
+.conv-dot{width:7px;height:7px;border-radius:50%}
+footer{border-top:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;font-size:10px;color:var(--text3);background:var(--surface)}
+.foot-logo{font-family:'DM Serif Display',serif;color:var(--teal)}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<script>
+/* CPIQ Data Shim */
+(function() {
+  function applyState(s) {
+    window.CPIQ = s;
+    window.SYS_NAME = s.meta ? s.meta.sysName : 'Health System';
+    window.COMPETITORS = (s.meta && s.meta.competitors) || [];
+    if (typeof window.__cpiqReady === 'function') window.__cpiqReady(s);
+  }
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cpiq-state') applyState(e.data.payload);
+    if (e.data && e.data.type === 'apply-filters' && typeof window.__applyFilters === 'function') window.__applyFilters(e.data.filterState);
+  });
+  if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
+})();
+</script></head>
+<body>
+
+<header>
+  <div class="hd-left">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain">
+      </div>
+    </div>
+    <div class="hd-divider"></div>
+    <div class="hd-title">Referral Destination Intelligence</div>
+  </div>
+  <div class="hd-right">
+    <span class="badge badge-teal">CIN Network Network</span>
+    <span class="badge badge-blue">Metro Market</span>
+    <span class="hd-period" id="hd-period">CY 2025 · ~20,000 Referrals</span>
+  </div>
+</header>
+
+<div class="shell">
+<aside>
+  <!-- SPECIALTY -->
+  <div style="padding:0 0 6px">
+    <div class="s-label" style="margin-bottom:8px">Specialty</div>
+    <button class="spec-btn active" id="sb-all" onclick="setSpec('all',this)">
+      <div class="spec-dot" style="background:linear-gradient(135deg,var(--gold),var(--rose),var(--teal))"></div>
+      <span class="spec-name">All Specialties</span>
+      <span class="spec-count" id="cnt-all">—</span>
+    </button>
+    <button class="spec-btn" id="sb-ortho" onclick="setSpec('ortho',this)">
+      <div class="spec-dot" style="background:var(--gold)"></div>
+      <span class="spec-name">Orthopedics</span>
+      <span class="spec-count" id="cnt-ortho">—</span>
+    </button>
+    <button class="spec-btn" id="sb-cardio" onclick="setSpec('cardio',this)">
+      <div class="spec-dot" style="background:var(--rose)"></div>
+      <span class="spec-name">Cardiology</span>
+      <span class="spec-count" id="cnt-cardio">—</span>
+    </button>
+    <button class="spec-btn" id="sb-gi" onclick="setSpec('gi',this)">
+      <div class="spec-dot" style="background:var(--teal)"></div>
+      <span class="spec-name">Gastroenterology</span>
+      <span class="spec-count" id="cnt-gi">—</span>
+    </button>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- TIME PERIOD -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:8px">Quarter</div>
+    <div class="chip-row" style="padding:0;margin-bottom:8px">
+      <div class="chip active" id="q-all" onclick="setQuarter('all',this)">All</div>
+      <div class="chip" id="q-q1" onclick="setQuarter('Q1',this)">Q1</div>
+      <div class="chip" id="q-q2" onclick="setQuarter('Q2',this)">Q2</div>
+      <div class="chip" id="q-q3" onclick="setQuarter('Q3',this)">Q3</div>
+      <div class="chip" id="q-q4" onclick="setQuarter('Q4',this)">Q4</div>
+    </div>
+    <div class="s-label" style="margin-bottom:6px">Month</div>
+    <select class="filter-select" id="sel-month" onchange="setMonth(this.value)">
+      <option value="all">All Months</option>
+      <option value="1">January</option><option value="2">February</option>
+      <option value="3">March</option><option value="4">April</option>
+      <option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option>
+      <option value="9">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- DESTINATION TIER -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Destination Tier</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-tier-all" onclick="setTier('all',this)">All</div>
+      <div class="chip" id="ch-tier-t1" onclick="setTier('t1',this)">T1 Employed</div>
+      <div class="chip blue" id="ch-tier-t2" onclick="setTier('t2',this)">T2 CIN Network</div>
+      <div class="chip rose" id="ch-tier-oon" onclick="setTier('oon',this)">Out-of-Net</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PRACTICE FILTER -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Practice</div>
+    <select class="filter-select" id="sel-practice" onchange="setPractice(this.value)">
+      <option value="all">All Practices</option>
+    </select>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PHYSICIAN FILTER -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Physician</div>
+    <select class="filter-select" id="sel-physician" onchange="setPhysician(this.value)">
+      <option value="all">All Physicians</option>
+    </select>
+  </div>
+</aside>
+
+<main>
+  <div id="main-area"></div>
+</main>
+</div>
+
+<footer>
+  <span class="foot-logo">Health System</span>
+  <span>Referral Destination Intelligence · CY 2025 · Metro Market SC</span>
+  <span>Analytics &amp; Strategy</span>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   REFERRED-TO SPECIALIST DATA
+   ~70% Tier 1 Employed, ~15% Tier 2 CIN Network, ~15% OON
+   convRate: base conversion rate for this physician (0–1)
+   refs: annual referral volume received {ortho, cardio, gi}
+══════════════════════════════════════════════════════ */
+const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+
+/* ══════════════════════════════════════════════════════
+   MONTHLY DISTRIBUTION WEIGHTS (CY 2025) — same seasonal
+   pattern as referral source dashboard
+══════════════════════════════════════════════════════ */
+const MONTH_WEIGHTS = {
+  ortho:  [0.07,0.07,0.08,0.09,0.09,0.10,0.10,0.09,0.09,0.08,0.08,0.06],
+  cardio: [0.10,0.09,0.09,0.08,0.08,0.07,0.07,0.07,0.08,0.09,0.09,0.09],
+  gi:     [0.08,0.08,0.08,0.08,0.08,0.09,0.09,0.09,0.08,0.09,0.08,0.08],
+};
+const MONTH_NAMES  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const QUARTER_MAP  = {1:'Q1',2:'Q1',3:'Q1',4:'Q2',5:'Q2',6:'Q2',7:'Q3',8:'Q3',9:'Q3',10:'Q4',11:'Q4',12:'Q4'};
+
+function getMonthlyRef(s, specKey, month) {
+  if(!specKey || !MONTH_WEIGHTS[specKey]) return 0;
+  return Math.round((s.refs[specKey]||0) * MONTH_WEIGHTS[specKey][month-1]);
+}
+// Weighted median MTTA across a list of specialists (volume-weighted average as proxy)
+function weightedMTTA(list) {
+  const k = (state.spec === "all") ? null : state.spec;
+  const totalVol = list.reduce((s,p)=>s+getRefTotal(p, k||p.spec),0);
+  if (!totalVol) return 0;
+  return list.reduce((s,p)=>{
+    const vol = getRefTotal(p, k||p.spec);
+    return s + (p.mttaDays * vol);
+  },0) / totalVol;
+}
+function mttaColor(d){ return d<=28?'var(--teal)':d<=45?'var(--gold)':'var(--rose)'; }
+function fmtMTTA(d){ return Math.round(d)+'d'; }
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const state = { spec:'all', quarter:'all', month:'all', tier:'all', practice:'all', physician:'all' };
+let chartInstances = {};
+function destroyCharts() { Object.values(chartInstances).forEach(c=>{try{c.destroy()}catch(e){}}); chartInstances={}; }
+
+const specMeta = {
+  all:    {label:'All Specialties', hex:'#4a6080', lt:'rgba(74,96,128,0.1)', pillClass:'pill-all'},
+  ortho:  {label:'Orthopedics',     hex:'#b8720e', lt:'var(--gold-lt)',  pillClass:'pill-ortho'},
+  cardio: {label:'Cardiology',      hex:'#c8354a', lt:'var(--rose-lt)',  pillClass:'pill-cardio'},
+  gi:     {label:'Gastroenterology',hex:'#007d6e', lt:'var(--teal-lt)', pillClass:'pill-gi'},
+};
+const CT = {
+  legend:{color:'#4a6080',font:{family:'Outfit',size:10},boxWidth:9,boxHeight:9},
+  tooltip:{backgroundColor:'#fff',titleColor:'#0f1e2e',bodyColor:'#4a6080',borderColor:'rgba(15,30,60,.12)',borderWidth:1,padding:10},
+  tick:'#8aa0b8', grid:'rgba(15,30,60,.07)',
+};
+
+/* ══════════════════════════════════════════════════════
+   FILTER ENGINE
+══════════════════════════════════════════════════════ */
+function getActiveMonths() {
+  if (state.month !== 'all') return [parseInt(state.month)];
+  if (state.quarter !== 'all') return [1,2,3,4,5,6,7,8,9,10,11,12].filter(m=>QUARTER_MAP[m]===state.quarter);
+  return [1,2,3,4,5,6,7,8,9,10,11,12];
+}
+function getRefTotal(s, specKey) {
+  if(!specKey || specKey==='all') specKey=s.spec;
+  return getActiveMonths().reduce((sum,m)=>sum+getMonthlyRef(s,specKey,m),0);
+}
+function filteredSpecialists() {
+  const k = state.spec;
+  return specialists.filter(s => {
+    if (k !== 'all' && s.spec !== k) return false;
+    if (getRefTotal(s, k === 'all' ? s.spec : k) === 0) return false;
+    if (state.tier !== 'all' && s.tier !== state.tier) return false;
+    if (state.practice !== 'all' && s.pid !== state.practice) return false;
+    if (state.physician !== 'all' && s.id !== state.physician) return false;
+    return true;
+  });
+}
+function totalRef(list) {
+  return list.reduce((sum,s)=>sum+getRefTotal(s,s.spec),0);
+}
+function weightedConvRate(list) {
+  const k = (state.spec === "all") ? null : state.spec;
+  const totalVol = totalRef(list);
+  if (!totalVol) return 0;
+  return list.reduce((sum,s)=>{
+    const vol = getRefTotal(s, k||s.spec);
+    return sum + (s.convRate * vol);
+  },0) / totalVol;
+}
+function fmt(n){ return Math.round(n).toLocaleString(); }
+function pct(n,d){ return d?Math.round(n/d*100):0; }
+function fmtPct(r){ return Math.round(r*100)+'%'; }
+function convColor(r){ return r>=0.68?'var(--teal)':r>=0.52?'var(--gold)':'var(--rose)'; }
+
+/* ══════════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════════ */
+function setSpec(s,el){
+  state.spec=s; state.practice='all'; state.physician='all'; state.tier='all';
+  document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderAll();
+}
+function setQuarter(q,el){
+  state.quarter=q; state.month='all';
+  document.getElementById('sel-month').value='all';
+  ['q-all','q-q1','q-q2','q-q3','q-q4'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setMonth(v){
+  state.month=v;
+  if(v!=='all'){ state.quarter='all'; ['q-all','q-q1','q-q2','q-q3','q-q4'].forEach(id=>document.getElementById(id).classList.remove('active')); document.getElementById('q-all').classList.add('active'); }
+  renderAll();
+}
+function setTier(t,el){
+  state.tier=t; state.practice='all'; state.physician='all';
+  ['ch-tier-all','ch-tier-t1','ch-tier-t2','ch-tier-oon'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setPractice(v){ state.practice=v; state.physician='all'; document.getElementById('sel-physician').value='all'; renderAll(); }
+function setPhysician(v){ state.physician=v; renderAll(); }
+function setPracticeCard(pid){ state.practice=state.practice===pid?'all':pid; state.physician='all'; document.getElementById('sel-practice').value=state.practice; document.getElementById('sel-physician').value='all'; renderAll(); }
+
+function populateDropdowns(all) {
+  const k = state.spec;
+  // Practice dropdown
+  const pracMap = {};
+  all.forEach(s=>{ if(!pracMap[s.pid]) pracMap[s.pid]=s.practice; });
+  const pSel = document.getElementById('sel-practice');
+  const curP = pSel.value;
+  pSel.innerHTML='<option value="all">All Practices</option>';
+  Object.entries(pracMap).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([pid,name])=>{
+    const o=document.createElement('option'); o.value=pid; o.textContent=name;
+    if(pid===curP) o.selected=true;
+    pSel.appendChild(o);
+  });
+  // Physician dropdown
+  const phSel = document.getElementById('sel-physician');
+  const curPh = phSel.value;
+  phSel.innerHTML='<option value="all">All Physicians</option>';
+  const phList = all.filter(s=>state.practice==='all'||s.pid===state.practice).sort((a,b)=>a.name.localeCompare(b.name));
+  phList.forEach(s=>{
+    const o=document.createElement('option'); o.value=s.id; o.textContent=s.name;
+    if(s.id===curPh) o.selected=true;
+    phSel.appendChild(o);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════ */
+function updateSidebarCounts(){
+  const mos=getActiveMonths();
+  const mwSum={};
+  ['ortho','cardio','gi'].forEach(sp=>{
+    mwSum[sp]=mos.reduce((s,m)=>s+MONTH_WEIGHTS[sp][m-1],0);
+  });
+  let allVol=0;
+  ['ortho','cardio','gi'].forEach(sp=>{
+    const vol=specialists.filter(s=>s.spec===sp)
+      .reduce((t,s)=>t+Math.round(s.refs[sp]*mwSum[sp]),0);
+    allVol+=vol;
+    const el=document.getElementById('cnt-'+sp);
+    if(el) el.textContent=vol.toLocaleString();
+  });
+  const allEl=document.getElementById('cnt-all');
+  if(allEl) allEl.textContent=allVol.toLocaleString();
+}
+
+function renderAll() {
+  updateSidebarCounts();
+  destroyCharts();
+  const k = state.spec;
+  const sm = specMeta[k] || specMeta['ortho'];
+  const filtered   = filteredSpecialists();
+  const allForSpec = (k==='all') ? specialists : specialists.filter(s=>s.spec===k);
+
+  populateDropdowns(allForSpec);
+
+  const t1list  = filtered.filter(s=>s.tier==='t1');
+  const t2list  = filtered.filter(s=>s.tier==='t2');
+  const oonlist = filtered.filter(s=>s.tier==='oon');
+
+  const total    = totalRef(filtered);
+  // KPI card shows canonical specialist-side total to match all dashboards
+  const kpiTotal = (()=>{
+    const mos=getActiveMonths(), specs=state.spec==='all'?['ortho','cardio','gi']:[state.spec];
+    return specs.reduce((t,sp)=>{
+      const mw=mos.reduce((s,m)=>s+MONTH_WEIGHTS[sp][m-1],0);
+      return t+Math.round(specialists.filter(s=>s.spec===sp).reduce((s2,s)=>s2+(s.refs[sp]||0),0)*mw);
+    },0);
+  })();
+  const t1Total  = totalRef(t1list);
+  const t2Total  = totalRef(t2list);
+  const oonTotal = totalRef(oonlist);
+  const t1pct    = pct(t1Total,total);
+  const t2pct    = pct(t2Total,total);
+  const oonpct   = pct(oonTotal,total);
+
+  const avgConv  = weightedConvRate(filtered);
+  const t1Conv   = weightedConvRate(t1list);
+  const t2Conv   = weightedConvRate(t2list);
+  const oonConv  = weightedConvRate(oonlist);
+  const converted= Math.round(total * avgConv);
+  const missed   = total - converted;
+
+  const avgMTTA  = weightedMTTA(filtered);
+  const t1MTTA   = weightedMTTA(t1list);
+  const t2MTTA   = weightedMTTA(t2list);
+  const oonMTTA  = weightedMTTA(oonlist);
+
+  // Practice aggregation
+  const practiceMap = {};
+  filtered.forEach(s=>{
+    const vol = getRefTotal(s, k||s.spec);
+    if(!practiceMap[s.pid]) practiceMap[s.pid]={name:s.practice,pid:s.pid,tier:s.tier,vol:0,conv:0,mtta:0,count:0};
+    practiceMap[s.pid].vol += vol;
+    practiceMap[s.pid].conv += s.convRate * vol;
+    practiceMap[s.pid].mtta += s.mttaDays * vol;
+    practiceMap[s.pid].count++;
+  });
+  const practices = Object.values(practiceMap).map(p=>({...p,convRate:p.vol?p.conv/p.vol:0,mttaDays:p.vol?p.mtta/p.vol:0})).sort((a,b)=>b.vol-a.vol);
+  const maxPVol = practices.length?practices[0].vol:1;
+
+  const sorted = [...filtered].sort((a,b)=>getRefTotal(b,k)-getRefTotal(a,k)).slice(0,15);
+  const maxVol = sorted.length?getRefTotal(sorted[0],k):1;
+
+  const practiceColors = {
+    t1:  {bg:'var(--teal-lt)',border:'rgba(0,125,110,.22)',dot:'var(--teal)',label:'T1 Employed',lc:'var(--teal)'},
+    t2:  {bg:'var(--blue-lt)',border:'rgba(26,86,176,.2)', dot:'var(--blue)',label:'T2 CIN Network',   lc:'var(--blue)'},
+    oon: {bg:'rgba(15,30,60,.04)',border:'var(--border)',  dot:'var(--text3)',label:'OON',       lc:'var(--text3)'},
+  };
+
+  // Period label
+  let periodLabel = 'CY 2025';
+  if (state.month !== 'all') periodLabel = MONTH_NAMES[parseInt(state.month)-1]+' 2025';
+  else if (state.quarter !== 'all') periodLabel = state.quarter+' 2025';
+  document.getElementById('hd-period').textContent = periodLabel+' · ~20,000 Referrals';
+
+  // Best and worst conversion performers
+  const sortedByConv = [...filtered].sort((a,b)=>b.convRate-a.convRate);
+  const bestConv  = sortedByConv.length?sortedByConv[0]:null;
+  const worstConv = sortedByConv.length?sortedByConv[sortedByConv.length-1]:null;
+
+  document.getElementById('main-area').innerHTML = `
+  <!-- KPI ROW — 6 cards -->
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-bottom:16px">
+    <div class="kpi-card c-${k==='ortho'?'gold':k==='cardio'?'rose':'teal'}">
+      <div class="kpi-lbl">${sm.label} Referrals</div>
+      <div class="kpi-val">${fmt(kpiTotal)}</div>
+      <div class="kpi-meta"><span class="delta d-up">+5.8%</span> vs 2024</div>
+    </div>
+    <div class="kpi-card c-teal">
+      <div class="kpi-lbl">Tier 1 Employed</div>
+      <div class="kpi-val">${t1pct}%</div>
+      <div class="kpi-meta">${fmt(t1Total)} referrals</div>
+    </div>
+    <div class="kpi-card c-blue">
+      <div class="kpi-lbl">T2 CIN Network + OON</div>
+      <div class="kpi-val">${t2pct+oonpct}%</div>
+      <div class="kpi-meta">${fmt(t2Total+oonTotal)} referrals</div>
+    </div>
+    <div class="kpi-card c-purple">
+      <div class="kpi-lbl">Avg Conversion Rate</div>
+      <div class="kpi-val" style="color:${convColor(avgConv)}">${fmtPct(avgConv)}</div>
+      <div class="kpi-meta">${fmt(converted)} visits completed</div>
+    </div>
+    <div class="kpi-card c-gold">
+      <div class="kpi-lbl">Median Time to Appt</div>
+      <div class="kpi-val" style="color:${mttaColor(avgMTTA)}">${fmtMTTA(avgMTTA)}</div>
+      <div class="kpi-meta">avg across filtered set</div>
+    </div>
+    <div class="kpi-card c-rose">
+      <div class="kpi-lbl">Unconverted Referrals</div>
+      <div class="kpi-val">${fmt(missed)}</div>
+      <div class="kpi-meta">${pct(missed,total)}% did not convert</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Destination breakdown + Donut -->
+  <div class="grid-2" style="align-items:start">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Referrals by Destination Tier</div>
+          <div class="card-subtitle">T1 Employed vs. T2 CIN Network vs. Out-of-Network</div>
+        </div>
+        <span class="card-badge">${fmt(total)} total</span>
+      </div>
+      <div class="source-bars">
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">PRISMA NETWORK</div>
+        <div class="src-row">
+          <div class="src-name">Tier 1 · Employed</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${t1pct}%;background:var(--teal)"></div></div>
+          <div class="src-val">${fmt(t1Total)}</div>
+          <div class="src-pct">${t1pct}%</div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Tier 2 · CIN Network Affiliated</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${t2pct}%;background:var(--blue)"></div></div>
+          <div class="src-val">${fmt(t2Total)}</div>
+          <div class="src-pct">${t2pct}%</div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:5px 0"></div>
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">OUT OF NETWORK</div>
+        <div class="src-row">
+          <div class="src-name">Out-of-Network Specialists</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${oonpct}%;background:var(--rose)"></div></div>
+          <div class="src-val">${fmt(oonTotal)}</div>
+          <div class="src-pct">${oonpct}%</div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:5px 0"></div>
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">CONVERSION RATE BY TIER</div>
+        <div class="src-row">
+          <div class="src-name">Tier 1 · Employed</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(t1Conv*100)}%;background:var(--teal)"></div></div>
+          <div class="src-val" style="color:${convColor(t1Conv)}">${fmtPct(t1Conv)}</div>
+          <div class="src-pct"></div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Tier 2 · CIN Network</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(t2Conv*100)}%;background:var(--blue)"></div></div>
+          <div class="src-val" style="color:${convColor(t2Conv)}">${fmtPct(t2Conv)}</div>
+          <div class="src-pct"></div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Out-of-Network</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(oonConv*100)}%;background:var(--rose)"></div></div>
+          <div class="src-val" style="color:${convColor(oonConv)}">${fmtPct(oonConv)}</div>
+          <div class="src-pct"></div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:5px 0"></div>
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">MEDIAN TIME TO APPT (MTTA) BY TIER</div>
+        <div class="src-row">
+          <div class="src-name">Tier 1 · Employed</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(t1MTTA/70*100)}%;background:var(--teal)"></div></div>
+          <div class="src-val" style="color:${mttaColor(t1MTTA)}">${fmtMTTA(t1MTTA)}</div>
+          <div class="src-pct"></div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Tier 2 · CIN Network</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(t2MTTA/70*100)}%;background:var(--blue)"></div></div>
+          <div class="src-val" style="color:${mttaColor(t2MTTA)}">${fmtMTTA(t2MTTA)}</div>
+          <div class="src-pct"></div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Out-of-Network</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(oonMTTA/70*100)}%;background:var(--rose)"></div></div>
+          <div class="src-val" style="color:${mttaColor(oonMTTA)}">${fmtMTTA(oonMTTA)}</div>
+          <div class="src-pct"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="margin-bottom:10px">
+        <div>
+          <div class="card-title">Destination Mix Overview</div>
+          <div class="card-subtitle">Volume distribution by tier</div>
+        </div>
+      </div>
+      <div class="donut-wrap" style="margin-bottom:16px">
+        <div style="width:130px;height:130px;flex-shrink:0"><canvas id="destDonut"></canvas></div>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#007d6e"></div><span class="dl-name">T1 Employed</span><span class="dl-val">${fmt(t1Total)}</span><span class="dl-pct">${t1pct}%</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#1a56b0"></div><span class="dl-name">T2 CIN Network</span><span class="dl-val">${fmt(t2Total)}</span><span class="dl-pct">${t2pct}%</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#c8354a"></div><span class="dl-name">Out-of-Network</span><span class="dl-val">${fmt(oonTotal)}</span><span class="dl-pct">${oonpct}%</span></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border2);padding-top:14px">
+        <div class="card-title" style="font-size:13px;margin-bottom:10px">Conversion Rate &amp; MTTA by Practice</div>
+        <div class="source-bars">
+          ${practices.slice(0,6).map(p=>{
+            const cc = convColor(p.convRate);
+            const mc = mttaColor(p.mttaDays);
+            return `<div style="margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+                <div class="src-name" style="width:auto;flex:1">${p.name}</div>
+                <span style="font-family:'DM Mono',monospace;font-size:10px;color:${mc};font-weight:600;margin-left:8px">${fmtMTTA(p.mttaDays)} MTTA</span>
+              </div>
+              <div class="src-row" style="gap:6px">
+                <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(p.convRate*100)}%;background:${cc}"></div></div>
+                <div style="font-family:'DM Mono',monospace;font-size:11px;color:${cc};font-weight:600;min-width:34px;text-align:right">${fmtPct(p.convRate)}</div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Practice grid -->
+  <div class="card full">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Referrals by Physician Practice</div>
+        <div class="card-subtitle">All ${sm.label} destination practices · Click to filter · Color = tier</div>
+      </div>
+      <span class="card-badge">${practices.length} practices</span>
+    </div>
+    <div class="practice-grid">
+      ${practices.map(pr=>{
+        const pc = practiceColors[pr.tier];
+        const cc = convColor(pr.convRate);
+        const mc = mttaColor(pr.mttaDays);
+        const isSelected = state.practice === pr.pid;
+        return `<div class="practice-card ${isSelected?'selected':''}" style="background:${pc.bg};border-color:${pc.border}" onclick="setPracticeCard('${pr.pid}')">
+          <div class="pc-name">${pr.name}</div>
+          <div class="pc-sub">${pr.count} specialist${pr.count>1?'s':''} · ${pc.label}</div>
+          <div class="pc-bar"><div class="pc-bar-fill" style="width:${pr.vol/maxPVol*100}%;background:${pc.dot}"></div></div>
+          <div class="pc-meta">
+            <span class="pc-vol" style="color:${pc.dot}">${fmt(pr.vol)}</span>
+            <span style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">
+              <span class="pc-conv" style="color:${cc}">Conv: ${fmtPct(pr.convRate)}</span>
+              <span class="pc-conv" style="color:${mc}">MTTA: ${fmtMTTA(pr.mttaDays)}</span>
+            </span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <!-- ROW 3: Physician table -->
+  <div class="card full">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Referred-To Specialist Detail</div>
+        <div class="card-subtitle">${sm.label} · ${filtered.length} specialists · Ranked by referral volume</div>
+      </div>
+      <span class="card-badge">Top 15 by volume</span>
+    </div>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Specialist</th>
+          <th>Practice</th>
+          <th>Tier</th>
+          <th style="text-align:right">Referrals</th>
+          <th style="text-align:right">% of Total</th>
+          <th style="min-width:130px">Conversion Rate</th>
+          <th style="min-width:110px">MTTA</th>
+          <th style="text-align:right">Converted</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map((s,i)=>{
+          const vol  = getRefTotal(s, k||s.spec);
+          const conv = s.convRate;
+          const converted = Math.round(vol * conv);
+          const cc = convColor(conv);
+          const mc = mttaColor(s.mttaDays);
+          return `<tr>
+            <td class="rank">${i+1}</td>
+            <td>
+              <div class="dr-name">${s.name}</div>
+              <div class="dr-spec">${(specMeta[s.spec]||{label:''}).label}</div>
+            </td>
+            <td><div class="dr-practice">${s.practice}</div></td>
+            <td>${s.tier==='t1'?'<span class="pill pill-t1">T1 Employed</span>':s.tier==='t2'?'<span class="pill pill-t2">T2 Affiliated</span>':'<span class="pill pill-ext">Out-of-Net</span>'}</td>
+            <td style="text-align:right">
+              <div class="num">${fmt(vol)}</div>
+              <div class="mini-bar-bg" style="margin-left:auto"><div class="mini-bar" style="width:${vol/maxVol*100}%;background:${sm.hex}"></div></div>
+            </td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${total>0?(vol/total*100).toFixed(1):0}%</td>
+            <td>
+              <div class="conv-bar-wrap">
+                <div class="conv-bar-bg"><div class="conv-bar-fill" style="width:${Math.round(conv*100)}%;background:${cc}"></div></div>
+                <span class="conv-pct" style="color:${cc}">${fmtPct(conv)}</span>
+              </div>
+            </td>
+            <td>
+              <div class="conv-bar-wrap">
+                <div class="conv-bar-bg"><div class="conv-bar-fill" style="width:${Math.round(s.mttaDays/70*100)}%;background:${mc}"></div></div>
+                <span class="conv-pct" style="color:${mc}">${s.mttaDays}d</span>
+              </div>
+            </td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--teal)">${fmt(converted)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Insights -->
+  <div class="full">
+    ${(()=>{
+      const sortedByMTTA = [...filtered].sort((a,b)=>a.mttaDays-b.mttaDays);
+      const fastestMTTA  = sortedByMTTA.length ? sortedByMTTA[0] : null;
+      const slowestMTTA  = sortedByMTTA.length ? sortedByMTTA[sortedByMTTA.length-1] : null;
+      return `
+    <div class="insight ins-teal"><span style="font-size:14px;flex-shrink:0">✓</span><span><strong>Network capture:</strong> ${t1pct}% of ${sm.label} referrals are directed to Tier 1 Health System-employed specialists, with an additional ${t2pct}% to CIN Network Tier 2 partners — keeping ${t1pct+t2pct}% of referral volume within the network.</span></div>
+    <div class="insight ins-${oonpct>20?'rose':'gold'}"><span style="font-size:14px;flex-shrink:0">${oonpct>20?'⚠':'△'}</span><span><strong>Out-of-network destination:</strong> ${fmt(oonTotal)} referrals (${oonpct}%) were directed to Out-of-Network specialists. ${oonpct>20?'This exceeds the 20% threshold — a network development and steerage opportunity.':'Expanding CIN Network specialist capacity could reduce this further.'}</span></div>
+    <div class="insight ins-${avgConv<0.60?'rose':'blue'}"><span style="font-size:14px;flex-shrink:0">◎</span><span><strong>Conversion performance:</strong> The overall Referral Conversion Rate is <strong>${fmtPct(avgConv)}</strong> (${fmt(converted)} completed visits of ${fmt(total)} referrals). ${bestConv?'Highest: '+bestConv.name+' at '+fmtPct(bestConv.convRate)+'.':''} ${worstConv&&worstConv.id!==bestConv?.id?' Lowest: '+worstConv.name+' at '+fmtPct(worstConv.convRate)+' — a conversion improvement opportunity.':''}</span></div>
+    <div class="insight ins-${avgMTTA>45?'rose':avgMTTA>30?'gold':'teal'}"><span style="font-size:14px;flex-shrink:0">⏱</span><span><strong>Median Time to Appointment (MTTA):</strong> The weighted MTTA across the filtered set is <strong>${fmtMTTA(avgMTTA)}</strong>. Tier 1 employed specialists average ${fmtMTTA(t1MTTA)}, Tier 2 CIN Network averages ${fmtMTTA(t2MTTA)}, and Out-of-Network averages ${fmtMTTA(oonMTTA)}. ${fastestMTTA?'Fastest access: '+fastestMTTA.name+' ('+fastestMTTA.mttaDays+'d).':''} ${slowestMTTA&&slowestMTTA.id!==fastestMTTA?.id?' Longest wait: '+slowestMTTA.name+' ('+slowestMTTA.mttaDays+'d) — a scheduling and capacity opportunity.':''}</span></div>
+    `;
+    })()}
+  </div>
+  `;
+
+  // ── DONUT CHART ──
+  const dCtx = document.getElementById('destDonut').getContext('2d');
+  chartInstances.donut = new Chart(dCtx, {
+    type:'doughnut',
+    data:{
+      labels:['T1 Employed','T2 CIN Network','Out-of-Network'],
+      datasets:[{
+        data:[t1Total,t2Total,oonTotal],
+        backgroundColor:['#007d6e','#1a56b0','#c8354a'],
+        borderWidth:2,borderColor:'#fff',hoverOffset:5
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'66%',
+      plugins:{legend:{display:false},tooltip:{...CT.tooltip,callbacks:{label:c=>`${c.label}: ${fmt(c.raw)} (${total>0?Math.round(c.raw/total*100):0}%)`}}}
+    },
+  });
+}
+
+// Init
+renderAll();
+
+// Notify parent suite of this tab's system name for CTA widget
+(function() {
+  if (typeof SYS_NAME !== 'undefined') {
+    window.parent.postMessage({ type: 'sys-name', value: SYS_NAME }, '*');
+  }
+})();
+</script>
+</body>
+</html>

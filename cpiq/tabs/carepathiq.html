@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CarePath IQ Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f7f9fc;--surface:#fff;--text:#0f1e2e;--text2:#4a6080;--text3:#8aa0b8;
+  --border:rgba(15,30,60,.09);--border2:rgba(15,30,60,.05);
+  --teal:#007d6e;--teal-lt:#e6f4f2;
+  --gold:#b8720e;--gold-lt:#fdf3e2;
+  --rose:#c8354a;--rose-lt:#fdeef0;
+  --blue:#1a56b0;--blue-lt:#e8f0ff;
+  --purple:#6a42b8;--purple-lt:#f0eaff;
+  --shadow:0 1px 4px rgba(15,30,60,.06),0 4px 16px rgba(15,30,60,.04);
+  --shadow-md:0 2px 8px rgba(15,30,60,.08),0 8px 24px rgba(15,30,60,.06);
+}
+html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* HEADER */
+header{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  height:56px;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);position:sticky;top:0;z-index:100;
+}
+.hd-left{display:flex;align-items:center;gap:14px}
+.hd-brand{display:flex;flex-direction:column;gap:1px}
+.hd-title{font-family:'DM Serif Display',serif;font-size:17px;color:var(--teal);line-height:1}
+.hd-sub{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.hd-badge{
+  background:var(--teal);color:#fff;font-size:9px;font-weight:700;
+  font-family:'DM Mono',monospace;padding:2px 8px;border-radius:10px;letter-spacing:.05em;
+}
+.hd-period{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* LAYOUT */
+.shell{display:flex;height:calc(100vh - 56px);overflow:hidden}
+
+/* ASIDE / SIDEBAR — matches other dashboards */
+aside{
+  width:200px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);overflow-y:auto;
+  padding:14px 12px;display:flex;flex-direction:column;gap:0;
+}
+.s-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:6px;display:block}
+.s-divider{height:1px;background:var(--border);margin:10px 0}
+.spec-btn{
+  width:100%;display:flex;align-items:center;gap:8px;
+  padding:6px 8px;border-radius:8px;border:none;background:transparent;
+  cursor:pointer;font-family:'Outfit',sans-serif;font-size:12px;color:var(--text2);
+  transition:background .12s;margin-bottom:2px;text-align:left;
+}
+.spec-btn:hover{background:rgba(15,30,60,.04)}
+.spec-btn.active{background:rgba(0,125,110,.08);color:var(--text)}
+.spec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.spec-name{flex:1;font-weight:500}
+.spec-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.filter-section{padding-bottom:6px}
+.filter-select{
+  width:100%;font-size:11px;font-family:'Outfit',sans-serif;color:var(--text);
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:5px 7px;cursor:pointer;
+}
+.chip-row{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0}
+.chip{
+  font-size:10px;font-weight:600;padding:3px 8px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg);color:var(--text2);
+  font-family:'DM Mono',monospace;transition:all .12s;
+}
+.chip.active,.chip:hover{background:var(--teal-lt);color:var(--teal);border-color:rgba(0,125,110,.3)}
+.chip.blue.active{background:var(--blue-lt);color:var(--blue);border-color:rgba(26,86,176,.3)}
+.chip.rose.active{background:var(--rose-lt);color:var(--rose);border-color:rgba(200,53,74,.3)}
+.chip.gold.active{background:var(--gold-lt);color:var(--gold);border-color:rgba(184,114,14,.3)}
+
+/* MAIN CONTENT area */
+.main-content{flex:1;overflow-y:auto;padding:18px 20px 40px}
+
+/* NETWORK KPI STRIP */
+.kpi-strip{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px;
+}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;display:flex;flex-direction:column;gap:4px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.kpi-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--kpi-color,var(--teal));border-radius:10px 10px 0 0;
+}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);line-height:1}
+.kpi-label{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.kpi-delta{font-size:10px;font-family:'DM Mono',monospace;font-weight:600}
+.delta-up{color:var(--teal)}.delta-dn{color:var(--rose)}
+
+/* INSIGHT CARDS GRID */
+.insights-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;
+}
+.insight-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;box-shadow:var(--shadow-md);display:flex;flex-direction:column;
+}
+.ic-header{
+  padding:14px 18px 12px;border-bottom:1px solid var(--border2);
+  display:flex;align-items:flex-start;gap:12px;
+}
+.ic-priority{
+  width:26px;height:26px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;font-family:'DM Mono',monospace;
+  margin-top:1px;
+}
+.ic-hd-text{flex:1}
+.ic-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.3}
+.ic-spec{
+  font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--text3);margin-top:2px;
+}
+.ic-severity{
+  font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;
+  font-family:'DM Mono',monospace;flex-shrink:0;
+}
+.sev-critical{background:var(--rose-lt);color:var(--rose)}
+.sev-high{background:var(--gold-lt);color:var(--gold)}
+.sev-medium{background:var(--blue-lt);color:var(--blue)}
+
+.ic-body{padding:12px 18px;flex:1;display:flex;gap:14px}
+.ic-narrative{flex:1;min-width:0}
+.ic-insight{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+
+.ic-stats{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.ic-stat{
+  display:flex;flex-direction:column;gap:2px;
+  background:var(--bg);border-radius:8px;padding:7px 10px;min-width:80px;
+}
+.ic-stat-val{font-family:'DM Serif Display',serif;font-size:18px;line-height:1}
+.ic-stat-lbl{font-size:9px;color:var(--text3);font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+
+.ic-chart{width:200px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.ic-chart canvas{max-width:100%;max-height:120px}
+
+.ic-footer{
+  padding:10px 18px;background:var(--bg);border-top:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ic-finding{font-size:11px;color:var(--text2);flex:1;margin-right:12px;line-height:1.4}
+.ic-finding strong{color:var(--text);font-weight:600}
+.ic-cta{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:700;font-family:'DM Mono',monospace;
+  padding:6px 14px;border-radius:8px;border:none;cursor:pointer;
+  white-space:nowrap;flex-shrink:0;transition:all .15s;
+}
+.cta-teal{background:var(--teal);color:#fff}
+.cta-teal:hover{background:#006a5d}
+.cta-gold{background:var(--gold);color:#fff}
+.cta-gold:hover{background:#9a5e08}
+.cta-rose{background:var(--rose);color:#fff}
+.cta-rose:hover{background:#a82a3e}
+.cta-blue{background:var(--blue);color:#fff}
+.cta-blue:hover{background:#144490}
+.ic-cta svg{width:12px;height:12px;flex-shrink:0}
+
+/* BOTTOM ROW: practice table + monthly trend */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;box-shadow:var(--shadow);
+}
+.card-header{
+  padding:12px 18px;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.card-badge{
+  font-size:9px;font-family:'DM Mono',monospace;font-weight:700;
+  padding:2px 8px;border-radius:8px;border:1px solid var(--border);color:var(--text2);background:var(--bg);
+}
+.chart-wrap{padding:14px 18px;height:200px;position:relative}
+
+/* PRACTICE TABLE */
+.prac-table{width:100%;border-collapse:collapse}
+.prac-table th{
+  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text3);padding:7px 10px;border-bottom:2px solid var(--border);
+  text-align:left;background:var(--bg);
+}
+.prac-table td{
+  padding:7px 10px;border-bottom:1px solid var(--border2);
+  font-size:11px;color:var(--text2);
+}
+.prac-table tr:last-child td{border-bottom:none}
+.prac-table tr:hover td{background:rgba(15,30,60,.02);cursor:pointer}
+.prac-name{font-weight:500;color:var(--text);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tier-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
+.met-bar{display:flex;align-items:center;gap:6px}
+.met-bg{flex:1;height:4px;background:rgba(15,30,60,.08);border-radius:2px;overflow:hidden;min-width:40px}
+.met-fill{height:100%;border-radius:2px}
+.met-val{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;white-space:nowrap}
+
+/* SPEC PILLS */
+.pill{display:inline-flex;align-items:center;font-size:8px;font-weight:700;
+  padding:1px 5px;border-radius:5px;font-family:'DM Mono',monospace}
+.pill-ortho{background:var(--gold-lt);color:var(--gold)}
+.pill-cardio{background:var(--rose-lt);color:var(--rose)}
+.pill-gi{background:var(--teal-lt);color:var(--teal)}
+.pill-t1{background:var(--teal-lt);color:var(--teal)}
+.pill-t2{background:var(--blue-lt);color:var(--blue)}
+.pill-oon{background:var(--rose-lt);color:var(--rose)}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<script>
+/* CPIQ Data Shim */
+(function() {
+  function applyState(s) {
+    window.CPIQ = s;
+    window.SYS_NAME = s.meta ? s.meta.sysName : 'Health System';
+    window.COMPETITORS = (s.meta && s.meta.competitors) || [];
+    if (typeof window.__cpiqReady === 'function') window.__cpiqReady(s);
+  }
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cpiq-state') applyState(e.data.payload);
+    if (e.data && e.data.type === 'apply-filters' && typeof window.__applyFilters === 'function') window.__applyFilters(e.data.filterState);
+  });
+  if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
+})();
+</script>
+</head>
+<body>
+
+<header>
+  <div class="hd-left">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain">
+    <div style="width:1px;height:28px;background:var(--border)"></div>
+    <div class="hd-brand">
+      <div class="hd-title">CarePath IQ</div>
+      <div class="hd-sub">Executive Summary</div>
+    </div>
+    <span class="hd-badge">AI-GUIDED INSIGHTS</span>
+  </div>
+  <span class="hd-period">CY 2025 · CIN Network · Metro Market SC</span>
+</header>
+
+<div class="shell">
+<aside>
+  <!-- SPECIALTY -->
+  <div style="padding:0 0 6px">
+    <div class="s-label" style="margin-bottom:8px">Specialty</div>
+    <button class="spec-btn active" id="ciq-sb-all" onclick="setSpecFilter('all',this)">
+      <div class="spec-dot" style="background:linear-gradient(135deg,var(--gold),var(--rose),var(--teal))"></div>
+      <span class="spec-name">All Specialties</span>
+      <span class="spec-count" id="ciq-cnt-all">—</span>
+    </button>
+    <button class="spec-btn" id="ciq-sb-ortho" onclick="setSpecFilter('ortho',this)">
+      <div class="spec-dot" style="background:var(--gold)"></div>
+      <span class="spec-name">Orthopedics</span>
+      <span class="spec-count" id="ciq-cnt-ortho">—</span>
+    </button>
+    <button class="spec-btn" id="ciq-sb-cardio" onclick="setSpecFilter('cardio',this)">
+      <div class="spec-dot" style="background:var(--rose)"></div>
+      <span class="spec-name">Cardiology</span>
+      <span class="spec-count" id="ciq-cnt-cardio">—</span>
+    </button>
+    <button class="spec-btn" id="ciq-sb-gi" onclick="setSpecFilter('gi',this)">
+      <div class="spec-dot" style="background:var(--teal)"></div>
+      <span class="spec-name">Gastroenterology</span>
+      <span class="spec-count" id="ciq-cnt-gi">—</span>
+    </button>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- DESTINATION TIER -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Destination Tier</div>
+    <div class="chip-row">
+      <div class="chip active" id="ciq-tier-all" onclick="setTierFilter('all',this)">All</div>
+      <div class="chip" id="ciq-tier-t1" onclick="setTierFilter('t1',this)">T1</div>
+      <div class="chip blue" id="ciq-tier-t2" onclick="setTierFilter('t2',this)">T2</div>
+      <div class="chip rose" id="ciq-tier-oon" onclick="setTierFilter('oon',this)">OON</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- TIME PERIOD -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Quarter</div>
+    <div class="chip-row" style="margin-bottom:8px">
+      <div class="chip active" id="ciq-q-all" onclick="setQuarterFilter('all',this)">All</div>
+      <div class="chip" id="ciq-q-q1" onclick="setQuarterFilter('Q1',this)">Q1</div>
+      <div class="chip" id="ciq-q-q2" onclick="setQuarterFilter('Q2',this)">Q2</div>
+      <div class="chip" id="ciq-q-q3" onclick="setQuarterFilter('Q3',this)">Q3</div>
+      <div class="chip" id="ciq-q-q4" onclick="setQuarterFilter('Q4',this)">Q4</div>
+    </div>
+    <div class="s-label" style="margin-bottom:6px">Month</div>
+    <select class="filter-select" id="ciq-sel-month" onchange="setMonthFilter(this.value)">
+      <option value="all">All Months</option>
+      <option value="1">January</option><option value="2">February</option>
+      <option value="3">March</option><option value="4">April</option>
+      <option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option>
+      <option value="9">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- NETWORK FOCUS -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Network Focus</div>
+    <div class="chip-row">
+      <div class="chip active" id="ciq-net-all" onclick="setNetFilter('all',this)">All</div>
+      <div class="chip" id="ciq-net-in" onclick="setNetFilter('in',this)">In-Net</div>
+      <div class="chip rose" id="ciq-net-oon" onclick="setNetFilter('oon',this)">OON</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- RISK LEVEL -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Risk Level</div>
+    <div class="chip-row">
+      <div class="chip active" id="ciq-risk-all" onclick="setRiskFilter('all',this)">All</div>
+      <div class="chip rose" id="ciq-risk-high" onclick="setRiskFilter('high',this)">High</div>
+      <div class="chip gold" id="ciq-risk-med" onclick="setRiskFilter('med',this)">Medium</div>
+      <div class="chip" id="ciq-risk-low" onclick="setRiskFilter('low',this)">Low</div>
+    </div>
+  </div>
+</aside>
+
+<div class="main-content">
+  <!-- NETWORK KPI STRIP -->
+  <div class="kpi-strip" id="kpi-strip"></div>
+
+  <!-- INSIGHT CARDS -->
+  <div class="insights-grid" id="insights-grid"></div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-grid">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Priority Practices — Action Required</div>
+          <div class="card-sub">Ranked by composite risk score (low conversion + high OON + long MTTA)</div>
+        </div>
+        <span class="card-badge" id="prac-badge">All Specs</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="prac-table" id="prac-table">
+          <thead>
+            <tr>
+              <th>Practice</th>
+              <th>Spec</th>
+              <th>Tier</th>
+              <th>Conv%</th>
+              <th>MTTA</th>
+              <th>OON%</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody id="prac-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Monthly Referral Volume</div>
+          <div class="card-sub">CY 2025 · all specialties · CIN Network network</div>
+        </div>
+        <span class="card-badge" id="trend-badge">47,510 annual</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
+    </div>
+  </div>
+</div>
+</div><!-- /main-content -->
+
+<script>
+// ── Canonical Data ──────────────────────────────────────────────
+const PRACTICES = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+
+const SPEC_TOTALS = {ortho:13770, cardio:14560, gi:19180};
+const MW = {
+  ortho:  [0.07,0.07,0.08,0.09,0.09,0.10,0.10,0.09,0.09,0.08,0.08,0.06],
+  cardio: [0.10,0.09,0.09,0.08,0.08,0.07,0.07,0.07,0.08,0.09,0.09,0.09],
+  gi:     [0.08,0.08,0.08,0.08,0.08,0.09,0.09,0.09,0.08,0.09,0.08,0.08],
+};
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const SPEC_LABEL = {ortho:'Orthopedics', cardio:'Cardiology', gi:'Gastroenterology'};
+const SPEC_COLOR = {ortho:'var(--gold)', cardio:'var(--rose)', gi:'var(--teal)'};
+const SPEC_HEX   = {ortho:'#b8720e', cardio:'#c8354a', gi:'#007d6e'};
+
+// Referral source tier mix — per specialty (from source dashboard analysis)
+const SRC_TIER_BY_SPEC = {
+  all:    {t1:29763, t2:20342, oon:13960},
+  ortho:  {t1:13079, t2:9154,  oon:5605},
+  cardio: {t1:8097,  t2:5107,  oon:4199},
+  gi:     {t1:8587,  t2:6081,  oon:4156},
+};
+const SRC_TOTAL_BY_SPEC = {all:64065, ortho:27838, cardio:17403, gi:18824};
+// Computed from active filter
+function getSrcTier() { return SRC_TIER_BY_SPEC[specFilter] || SRC_TIER_BY_SPEC.all; }
+function getSrcTotal(){ return SRC_TOTAL_BY_SPEC[specFilter] || SRC_TOTAL_BY_SPEC.all; }
+
+// ── State ────────────────────────────────────────────────────────
+let specFilter = 'all';
+let tierFilter = 'all';
+let quarterFilter = 'all';
+let monthFilter = null;
+let netFilter = 'all';
+let riskFilter = 'all';
+let charts = {};
+
+function setSpecFilter(val, el) {
+  specFilter = val;
+  // Update all spec buttons in aside
+  ['all','ortho','cardio','gi'].forEach(s => {
+    var btn = document.getElementById('ciq-sb-'+s);
+    if(btn) btn.classList.toggle('active', s===val);
+  });
+  render();
+}
+function setTierFilter(val, el) {
+  tierFilter = val;
+  // Update tier chips
+  ['all','t1','t2','oon'].forEach(t => {
+    var chip = document.getElementById('ciq-tier-'+t);
+    if(chip) chip.classList.toggle('active', t===val);
+  });
+  render();
+}
+function setQuarterFilter(val, el) {
+  quarterFilter = val;
+  ['all','Q1','Q2','Q3','Q4'].forEach(q => {
+    var chip = document.getElementById('ciq-q-'+q.toLowerCase());
+    if(chip) chip.classList.toggle('active', q===val);
+  });
+  render();
+}
+function setMonthFilter(val) {
+  monthFilter = val === 'all' ? null : +val;
+  render();
+}
+function setNetFilter(val, el) {
+  netFilter = val;
+  ['all','in','oon'].forEach(n => {
+    var chip = document.getElementById('ciq-net-'+n);
+    if(chip) chip.classList.toggle('active', n===val);
+  });
+  render();
+}
+function setRiskFilter(val, el) {
+  riskFilter = val;
+  ['all','high','med','low'].forEach(r => {
+    var chip = document.getElementById('ciq-risk-'+r);
+    if(chip) chip.classList.toggle('active', r===val);
+  });
+  render();
+}
+
+function filtered() {
+  return PRACTICES.filter(p =>
+    (specFilter === 'all' || p.spec === specFilter) &&
+    (tierFilter === 'all' || p.tier === tierFilter)
+  );
+}
+// Quarter/month filters apply to monthly trend only
+function monthsInFilter() {
+  if(monthFilter) return [monthFilter - 1]; // 0-indexed
+  if(quarterFilter === 'Q1') return [0,1,2];
+  if(quarterFilter === 'Q2') return [3,4,5];
+  if(quarterFilter === 'Q3') return [6,7,8];
+  if(quarterFilter === 'Q4') return [9,10,11];
+  return [0,1,2,3,4,5,6,7,8,9,10,11];
+}
+
+function fmt(n) { return n >= 1000 ? (n/1000).toFixed(1)+'k' : n.toLocaleString(); }
+function fmtPct(n) { return (n*100).toFixed(1)+'%'; }
+function fmtFull(n) { return Math.round(n).toLocaleString(); }
+
+// ── Compute network KPIs from filtered practices ─────────────────
+function computeKPIs(pts) {
+  if(!pts.length) return {};
+  // Display total: canonical network referral volume from SPEC_TOTALS
+  const specs   = specFilter==='all' ? ['ortho','cardio','gi'] : [specFilter];
+  const totRefs = specs.reduce((s,sp)=>s+(SPEC_TOTALS[sp]||0), 0);
+  // Weighted averages: use pts.totalRefs as weights (consistent num/denom)
+  const wBase   = pts.reduce((s,p)=>s+p.totalRefs, 0) || 1;
+  const wConv   = pts.reduce((s,p)=>s+p.convRate*p.totalRefs, 0) / wBase;
+  const wMTTA   = pts.reduce((s,p)=>s+p.mttaDays*p.totalRefs, 0) / wBase;
+  const wProc   = pts.reduce((s,p)=>s+p.procRate*p.totalRefs, 0) / wBase;
+  const totProc = pts.reduce((s,p)=>s+p.totalRefs*p.procRate, 0);
+  const totOon  = pts.reduce((s,p)=>s+p.totalRefs*p.procRate*p.oonProcRate, 0);
+  const wOon    = totOon / (totProc || 1);
+  const noProceedPct = 1 - wConv;
+  return { totRefs, wConv, wMTTA, wProc, wOon, totProc, totOon, noProceedPct };
+}
+
+// ── KPI Strip ────────────────────────────────────────────────────
+function renderKPIs() {
+  const pts = filtered();
+  const K = computeKPIs(pts);
+  const oonLeakage = Math.round(K.totOon);
+  const noVisit = Math.round(K.totRefs * K.noProceedPct);
+
+  const kpis = [
+    { label:'Total Referrals', val: fmtFull(K.totRefs), color:'var(--teal)',
+      delta:null, sub:'annual CY2025' },
+    { label:'Completion Rate', val: fmtPct(K.wConv), color: K.wConv>=0.65?'var(--teal)':'var(--rose)',
+      delta:'↓ '+fmtFull(noVisit)+' never visit', sub:'specialist visits', cls: K.wConv>=0.65?'delta-up':'delta-dn' },
+    { label:'Mean Time to Appt', val: Math.round(K.wMTTA)+'d', color: K.wMTTA<=50?'var(--teal)':K.wMTTA<=65?'var(--gold)':'var(--rose)',
+      delta: K.wMTTA > 60 ? '⚠ above 60d target' : '✓ within target', sub:'referral to first visit',
+      cls: K.wMTTA <= 60 ? 'delta-up' : 'delta-dn' },
+    { label:'Procedure Rate', val: fmtPct(K.wProc), color:'var(--blue)',
+      delta: fmtFull(Math.round(K.totProc))+' procedures/yr', sub:'of completed visits', cls:'' },
+    { label:'OON Procedure Rate', val: fmtPct(K.wOon), color: K.wOon<=0.15?'var(--teal)':K.wOon<=0.22?'var(--gold)':'var(--rose)',
+      delta:'↑ '+fmtFull(oonLeakage)+' OON/yr', sub:'of all procedures', cls: K.wOon<=0.20?'delta-up':'delta-dn' },
+    { label:'Practices in View', val: pts.length, color:'var(--purple)',
+      delta: [...new Set(pts.map(p=>p.spec))].map(s=>SPEC_LABEL[s]).join(' · '), sub:'destination practices', cls:'' },
+  ];
+
+  // Update sidebar spec counts
+  // 'all' always shows grand total regardless of spec filter
+  // individual specs only respect tier filter (not spec filter)
+  ['all','ortho','cardio','gi'].forEach(sp => {
+    var el = document.getElementById('ciq-cnt-'+sp);
+    if(!el) return;
+    // Use SPEC_TOTALS for all specs — consistent with network volume shown on other tabs
+    var tot = sp==='all'
+      ? Object.values(SPEC_TOTALS).reduce(function(a,b){return a+b;},0)
+      : (SPEC_TOTALS[sp] || 0);
+    el.textContent = tot >= 1000 ? (tot/1000).toFixed(0)+'k' : tot;
+  });
+
+  document.getElementById('kpi-strip').innerHTML = kpis.map(k=>`
+    <div class="kpi-card" style="--kpi-color:${k.color}">
+      <div class="kpi-val" style="color:${k.color}">${k.val}</div>
+      <div class="kpi-label">${k.label}</div>
+      ${k.sub ? `<div class="kpi-label" style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;margin-top:1px">${k.sub}</div>` : ''}
+      ${k.delta ? `<div class="kpi-delta ${k.cls||''}" style="margin-top:4px">${k.delta}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── Insight Cards ────────────────────────────────────────────────
+function renderInsights() {
+  const pts = filtered();
+  const K = computeKPIs(pts);
+
+  // Compute per-spec KPIs for insights
+  const bySpec = {};
+  ['ortho','cardio','gi'].forEach(sp => {
+    const spts = pts.filter(p=>p.spec===sp);
+    bySpec[sp] = spts.length ? computeKPIs(spts) : null;
+  });
+
+  // Identify worst practices
+  const worstConv = [...pts].filter(p=>p.tier!=='oon').sort((a,b)=>a.convRate-b.convRate).slice(0,3);
+  const worstMTTA = [...pts].filter(p=>p.tier!=='oon').sort((a,b)=>b.mttaDays-a.mttaDays).slice(0,3);
+  const worstOON  = [...pts].filter(p=>p.tier!=='oon').sort((a,b)=>b.oonProcRate-a.oonProcRate).slice(0,3);
+
+  const noVisitCount = Math.round(K.totRefs * (1-K.wConv));
+  const oonProcCount = Math.round(K.totOon);
+
+  const insights = [
+    // ── INSIGHT 1: Referral Completion Gap ──────────────────────
+    {
+      priority: '01', severity: 'critical',
+      title: 'Referral Completion Gap — ' + fmtFull(noVisitCount) + ' referrals fall through each year',
+      spec: specFilter==='all'?'All Specialties':SPEC_LABEL[specFilter],
+      insight: `<strong>${fmtPct(1-K.wConv)}</strong> of all referrals never result in a completed specialist visit. That represents <strong>${fmtFull(noVisitCount)} patients per year</strong> who received a referral order but were never seen — lost to follow-up, scheduling friction, or migration to out-of-network providers.${worstConv.length?` Worst performers: <strong>${worstConv[0].name}</strong> (${fmtPct(worstConv[0].convRate)} completion) and <strong>${worstConv[1]?.name||''}</strong> (${fmtPct(worstConv[1]?.convRate||0)}).`:''}`,
+      stats: [
+        { val: fmtPct(K.wConv), lbl:'Avg Conv Rate', color:'var(--rose)' },
+        { val: fmtFull(noVisitCount), lbl:'Lost Referrals/yr', color:'var(--rose)' },
+        { val: worstConv[0] ? fmtPct(worstConv[0].convRate) : '—', lbl:'Worst Practice', color:'var(--gold)' },
+      ],
+      chartType: 'bar_conv',
+      finding: `<strong>Action:</strong> Open Referral Outcomes → filter by lowest Completion Rate practices to identify which sources are driving the gap.`,
+      ctaLabel: '→ Referral Outcomes',
+      ctaColor: 'cta-rose',
+      ctaTab: 'destination',
+      ctaFilter: { tier: tierFilter, spec: specFilter },
+    },
+    // ── INSIGHT 2: OON Procedure Leakage ────────────────────────
+    {
+      priority: '02', severity: 'critical',
+      title: 'Procedure Leakage — ' + fmtFull(oonProcCount) + ' procedures/year leave the network',
+      spec: specFilter==='all'?'All Specialties':SPEC_LABEL[specFilter],
+      insight: `<strong>${fmtPct(K.wOon)}</strong> of all downstream procedures are performed out-of-network, representing <strong>${fmtFull(oonProcCount)} OON procedures annually</strong>. GI shows the highest OON rate${bySpec.gi?` (${fmtPct(bySpec.gi.wOon)})`:''}, followed by Orthopedics${bySpec.ortho?` (${fmtPct(bySpec.ortho.wOon)})`:''}.${worstOON.length?` Top leakage practice: <strong>${worstOON[0].name}</strong> at ${fmtPct(worstOON[0].oonProcRate)} OON.`:''}`,
+      stats: [
+        { val: fmtPct(K.wOon), lbl:'OON Proc Rate', color:'var(--rose)' },
+        { val: fmtFull(oonProcCount), lbl:'OON Procs/yr', color:'var(--rose)' },
+        { val: bySpec.gi ? fmtPct(bySpec.gi.wOon) : '—', lbl:'GI OON Rate', color:'var(--gold)' },
+      ],
+      chartType: 'donut_oon',
+      finding: `<strong>Action:</strong> Open Downstream Procedures → filter by Out-of-Network to see which procedures and facilities are capturing your volume.`,
+      ctaLabel: '→ Downstream Procedures',
+      ctaColor: 'cta-gold',
+      ctaTab: 'procedure',
+      ctaFilter: { spec: specFilter, procNet: 'oon' },
+    },
+    // ── INSIGHT 3: Access & MTTA ─────────────────────────────────
+    {
+      priority: '03', severity: K.wMTTA > 60 ? 'high' : 'medium',
+      title: 'Access Barrier — Average ' + Math.round(K.wMTTA) + '-day wait to specialist appointment',
+      spec: specFilter==='all'?'All Specialties':SPEC_LABEL[specFilter],
+      insight: `The network average MTTA of <strong>${Math.round(K.wMTTA)} days</strong> masks significant variation by specialty and practice. GI has the longest waits${bySpec.gi?` (avg ${Math.round(bySpec.gi.wMTTA)}d)`:''}, with ${worstMTTA[0]?.name||''} reaching <strong>${worstMTTA[0]?.mttaDays||0} days</strong>. Extended access times are a primary driver of OON migration — patients who wait more than 60 days are significantly more likely to seek care outside the network.`,
+      stats: [
+        { val: Math.round(K.wMTTA)+'d', lbl:'Avg MTTA', color: K.wMTTA>60?'var(--rose)':'var(--gold)' },
+        { val: bySpec.gi ? Math.round(bySpec.gi.wMTTA)+'d' : '—', lbl:'GI MTTA', color:'var(--rose)' },
+        { val: worstMTTA[0] ? worstMTTA[0].mttaDays+'d' : '—', lbl:'Worst Practice', color:'var(--rose)' },
+      ],
+      chartType: 'bar_mtta',
+      finding: `<strong>Action:</strong> Open Provider Scorecard → select high-MTTA practices to benchmark against peers and identify capacity opportunities.`,
+      ctaLabel: '→ Provider Scorecard',
+      ctaColor: 'cta-blue',
+      ctaTab: 'scorecard',
+      ctaFilter: { spec: specFilter },
+    },
+    // ── INSIGHT 4: OON Referral Sources ─────────────────────────
+    {
+      priority: '04', severity: 'medium',
+      title: `Source Network Mix — ${fmtPct(getSrcTier().oon/getSrcTotal())} of referrals originate from out-of-network providers`,
+      spec: specFilter==='all'?'All Specialties':(SPEC_LABEL[specFilter]||specFilter),
+      insight: `Of the <strong>${fmtFull(getSrcTotal())} annual referrals</strong> tracked for ${specFilter==='all'?'all specialties':SPEC_LABEL[specFilter]}, <strong>${fmtPct(getSrcTier().oon/getSrcTotal())} originate from OON providers</strong> (vs ${fmtPct(getSrcTier().t1/getSrcTotal())} T1 Employed and ${fmtPct(getSrcTier().t2/getSrcTotal())} T2 CIN Network). OON-sourced referrals have lower completion rates and are more likely to result in OON downstream procedures.`,
+      stats: [
+        { val: fmtPct(getSrcTier().t1/getSrcTotal()), lbl:'T1 Source Share', color:'var(--teal)' },
+        { val: fmtPct(getSrcTier().t2/getSrcTotal()), lbl:'T2 Source Share', color:'var(--blue)' },
+        { val: fmtPct(getSrcTier().oon/getSrcTotal()), lbl:'OON Source Share', color:'var(--rose)' },
+      ],
+      chartType: 'donut_tier',
+      finding: `<strong>Action:</strong> Open Referral Sources → filter by Out-of-Network tier to map OON source practices and identify recruitment opportunities.`,
+      ctaLabel: '→ Referral Sources',
+      ctaColor: 'cta-teal',
+      ctaTab: 'source',
+      ctaFilter: { tier: 'oon' },
+    },
+  ];
+
+  // All insights shown for all specialty filters
+  const visibleInsights = insights;
+
+  document.getElementById('insights-grid').innerHTML = visibleInsights.map(ins => `
+    <div class="insight-card">
+      <div class="ic-header">
+        <div class="ic-priority" style="background:${
+          ins.severity==='critical'?'var(--rose-lt)':ins.severity==='high'?'var(--gold-lt)':'var(--blue-lt)'
+        };color:${
+          ins.severity==='critical'?'var(--rose)':ins.severity==='high'?'var(--gold)':'var(--blue)'
+        }">${ins.priority}</div>
+        <div class="ic-hd-text">
+          <div class="ic-title">${ins.title}</div>
+          <div class="ic-spec">${ins.spec}</div>
+        </div>
+        <div class="ic-severity sev-${ins.severity}">${ins.severity.toUpperCase()}</div>
+      </div>
+      <div class="ic-body">
+        <div class="ic-narrative">
+          <p class="ic-insight">${ins.insight}</p>
+          <div class="ic-stats">
+            ${ins.stats.map(st=>`
+              <div class="ic-stat">
+                <div class="ic-stat-val" style="color:${st.color}">${st.val}</div>
+                <div class="ic-stat-lbl">${st.lbl}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="ic-chart" id="chart-${ins.priority}"></div>
+      </div>
+      <div class="ic-footer">
+        <div class="ic-finding">${ins.finding}</div>
+        <button class="ic-cta ${ins.ctaColor}" data-tab="${ins.ctaTab}" data-filter='${JSON.stringify(ins.ctaFilter).replace(/'/g,"&apos;")}' onclick="handleCTA(this)">
+          ${ins.ctaLabel}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>`).join('');
+
+  // Render inline charts
+  visibleInsights.forEach(ins => renderInsightChart(ins, pts, bySpec));
+}
+
+// ── Insight mini-charts ─────────────────────────────────────────
+function renderInsightChart(ins, pts, bySpec) {
+  const container = document.getElementById('chart-'+ins.priority);
+  if(!container) return;
+  container.innerHTML = '<canvas style="max-width:180px;max-height:120px"></canvas>';
+  const canvas = container.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const chartDefs = {
+    bar_conv: () => {
+      const specs = pts.length ? ['ortho','cardio','gi'].filter(s=>pts.find(p=>p.spec===s)) : ['ortho','cardio','gi'];
+      const vals = specs.map(sp => {
+        const spts = pts.filter(p=>p.spec===sp);
+        if(!spts.length) return 0;
+        const tot = spts.reduce((s,p)=>s+p.totalRefs,0);
+        return +(spts.reduce((s,p)=>s+p.convRate*p.totalRefs,0)/tot*100).toFixed(1);
+      });
+      return { type:'bar', data:{
+        labels: specs.map(s=>s==='ortho'?'Ortho':s==='cardio'?'Cardio':'GI'),
+        datasets:[{data:vals,backgroundColor:specs.map(s=>SPEC_HEX[s]+'55'),
+          borderColor:specs.map(s=>SPEC_HEX[s]),borderWidth:1.5,borderRadius:4}]},
+        options:{...miniChartOpts(), scales:{y:{...axisOpts(),max:100,ticks:{callback:v=>v+'%'}},x:axisOpts()},
+          plugins:{...noLegend(),tooltip:{callbacks:{label:ctx=>ctx.raw+'%'}}}}
+      };
+    },
+    donut_oon: () => {
+      const specs = ['ortho','cardio','gi'];
+      const oonVals = specs.map(sp => {
+        const spts = pts.filter(p=>p.spec===sp);
+        if(!spts.length) return 0;
+        return Math.round(spts.reduce((s,p)=>s+p.totalRefs*p.procRate*p.oonProcRate,0));
+      });
+      const inVals  = specs.map(sp => {
+        const spts = pts.filter(p=>p.spec===sp);
+        if(!spts.length) return 0;
+        return Math.round(spts.reduce((s,p)=>s+p.totalRefs*p.procRate*(1-p.oonProcRate),0));
+      });
+      return { type:'doughnut', data:{
+        labels:['In-Net Procs','OON Procs'],
+        datasets:[{data:[inVals.reduce((a,b)=>a+b,0),oonVals.reduce((a,b)=>a+b,0)],
+          backgroundColor:['#007d6e55','#c8354a55'],borderColor:['#007d6e','#c8354a'],borderWidth:1.5}]},
+        options:{...miniChartOpts(), cutout:'65%', plugins:{legend:{display:true,position:'bottom',
+          labels:{font:{size:9,family:'Outfit'},padding:6,boxWidth:10}}}}
+      };
+    },
+    bar_mtta: () => {
+      const specs = ['ortho','cardio','gi'].filter(s=>pts.find(p=>p.spec===s));
+      const vals = specs.map(sp => {
+        const spts = pts.filter(p=>p.spec===sp);
+        if(!spts.length) return 0;
+        const tot = spts.reduce((s,p)=>s+p.totalRefs,0);
+        return +(spts.reduce((s,p)=>s+p.mttaDays*p.totalRefs,0)/tot).toFixed(0);
+      });
+      return { type:'bar', data:{
+        labels: specs.map(s=>s==='ortho'?'Ortho':s==='cardio'?'Cardio':'GI'),
+        datasets:[{data:vals,
+          backgroundColor:vals.map(v=>v>60?'#c8354a55':v>45?'#b8720e55':'#007d6e55'),
+          borderColor:vals.map(v=>v>60?'#c8354a':v>45?'#b8720e':'#007d6e'),
+          borderWidth:1.5,borderRadius:4}]},
+        options:{...miniChartOpts(), scales:{y:{...axisOpts(),ticks:{callback:v=>v+'d'}},x:axisOpts()},
+          plugins:{...noLegend(),tooltip:{callbacks:{label:ctx=>ctx.raw+'d'}}}}
+      };
+    },
+    donut_tier: () => ({
+      type:'doughnut',data:{
+        labels:['T1 Employed','T2 CIN Network','Out-of-Network'],
+        datasets:[{data:[getSrcTier().t1,getSrcTier().t2,getSrcTier().oon],
+          backgroundColor:['#007d6e55','#1a56b055','#c8354a55'],
+          borderColor:['#007d6e','#1a56b0','#c8354a'],borderWidth:1.5}]},
+      options:{...miniChartOpts(), cutout:'65%', plugins:{legend:{display:true,position:'bottom',
+        labels:{font:{size:8,family:'Outfit'},padding:5,boxWidth:10}}}}
+    }),
+  };
+  const def = chartDefs[ins.chartType];
+  if(!def) return;
+  if(charts['ins_'+ins.priority]) charts['ins_'+ins.priority].destroy();
+  charts['ins_'+ins.priority] = new Chart(ctx, def());
+}
+
+// ── Monthly Trend Chart ─────────────────────────────────────────
+function renderMonthlyChart() {
+  const pts = filtered();
+  const specs = specFilter==='all' ? ['ortho','cardio','gi'] : [specFilter];
+
+  const activeMos = monthsInFilter();
+  const datasets = specs.map(sp => {
+    const monthly = MN.map((_,i) => {
+      if(!activeMos.includes(i)) return null; // null skips in chart
+      const spts = pts.filter(p=>p.spec===sp);
+      if(!spts.length) return 0;
+      return spts.reduce((s,p)=>s+p.monthly[i],0);
+    });
+    return {
+      label: SPEC_LABEL[sp],
+      data: monthly,
+      backgroundColor: SPEC_HEX[sp]+'33',
+      borderColor: SPEC_HEX[sp],
+      borderWidth: 2, tension: 0.35, fill: true, pointRadius: 3,
+    };
+  });
+
+  const totals = MN.map((_,i) => datasets.reduce((s,d)=>s+d.data[i],0));
+  const annTotal = totals.reduce((a,b)=>a+b,0);
+  document.getElementById('trend-badge').textContent = fmtFull(annTotal)+' annual';
+
+  if(charts.monthly) charts.monthly.destroy();
+  charts.monthly = new Chart(document.getElementById('chart-monthly').getContext('2d'), {
+    type:'line', data:{labels:MN, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      scales:{
+        x:{grid:{color:'rgba(15,30,60,.04)'},ticks:{color:'#8aa0b8',font:{size:10,family:'Outfit'}}},
+        y:{grid:{color:'rgba(15,30,60,.05)'},ticks:{color:'#8aa0b8',font:{size:10,family:'Outfit'},callback:v=>v>=1000?v/1000+'k':v}},
+      },
+      plugins:{
+        legend:{display:specs.length>1,position:'top',labels:{font:{size:10,family:'Outfit'},boxWidth:12,padding:10}},
+        tooltip:{backgroundColor:'#fff',titleColor:'#0f1e2e',bodyColor:'#4a6080',
+          borderColor:'rgba(15,30,60,.12)',borderWidth:1,padding:10},
+      },
+      interaction:{mode:'index',intersect:false},
+    }
+  });
+}
+
+// ── Priority Practice Table ─────────────────────────────────────
+function renderPracticeTable() {
+  const pts = filtered().filter(p=>p.tier!=='oon');
+
+  // Risk score: normalized composite of (1-convRate), mttaDays/100, oonProcRate
+  const scored = pts.map(p => ({
+    ...p,
+    risk: (1-p.convRate)*0.4 + (p.mttaDays/120)*0.3 + p.oonProcRate*0.3,
+  }))
+  .filter(p => {
+    if(riskFilter === 'high') return p.risk > 0.35;
+    if(riskFilter === 'med')  return p.risk > 0.25 && p.risk <= 0.35;
+    if(riskFilter === 'low')  return p.risk <= 0.25;
+    return true;
+  })
+  .filter(p => {
+    if(netFilter === 'oon') return p.oonProcRate > 0.20;
+    if(netFilter === 'in')  return p.oonProcRate <= 0.15;
+    return true;
+  })
+  .sort((a,b)=>b.risk-a.risk).slice(0,10);
+
+  document.getElementById('prac-badge').textContent =
+    specFilter==='all'?'All Specs':SPEC_LABEL[specFilter];
+
+  const specHex = {ortho:'#b8720e',cardio:'#c8354a',gi:'#007d6e'};
+  const tierCls = {t1:'pill-t1',t2:'pill-t2',oon:'pill-oon'};
+  const tierLabel = {t1:'T1',t2:'T2',oon:'OON'};
+
+  document.getElementById('prac-tbody').innerHTML = scored.map(p => {
+    const riskPct = Math.min(p.risk*120, 100);
+    const riskColor = p.risk>0.35?'#c8354a':p.risk>0.25?'#b8720e':'#007d6e';
+    return `<tr onclick="navigateTo('scorecard',{spec:''+this.dataset.spec,pid:''+this.dataset.pid})" data-spec="${p.spec}" data-pid="${p.pid}">
+      <td>
+        <div class="prac-name" title="${p.name}">${p.name}</div>
+      </td>
+      <td><span class="pill pill-${p.spec}">${p.spec==='ortho'?'Ortho':p.spec==='cardio'?'Cardio':'GI'}</span></td>
+      <td><span class="pill ${tierCls[p.tier]}">${tierLabel[p.tier]}</span></td>
+      <td>
+        <div class="met-bar">
+          <div class="met-bg"><div class="met-fill" style="width:${p.convRate*100}%;background:${p.convRate<0.6?'#c8354a':p.convRate<0.70?'#b8720e':'#007d6e'}"></div></div>
+          <span class="met-val" style="color:${p.convRate<0.6?'var(--rose)':p.convRate<0.70?'var(--gold)':'var(--teal)'}">${(p.convRate*100).toFixed(0)}%</span>
+        </div>
+      </td>
+      <td>
+        <span class="met-val" style="color:${p.mttaDays>70?'var(--rose)':p.mttaDays>50?'var(--gold)':'var(--teal)'}">${p.mttaDays}d</span>
+      </td>
+      <td>
+        <span class="met-val" style="color:${p.oonProcRate>0.25?'var(--rose)':p.oonProcRate>0.15?'var(--gold)':'var(--teal)'}">${(p.oonProcRate*100).toFixed(0)}%</span>
+      </td>
+      <td>
+        <div class="met-bar">
+          <div class="met-bg" style="min-width:50px"><div class="met-fill" style="width:${riskPct}%;background:${riskColor}"></div></div>
+          <span class="met-val" style="color:${riskColor}">${p.risk>0.35?'HIGH':p.risk>0.25?'MED':'LOW'}</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Chart helpers ───────────────────────────────────────────────
+function miniChartOpts() {
+  return { responsive:true, maintainAspectRatio:false, animation:false,
+    plugins:{ tooltip:{backgroundColor:'#fff',titleColor:'#0f1e2e',bodyColor:'#4a6080',
+      borderColor:'rgba(15,30,60,.12)',borderWidth:1,padding:8} }
+  };
+}
+function axisOpts() {
+  return { grid:{color:'rgba(15,30,60,.05)'}, ticks:{color:'#8aa0b8',font:{size:9,family:'Outfit'}} };
+}
+function noLegend() { return { legend:{display:false} }; }
+
+// ── Navigation with filter pre-application ──────────────────────
+function handleCTA(btn) {
+  var tab = btn.getAttribute('data-tab');
+  var filterState = {};
+  try { filterState = JSON.parse(btn.getAttribute('data-filter') || '{}'); } catch(e) {}
+  navigateTo(tab, filterState);
+}
+
+function navigateTo(tab, filterState) {
+  // Primary: call parent switchTab directly (works because srcdoc shares parent origin)
+  try {
+    if (window.parent && window.parent.switchTab) {
+      window.parent.switchTab(tab);
+      // After frame loads, send filter state into it
+      setTimeout(function() {
+        try {
+          var frame = window.parent.document.getElementById('frame-' + tab);
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({ type: 'apply-filters', filterState: filterState }, '*');
+          }
+        } catch(e2) {}
+      }, 700);
+      return;
+    }
+  } catch(e) {}
+  // Fallback: postMessage to parent window
+  try {
+    window.parent.postMessage({ type: 'carepathiq-navigate', tab: tab, filterState: filterState }, '*');
+  } catch(e) {}
+}
+
+// ── Full render ─────────────────────────────────────────────────
+function render() {
+  renderKPIs();
+  renderInsights();
+  renderMonthlyChart();
+  renderPracticeTable();
+}
+
+render();
+
+// Notify parent suite of this tab's system name for CTA widget
+(function() {
+  if (typeof SYS_NAME !== 'undefined') {
+    window.parent.postMessage({ type: 'sys-name', value: SYS_NAME }, '*');
+  }
+})();
+</script>
+</body>
+</html>

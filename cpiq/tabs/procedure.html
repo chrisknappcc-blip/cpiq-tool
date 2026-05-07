@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarePath IQ Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#f7f9fc; --surface:#fff; --sidebar:#f1f4f8;
+  --text:#0f1e2e; --text2:#4a6080; --text3:#8aa0b8;
+  --border:rgba(15,30,60,.09); --border2:rgba(15,30,60,.05);
+  --teal:#007d6e; --teal-lt:#e6f4f2; --teal-mid:#009e8c;
+  --gold:#b8720e; --gold-lt:#fdf3e2;
+  --rose:#c8354a; --rose-lt:#fdeef0;
+  --blue:#1a56b0; --blue-lt:#e8f0ff;
+  --purple:#6a42b8; --purple-lt:#f0eaff;
+  --shadow:0 1px 4px rgba(15,30,60,.07),0 4px 16px rgba(15,30,60,.04);
+  --shadow-sm:0 1px 3px rgba(15,30,60,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
+header{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);height:60px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.hd-left{display:flex;align-items:center;gap:14px}
+.prisma-logo{display:flex;align-items:center;gap:9px}
+.prisma-logo svg{width:32px;height:32px}
+.prisma-wordmark{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);letter-spacing:.01em}
+.prisma-wordmark span{color:var(--teal)}
+.hd-divider{width:1px;height:28px;background:var(--border);margin:0 4px}
+.hd-title{font-size:13px;color:var(--text2);font-weight:400}
+.hd-right{display:flex;align-items:center;gap:10px}
+.badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;font-family:'DM Mono',monospace}
+.badge-teal{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(0,125,110,.2)}
+.badge-blue{background:var(--blue-lt);color:var(--blue);border:1px solid rgba(26,86,176,.2)}
+.hd-period{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.shell{display:flex;min-height:calc(100vh - 60px)}
+/* SIDEBAR */
+aside{width:230px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);padding:14px 0;overflow-y:auto;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.s-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:0 14px;margin-bottom:7px}
+.s-divider{height:1px;background:var(--border);margin:10px 0}
+.spec-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 14px;border:1px solid transparent;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;background:transparent;margin-bottom:1px}
+.spec-btn:hover{background:rgba(0,125,110,.05)}
+.spec-btn.active{background:var(--teal-lt);border-left:3px solid var(--teal)}
+.spec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.spec-name{font-size:12px;font-weight:500;color:var(--text);text-align:left}
+.spec-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-left:auto}
+.filter-section{padding:0 14px;margin-bottom:10px}
+.filter-select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:6px;font-size:11px;font-family:'Outfit',sans-serif;appearance:none;cursor:pointer;box-shadow:var(--shadow-sm);margin-bottom:6px}
+.filter-select:focus{outline:none;border-color:var(--teal)}
+.chip-row{display:flex;flex-wrap:wrap;gap:4px;padding:0 14px;margin-bottom:8px}
+.chip{font-size:10px;padding:3px 8px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;font-weight:500}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.chip.active{background:var(--teal-lt);border-color:rgba(0,125,110,.3);color:var(--teal)}
+.chip.gold.active{background:var(--gold-lt);border-color:rgba(184,114,14,.3);color:var(--gold)}
+.chip.rose.active{background:var(--rose-lt);border-color:rgba(200,53,74,.3);color:var(--rose)}
+.chip.blue.active{background:var(--blue-lt);border-color:rgba(26,86,176,.3);color:var(--blue)}
+/* MAIN */
+main{flex:1;padding:18px 22px;overflow-y:auto}
+/* KPI CARDS */
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px 16px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .2s}
+.kpi-card:hover{box-shadow:0 4px 20px rgba(15,30,60,.1)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.c-teal::before{background:var(--teal)}
+.kpi-card.c-blue::before{background:var(--blue)}
+.kpi-card.c-gold::before{background:var(--gold)}
+.kpi-card.c-rose::before{background:var(--rose)}
+.kpi-card.c-purple::before{background:var(--purple)}
+.kpi-lbl{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:6px}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);line-height:1;margin-bottom:4px}
+.kpi-meta{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px}
+.delta{font-size:10px;font-weight:700;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:3px}
+.d-up{color:var(--teal);background:var(--teal-lt)}
+.d-dn{color:var(--rose);background:var(--rose-lt)}
+/* LAYOUT */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.full{margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);transition:box-shadow .2s}
+.card:hover{box-shadow:0 4px 20px rgba(15,30,60,.1)}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.card-title{font-family:'DM Serif Display',serif;font-size:14px;color:var(--text)}
+.card-subtitle{font-size:11px;color:var(--text2);margin-top:2px}
+.card-badge{font-size:10px;font-family:'DM Mono',monospace;color:var(--teal);background:var(--teal-lt);border:1px solid rgba(0,125,110,.18);padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+/* SOURCE BARS */
+.source-bars{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.src-row{display:flex;align-items:center;gap:8px}
+.src-name{font-size:11px;color:var(--text2);width:170px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-bar-bg{flex:1;height:7px;background:rgba(15,30,60,.07);border-radius:4px;overflow:hidden;min-width:30px}
+.src-bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.src-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);width:46px;text-align:right;font-weight:600}
+.src-pct{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:34px;text-align:right}
+/* RATE BAR */
+.rate-bar-wrap{display:flex;align-items:center;gap:8px}
+.rate-bar-bg{flex:1;height:6px;background:rgba(15,30,60,.07);border-radius:4px;overflow:hidden}
+.rate-bar-fill{height:100%;border-radius:4px;transition:width .4s}
+.rate-val{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;min-width:36px;text-align:right}
+/* TABLE */
+.ref-table{width:100%;border-collapse:collapse}
+.ref-table th{text-align:left;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:0 10px 8px 0;border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:7px 10px 7px 0;font-size:11px;border-bottom:1px solid var(--border2);vertical-align:middle}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:rgba(0,125,110,.025)}
+.dr-name{font-weight:600;color:var(--text);font-size:12px}
+.dr-spec{font-size:10px;color:var(--text3);margin-top:1px}
+.dr-practice{font-size:10px;color:var(--text2)}
+.num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);font-weight:600}
+.pill{font-size:9px;padding:2px 7px;border-radius:9px;font-weight:700;white-space:nowrap}
+.pill-t1{background:var(--teal-lt);color:var(--teal)}
+.pill-t2{background:var(--blue-lt);color:var(--blue)}
+.pill-ext{background:rgba(15,30,60,.07);color:var(--text2)}
+.pill-in{background:var(--teal-lt);color:var(--teal)}
+.pill-oon{background:var(--rose-lt);color:var(--rose)}
+.mini-bar-bg{height:3px;background:rgba(15,30,60,.08);border-radius:2px;overflow:hidden;margin-top:3px;width:60px}
+.mini-bar{height:100%;border-radius:2px}
+.rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:16px;text-align:right}
+/* PRACTICE GRID */
+.practice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.practice-card{border-radius:8px;padding:9px 11px;border:1px solid;cursor:pointer;transition:all .15s}
+.practice-card:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.practice-card.selected{box-shadow:0 0 0 2px var(--teal)}
+.pc-name{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px;line-height:1.3}
+.pc-sub{font-size:9px;color:var(--text2);margin-bottom:4px}
+.pc-bar{height:3px;background:rgba(15,30,60,.08);border-radius:2px;overflow:hidden;margin-bottom:3px}
+.pc-bar-fill{height:100%;border-radius:2px}
+.pc-meta{display:flex;justify-content:space-between;align-items:center}
+.pc-vol{font-family:'DM Mono',monospace;font-size:11px;font-weight:700}
+.pc-stat{font-size:9px;font-weight:700}
+/* PROCEDURE LIST */
+.proc-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s}
+.proc-row:last-child{border-bottom:none}
+.proc-row:hover{background:rgba(0,125,110,.03)}
+.proc-row.selected{background:var(--teal-lt)}
+.proc-left{flex:1;min-width:0}
+.proc-name{font-size:12px;font-weight:500;color:var(--text)}
+.proc-code{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px}
+.proc-right{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:12px}
+.proc-vol{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--text)}
+.proc-bar-wrap{width:80px}
+.proc-bar-bg{height:4px;background:rgba(15,30,60,.07);border-radius:2px;overflow:hidden}
+.proc-bar-fill{height:100%;border-radius:2px}
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-legend{flex:1;display:flex;flex-direction:column;gap:5px}
+.dl-row{display:flex;align-items:center;gap:7px;font-size:11px;padding:2px 4px;border-radius:4px;transition:background .1s}
+.dl-row:hover{background:rgba(15,30,60,.04)}
+.dl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.dl-name{color:var(--text2);flex:1}
+.dl-val{font-family:'DM Mono',monospace;color:var(--text);font-size:11px;font-weight:600}
+.dl-pct{font-family:'DM Mono',monospace;color:var(--text3);font-size:10px;width:30px;text-align:right}
+/* INSIGHT */
+.insight{border-radius:8px;padding:9px 13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:12px;line-height:1.65}
+.ins-teal{background:var(--teal-lt);border:1px solid rgba(0,125,110,.18);color:var(--text2)}
+.ins-rose{background:var(--rose-lt);border:1px solid rgba(200,53,74,.18);color:var(--text2)}
+.ins-gold{background:var(--gold-lt);border:1px solid rgba(184,114,14,.18);color:var(--text2)}
+.ins-blue{background:var(--blue-lt);border:1px solid rgba(26,86,176,.18);color:var(--text2)}
+.insight strong{color:var(--text);font-weight:600}
+/* LOCATION GRID */
+.loc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.loc-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)}
+.loc-row:last-child{border-bottom:none}
+.loc-row:hover{background:rgba(0,125,110,.02)}
+.loc-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.loc-icon-in{background:var(--teal-lt)}
+.loc-icon-oon{background:var(--rose-lt)}
+.loc-body{flex:1;min-width:0}
+.loc-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loc-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.loc-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.loc-count{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;min-width:40px;text-align:right}
+.loc-bar-wrap{width:70px}
+.loc-bar-bg{height:5px;background:rgba(15,30,60,.07);border-radius:3px;overflow:hidden}
+.loc-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+footer{border-top:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;font-size:10px;color:var(--text3);background:var(--surface)}
+.foot-logo{font-family:'DM Serif Display',serif;color:var(--teal)}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<script>
+/* CPIQ Data Shim */
+(function() {
+  function applyState(s) {
+    window.CPIQ = s;
+    window.SYS_NAME = s.meta ? s.meta.sysName : 'Health System';
+    window.COMPETITORS = (s.meta && s.meta.competitors) || [];
+    if (typeof window.__cpiqReady === 'function') window.__cpiqReady(s);
+  }
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cpiq-state') applyState(e.data.payload);
+    if (e.data && e.data.type === 'apply-filters' && typeof window.__applyFilters === 'function') window.__applyFilters(e.data.filterState);
+  });
+  if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
+})();
+</script></head>
+<body>
+
+<header>
+  <div class="hd-left">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain"></div>
+    </div>
+    <div class="hd-divider"></div>
+    <div class="hd-title">Downstream Procedure Intelligence</div>
+  </div>
+  <div class="hd-right">
+    <span class="badge badge-teal">CIN Network Network</span>
+    <span class="badge badge-blue">Metro Market</span>
+    <span class="hd-period" id="hd-period">CY 2025 · ~20,000 Referrals</span>
+  </div>
+</header>
+
+<div class="shell">
+<aside>
+  <!-- SPECIALTY -->
+  <div style="padding:0 0 6px">
+    <div class="s-label" style="margin-bottom:8px">Specialty</div>
+    <button class="spec-btn active" id="sb-all" onclick="setSpec('all',this)">
+      <div class="spec-dot" style="background:linear-gradient(135deg,var(--gold),var(--rose),var(--teal))"></div>
+      <span class="spec-name">All Specialties</span>
+      <span class="spec-count" id="cnt-all">—</span>
+    </button>
+    <button class="spec-btn" id="sb-ortho" onclick="setSpec('ortho',this)">
+      <div class="spec-dot" style="background:var(--gold)"></div>
+      <span class="spec-name">Orthopedics</span>
+      <span class="spec-count" id="cnt-ortho">—</span>
+    </button>
+    <button class="spec-btn" id="sb-cardio" onclick="setSpec('cardio',this)">
+      <div class="spec-dot" style="background:var(--rose)"></div>
+      <span class="spec-name">Cardiology</span>
+      <span class="spec-count" id="cnt-cardio">—</span>
+    </button>
+    <button class="spec-btn" id="sb-gi" onclick="setSpec('gi',this)">
+      <div class="spec-dot" style="background:var(--teal)"></div>
+      <span class="spec-name">Gastroenterology</span>
+      <span class="spec-count" id="cnt-gi">—</span>
+    </button>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- TIME PERIOD -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:8px">Quarter</div>
+    <div class="chip-row" style="padding:0;margin-bottom:8px">
+      <div class="chip active" id="q-all" onclick="setQuarter('all',this)">All</div>
+      <div class="chip" id="q-q1" onclick="setQuarter('Q1',this)">Q1</div>
+      <div class="chip" id="q-q2" onclick="setQuarter('Q2',this)">Q2</div>
+      <div class="chip" id="q-q3" onclick="setQuarter('Q3',this)">Q3</div>
+      <div class="chip" id="q-q4" onclick="setQuarter('Q4',this)">Q4</div>
+    </div>
+    <div class="s-label" style="margin-bottom:6px">Month</div>
+    <select class="filter-select" id="sel-month" onchange="setMonth(this.value)">
+      <option value="all">All Months</option>
+      <option value="1">January</option><option value="2">February</option>
+      <option value="3">March</option><option value="4">April</option>
+      <option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option>
+      <option value="9">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- DESTINATION TIER -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Destination Tier</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-tier-all" onclick="setTier('all',this)">All</div>
+      <div class="chip" id="ch-tier-t1" onclick="setTier('t1',this)">T1 Employed</div>
+      <div class="chip blue" id="ch-tier-t2" onclick="setTier('t2',this)">T2 CIN Network</div>
+      <div class="chip rose" id="ch-tier-oon" onclick="setTier('oon',this)">Out-of-Net</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PROCEDURE NETWORK -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Procedure Network</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-pnet-all" onclick="setProcNet('all',this)">All</div>
+      <div class="chip" id="ch-pnet-in" onclick="setProcNet('in',this)">In-Network</div>
+      <div class="chip rose" id="ch-pnet-oon" onclick="setProcNet('oon',this)">Out-of-Net</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PRACTICE FILTER -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Practice</div>
+    <select class="filter-select" id="sel-practice" onchange="setPractice(this.value)">
+      <option value="all">All Practices</option>
+    </select>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PHYSICIAN FILTER -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Physician</div>
+    <select class="filter-select" id="sel-physician" onchange="setPhysician(this.value)">
+      <option value="all">All Physicians</option>
+    </select>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PROCEDURE FILTER (for location analysis) -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Procedure (Location Filter)</div>
+    <select class="filter-select" id="sel-proc" onchange="setProc(this.value)">
+      <option value="all">All Procedures</option>
+    </select>
+  </div>
+</aside>
+
+<main>
+  <div id="main-area"></div>
+</main>
+</div>
+
+<footer>
+  <span class="foot-logo">Health System</span>
+  <span>Downstream Procedure Intelligence · CY 2025 · Metro Market SC</span>
+  <span>Analytics &amp; Strategy</span>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   PROCEDURE CATALOG — top procedures per specialty with CPT codes
+   Each has: code, name, network ('in'|'oon'), avgCost (relative)
+══════════════════════════════════════════════════════════════ */
+const PROC_CATALOG = {
+  ortho: [
+    {code:'27447',name:'Total Knee Arthroplasty',          network:'in',  wt:0.22},
+    {code:'27130',name:'Total Hip Arthroplasty',            network:'in',  wt:0.18},
+    {code:'29881',name:'Knee Arthroscopy w/ Meniscectomy',  network:'in',  wt:0.14},
+    {code:'29827',name:'Shoulder Arthroscopy w/ Rotator Cuff Repair', network:'in', wt:0.10},
+    {code:'22612',name:'Lumbar Spinal Fusion',              network:'in',  wt:0.08},
+    {code:'27487',name:'Revision Total Knee Arthroplasty',  network:'in',  wt:0.06},
+    {code:'29823',name:'Shoulder Arthroscopy Débridement',  network:'in',  wt:0.05},
+    {code:'27486',name:'Revision Total Hip Arthroplasty',   network:'oon', wt:0.05},
+    {code:'20610',name:'Joint Aspiration / Injection',       network:'oon', wt:0.07},
+    {code:'64483',name:'Transforaminal Epidural Injection',  network:'oon', wt:0.05},
+  ],
+  cardio: [
+    {code:'93458',name:'Left Heart Catheterization',         network:'in',  wt:0.20},
+    {code:'92928',name:'Percutaneous Coronary Intervention', network:'in',  wt:0.16},
+    {code:'33533',name:'CABG — Arterial',                   network:'in',  wt:0.10},
+    {code:'93306',name:'Echocardiography w/ Doppler',        network:'in',  wt:0.14},
+    {code:'93018',name:'Cardiovascular Stress Test',         network:'in',  wt:0.09},
+    {code:'33249',name:'ICD Implantation',                   network:'in',  wt:0.06},
+    {code:'93650',name:'AV Node Ablation',                   network:'in',  wt:0.05},
+    {code:'93621',name:'Electrophysiology Study',            network:'oon', wt:0.07},
+    {code:'33208',name:'Permanent Pacemaker Implantation',   network:'oon', wt:0.08},
+    {code:'93797',name:'Cardiac Rehabilitation (per session)',network:'oon', wt:0.05},
+  ],
+  gi: [
+    {code:'45378',name:'Diagnostic Colonoscopy',             network:'in',  wt:0.28},
+    {code:'45380',name:'Colonoscopy w/ Biopsy',              network:'in',  wt:0.20},
+    {code:'43239',name:'Upper GI Endoscopy w/ Biopsy',       network:'in',  wt:0.14},
+    {code:'43270',name:'Upper Endoscopy w/ Ablation',        network:'in',  wt:0.08},
+    {code:'45385',name:'Colonoscopy w/ Polypectomy',         network:'in',  wt:0.10},
+    {code:'43760',name:'Percutaneous Gastrostomy Tube',      network:'in',  wt:0.04},
+    {code:'47562',name:'Laparoscopic Cholecystectomy',       network:'oon', wt:0.07},
+    {code:'43281',name:'Laparoscopic Hiatal Hernia Repair',  network:'oon', wt:0.05},
+    {code:'45990',name:'Anorectal Procedure',                network:'oon', wt:0.04},
+  ],
+};
+
+/* ══════════════════════════════════════════════════════════════
+   PROCEDURE LOCATION CATALOG
+   network: 'in' = health system facility, 'oon' = competitor
+   type: 'hospital' | 'asc' (ambulatory surgery center)
+   specs: which specialties this location serves
+   wt_ortho / wt_cardio / wt_gi: relative volume weights within
+         in-network or oon pool for that specialty
+══════════════════════════════════════════════════════════════ */
+const PROC_LOCATIONS = [
+  /* ─── IN-NETWORK: Health System Hospitals ─── */
+  {id:'mh-dal',    name:'Health System Medical Center – City A',              city:'City A, ST',        type:'hospital', network:'in',  wt:{ortho:0.28, cardio:0.32, gi:0.30}},
+  {id:'mh-ric',    name:'Health System Medical Center – City B',          city:'City B, ST',    type:'hospital', network:'in',  wt:{ortho:0.14, cardio:0.16, gi:0.12}},
+  {id:'mh-man',    name:'Health System Medical Center – City C',           city:'City C, ST',     type:'hospital', network:'in',  wt:{ortho:0.14, cardio:0.16, gi:0.14}},
+  {id:'mh-chl',    name:'Health System Medical Center – City D',            city:'City D, ST',        type:'hospital', network:'in',  wt:{ortho:0.10, cardio:0.09, gi:0.14}},
+  {id:'mh-stl',    name:'Health System Medical Center – City E',           city:'City E, ST',     type:'hospital', network:'in',  wt:{ortho:0.06, cardio:0.07, gi:0.06}},
+  {id:'mh-mid',    name:'Health System Medical Center – City F',          city:'City F, ST',    type:'hospital', network:'in',  wt:{ortho:0.06, cardio:0.06, gi:0.08}},
+  /* ─── IN-NETWORK: Health System ASCs ─── */
+  {id:'mh-asc-dal',name:'Health System Surgery Center – City A',            city:'City A, ST',        type:'asc',      network:'in',  wt:{ortho:0.12, cardio:0.05, gi:0.10}},
+  {id:'mh-asc-man',name:'Health System Surgery Center – City B',         city:'City B, ST',     type:'asc',      network:'in',  wt:{ortho:0.08, cardio:0.04, gi:0.06}},
+  {id:'mh-asc-ric',name:'Health System Surgery Center – City C',        city:'City C, ST',    type:'asc',      network:'in',  wt:{ortho:0.02, cardio:0.05, gi:0.00}},
+  /* ─── OON: Health System ─── */
+  {id:'bsw-dal',   name:'Competitor Medical Center – City A',                  city:'City A, ST',        type:'hospital', network:'oon', wt:{ortho:0.26, cardio:0.28, gi:0.22}},
+  {id:'bsw-pla',   name:'Competitor Medical Center – City B',                   city:'City B, ST',         type:'hospital', network:'oon', wt:{ortho:0.14, cardio:0.16, gi:0.14}},
+  /* ─── OON: Medical City Healthcare (HCA) ─── */
+  {id:'mc-dal',    name:'Regional Health Medical Center – City A',                           city:'City A, ST',        type:'hospital', network:'oon', wt:{ortho:0.18, cardio:0.20, gi:0.16}},
+  {id:'mc-pla',    name:'Regional Health Medical Center – City B',                            city:'City B, ST',         type:'hospital', network:'oon', wt:{ortho:0.10, cardio:0.10, gi:0.10}},
+  {id:'mc-las',    name:'Academic Medical Center – City A',                      city:'City A, ST',        type:'hospital', network:'oon', wt:{ortho:0.08, cardio:0.06, gi:0.12}},
+  {id:'mc-asc-fri',name:'Competitor Surgery Center – City C',            city:'City C, ST',        type:'asc',      network:'oon', wt:{ortho:0.10, cardio:0.03, gi:0.04}},
+  {id:'mc-endo',   name:'Independent Endoscopy Center – City B',         city:'City B, ST',         type:'asc',      network:'oon', wt:{ortho:0.02, cardio:0.02, gi:0.10}},
+  /* ─── OON: UT Southwestern ─── */
+  {id:'utsw-ch',   name:'Academic Medical Center – City B',          city:'City B, ST',        type:'hospital', network:'oon', wt:{ortho:0.08, cardio:0.08, gi:0.06}},
+  /* ─── OON: Independent ASCs ─── */
+  {id:'txins-asc', name:'Specialty Surgical Institute – City A',          city:'City A, ST',        type:'asc',      network:'oon', wt:{ortho:0.12, cardio:0.04, gi:0.04}},
+  {id:'ntgi-asc',  name:'Independent GI Surgery Center – City D',     city:'City D, ST',     type:'asc',      network:'oon', wt:{ortho:0.02, cardio:0.02, gi:0.12}},
+  {id:'dfw-endo',  name:'Regional Endoscopy Center – City A',                 city:'City A, ST',        type:'asc',      network:'oon', wt:{ortho:0.00, cardio:0.02, gi:0.08}},
+  {id:'txhs-asc',  name:'Competitor Orthopedic Surgery Center – City A', city:'City A, ST',      type:'asc',      network:'oon', wt:{ortho:0.08, cardio:0.02, gi:0.02}},
+];
+
+/* Derive location rows for current filter state */
+function getLocationRows(filtered, k, procNetFilter){
+  const totProcVol = totalProc(filtered, k);
+  const inNetVol   = totalProcIn(filtered, k);
+  const oonVol     = totProcVol - inNetVol;
+
+  // If a specific procedure is selected, scale the pool by that procedure's share
+  let inPool  = inNetVol;
+  let oonPool = oonVol;
+  if(state.procName !== 'all'){
+    const catalog = (k==='all') ? [...PROC_CATALOG.ortho,...PROC_CATALOG.cardio,...PROC_CATALOG.gi] : PROC_CATALOG[k];
+    const proc = catalog.find(p=>p.code===state.procName);
+    if(proc){
+      // proc.wt is its share of total procedure volume
+      // Split in-net / oon using the same logic as getProcRows
+      const procTotalVol = Math.round(totProcVol * proc.wt);
+      const procInVol  = proc.network==='in' ? Math.round(procTotalVol*0.88) : Math.round(procTotalVol*0.18);
+      const procOonVol = procTotalVol - procInVol;
+      inPool  = procInVol;
+      oonPool = procOonVol;
+    }
+  }
+
+  return PROC_LOCATIONS.map(loc=>{
+    const pool = loc.network==='in' ? inPool : oonPool;
+    const wt   = loc.wt[k] || 0;
+    const normDenom = PROC_LOCATIONS
+      .filter(l=>l.network===loc.network)
+      .reduce((s,l)=>s+(l.wt[k]||0), 0);
+    const vol = normDenom > 0 ? Math.round(pool * wt / normDenom) : 0;
+    return {...loc, vol};
+  })
+  .filter(loc=>{
+    if(procNetFilter==='in')  return loc.network==='in'  && loc.vol>0;
+    if(procNetFilter==='oon') return loc.network==='oon' && loc.vol>0;
+    return loc.vol>0;
+  })
+  .sort((a,b)=>b.vol-a.vol);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SPECIALIST DATA — procRate: fraction of referrals → procedure
+   procNetSplit: fraction of those procedures done in-network
+   Ortho avg ~30%, Cardio ~22%, GI ~14% → blended ~22%
+══════════════════════════════════════════════════════════════ */
+const specialists = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : [];
+
+/* ══════════════════════════════════════════════════════
+   MONTHLY WEIGHTS — same seasonal pattern
+══════════════════════════════════════════════════════ */
+const MONTH_WEIGHTS = {
+  ortho:  [0.07,0.07,0.08,0.09,0.09,0.10,0.10,0.09,0.09,0.08,0.08,0.06],
+  cardio: [0.10,0.09,0.09,0.08,0.08,0.07,0.07,0.07,0.08,0.09,0.09,0.09],
+  gi:     [0.08,0.08,0.08,0.08,0.08,0.09,0.09,0.09,0.08,0.09,0.08,0.08],
+};
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const QUARTER_MAP = {1:'Q1',2:'Q1',3:'Q1',4:'Q2',5:'Q2',6:'Q2',7:'Q3',8:'Q3',9:'Q3',10:'Q4',11:'Q4',12:'Q4'};
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const state = { spec:'all', quarter:'all', month:'all', tier:'all', procNet:'all', procName:'all', practice:'all', physician:'all' };
+let chartInstances = {};
+function destroyCharts(){ Object.values(chartInstances).forEach(c=>{try{c.destroy()}catch(e){}}); chartInstances={}; }
+
+const specMeta = {
+  all:    {label:'All Specialties', hex:'#4a6080', color:'var(--text2)'},
+  ortho:  {label:'Orthopedics',     hex:'#b8720e', color:'var(--gold)'},
+  cardio: {label:'Cardiology',      hex:'#c8354a', color:'var(--rose)'},
+  gi:     {label:'Gastroenterology',hex:'#007d6e', color:'var(--teal)'},
+};
+const CT = {
+  legend:{color:'#4a6080',font:{family:'Outfit',size:10},boxWidth:9,boxHeight:9},
+  tooltip:{backgroundColor:'#fff',titleColor:'#0f1e2e',bodyColor:'#4a6080',borderColor:'rgba(15,30,60,.12)',borderWidth:1,padding:10},
+  tick:'#8aa0b8', grid:'rgba(15,30,60,.07)',
+};
+
+/* ══════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════ */
+function getMonthlyRef(s, specKey, month){
+  return Math.round(s.refs[specKey] * MONTH_WEIGHTS[specKey][month-1]);
+}
+function getActiveMonths(){
+  if(state.month!=='all') return [parseInt(state.month)];
+  if(state.quarter!=='all') return [1,2,3,4,5,6,7,8,9,10,11,12].filter(m=>QUARTER_MAP[m]===state.quarter);
+  return [1,2,3,4,5,6,7,8,9,10,11,12];
+}
+function getRefTotal(s,specKey){
+  if(!specKey||specKey==='all') specKey=s.spec;
+  return getActiveMonths().reduce((sum,m)=>sum+getMonthlyRef(s,specKey,m),0);
+}
+function getProcVol(s,specKey){
+  return Math.round(getRefTotal(s,specKey)*s.procRate);
+}
+function getProcInNet(s,specKey){
+  return Math.round(getProcVol(s,specKey)*s.procNetSplit);
+}
+function getProcOon(s,specKey){
+  return getProcVol(s,specKey) - getProcInNet(s,specKey);
+}
+function totalRef(list,k){ return list.reduce((s,p)=>s+getRefTotal(p, k||p.spec),0); }
+function totalProc(list,k){ return list.reduce((s,p)=>s+getProcVol(p,k),0); }
+function totalProcIn(list,k){ return list.reduce((s,p)=>s+getProcInNet(p,k),0); }
+function weightedProcRate(list,k){
+  const r=totalRef(list,k); if(!r) return 0;
+  return list.reduce((s,p)=>s+p.procRate*getRefTotal(p, k||p.spec),0)/r;
+}
+function weightedNetSplit(list,k){
+  const p=totalProc(list,k); if(!p) return 0;
+  return list.reduce((s,sp)=>s+getProcInNet(sp,k),0)/p;
+}
+function fmt(n){ return Math.round(n).toLocaleString(); }
+function pct(n,d){ return d?Math.round(n/d*100):0; }
+function fmtPct(r){ return Math.round(r*100)+'%'; }
+function rateColor(r,spec){
+  const hi = spec==='ortho'?0.28:spec==='cardio'?0.22:0.15;
+  const lo = spec==='ortho'?0.16:spec==='cardio'?0.12:0.08;
+  return r>=hi?'var(--teal)':r>=lo?'var(--gold)':'var(--rose)';
+}
+function netColor(split){ return split>=0.80?'var(--teal)':split>=0.60?'var(--gold)':'var(--rose)'; }
+
+/* ══════════════════════════════════════════════════════
+   FILTER ENGINE
+══════════════════════════════════════════════════════ */
+function filteredSpecialists(){
+  const k = state.spec;
+  return specialists.filter(s=>{
+    if(k!=='all' && s.spec!==k) return false;
+    if(getRefTotal(s, k==='all' ? s.spec : k)===0) return false;
+    if(state.tier!=='all' && s.tier!==state.tier) return false;
+    if(state.practice!=='all' && s.pid!==state.practice) return false;
+    if(state.physician!=='all' && s.id!==state.physician) return false;
+    return true;
+  });
+}
+
+/* Procedure catalog rows — filtered by procNet state */
+function getProcRows(list, k){
+  const catalog = (k==='all') ? [...PROC_CATALOG.ortho,...PROC_CATALOG.cardio,...PROC_CATALOG.gi] : PROC_CATALOG[k];
+  const totalProcVol = totalProc(list,k);
+  const inNetVol = totalProcIn(list,k);
+  const oonVol = totalProcVol - inNetVol;
+  return catalog.map(proc=>{
+    const vol = Math.round(totalProcVol * proc.wt);
+    const inV = proc.network==='in'
+      ? Math.round(vol * 0.88)
+      : Math.round(vol * 0.18);
+    const oonV = vol - inV;
+    return {...proc, vol, inV, oonV};
+  }).filter(p=>{
+    if(state.procNet==='in') return p.inV>0;
+    if(state.procNet==='oon') return p.oonV>0;
+    return true;
+  }).sort((a,b)=>b.vol-a.vol);
+}
+
+/* ══════════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════════ */
+function setSpec(s,el){
+  state.spec=s; state.practice='all'; state.physician='all'; state.procName='all'; state.tier='all';
+  document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setQuarter(q,el){
+  state.quarter=q; state.month='all';
+  document.getElementById('sel-month').value='all';
+  ['q-all','q-q1','q-q2','q-q3','q-q4'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setMonth(v){
+  state.month=v;
+  if(v!=='all'){ state.quarter='all'; ['q-all','q-q1','q-q2','q-q3','q-q4'].forEach(id=>document.getElementById(id).classList.remove('active')); document.getElementById('q-all').classList.add('active'); }
+  renderAll();
+}
+function setTier(t,el){
+  state.tier=t; state.practice='all'; state.physician='all';
+  ['ch-tier-all','ch-tier-t1','ch-tier-t2','ch-tier-oon'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setProcNet(v,el){
+  state.procNet=v;
+  ['ch-pnet-all','ch-pnet-in','ch-pnet-oon'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setPractice(v){ state.practice=v; state.physician='all'; document.getElementById('sel-physician').value='all'; renderAll(); }
+function setPhysician(v){ state.physician=v; renderAll(); }
+function setProc(v){ state.procName=v; renderAll(); }
+function clickProcRow(code){
+  state.procName = (state.procName===code) ? 'all' : code;
+  renderAll();
+}
+function setPracticeCard(pid){ state.practice=state.practice===pid?'all':pid; state.physician='all'; document.getElementById('sel-practice').value=state.practice; document.getElementById('sel-physician').value='all'; renderAll(); }
+
+function populateDropdowns(allForSpec){
+  const pracMap = {};
+  allForSpec.forEach(s=>{ if(!pracMap[s.pid]) pracMap[s.pid]=s.practice; });
+  const pSel=document.getElementById('sel-practice');
+  const curP=pSel.value;
+  pSel.innerHTML='<option value="all">All Practices</option>';
+  Object.entries(pracMap).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([pid,name])=>{
+    const o=document.createElement('option'); o.value=pid; o.textContent=name;
+    if(pid===curP) o.selected=true; pSel.appendChild(o);
+  });
+  const phSel=document.getElementById('sel-physician');
+  const curPh=phSel.value;
+  phSel.innerHTML='<option value="all">All Physicians</option>';
+  allForSpec.filter(s=>state.practice==='all'||s.pid===state.practice).sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
+    const o=document.createElement('option'); o.value=s.id; o.textContent=s.name;
+    if(s.id===curPh) o.selected=true; phSel.appendChild(o);
+  });
+  // Procedure dropdown — populated from catalog for the current specialty
+  const procSel=document.getElementById('sel-proc');
+  const curProc=procSel.value;
+  procSel.innerHTML='<option value="all">All Procedures</option>';
+  (PROC_CATALOG[state.spec]||[]).forEach(proc=>{
+    const o=document.createElement('option'); o.value=proc.code;
+    o.textContent=`${proc.name} (CPT ${proc.code})`;
+    if(proc.code===curProc) o.selected=true; procSel.appendChild(o);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════ */
+function renderAll(){
+  destroyCharts();
+  updateSidebarCounts();
+  const k = state.spec;
+  const sm = specMeta[k] || specMeta['ortho'];
+  const filtered = filteredSpecialists();
+  const allForSpec = (k==='all') ? specialists : specialists.filter(s=>s.spec===k);
+  populateDropdowns(allForSpec);
+
+  const t1list  = filtered.filter(s=>s.tier==='t1');
+  const t2list  = filtered.filter(s=>s.tier==='t2');
+  const oonlist = filtered.filter(s=>s.tier==='oon');
+
+  const totRef    = totalRef(filtered,k);
+  const kpiTotal = (()=>{
+    const mos=getActiveMonths(), specs=state.spec==='all'?['ortho','cardio','gi']:[state.spec];
+    return specs.reduce((t,sp)=>{
+      const mw=mos.reduce((s,m)=>s+MONTH_WEIGHTS[sp][m-1],0);
+      return t+specialists.filter(s=>s.spec===sp).reduce((s2,s)=>s2+Math.round((s.refs[sp]||0)*mw),0);
+    },0);
+  })();
+  const totProc   = totalProc(filtered,k);
+  const totProcIn = totalProcIn(filtered,k);
+  const totProcOon= totProc - totProcIn;
+  const avgRate   = weightedProcRate(filtered,k);
+  const avgNetSplit = totProc?totProcIn/totProc:0;
+
+  const t1Rate  = weightedProcRate(t1list,k);
+  const t2Rate  = weightedProcRate(t2list,k);
+  const oonRate = weightedProcRate(oonlist,k);
+  const t1Ref   = totalRef(t1list,k);
+  const t2Ref   = totalRef(t2list,k);
+  const oonRef  = totalRef(oonlist,k);
+  const t1Proc  = totalProc(t1list,k);
+  const t2Proc  = totalProc(t2list,k);
+  const oonProc = totalProc(oonlist,k);
+  const t1NetSplit  = weightedNetSplit(t1list,k);
+  const t2NetSplit  = weightedNetSplit(t2list,k);
+  const oonNetSplit = weightedNetSplit(oonlist,k);
+
+  // Practice aggregation
+  const pracMap = {};
+  filtered.forEach(s=>{
+    const vol=getRefTotal(s, k||s.spec), pv=getProcVol(s,k), pin=getProcInNet(s,k);
+    if(!pracMap[s.pid]) pracMap[s.pid]={name:s.practice,pid:s.pid,tier:s.tier,refs:0,procs:0,procsIn:0,count:0};
+    pracMap[s.pid].refs+=vol; pracMap[s.pid].procs+=pv; pracMap[s.pid].procsIn+=pin; pracMap[s.pid].count++;
+  });
+  const practices = Object.values(pracMap).map(p=>({...p,rate:p.refs?p.procs/p.refs:0,netSplit:p.procs?p.procsIn/p.procs:0})).sort((a,b)=>b.procs-a.procs);
+  const maxPProc = practices.length?practices[0].procs:1;
+
+  const sorted = [...filtered].sort((a,b)=>getProcVol(b,k)-getProcVol(a,k)).slice(0,15);
+  const maxDocProc = sorted.length?getProcVol(sorted[0],k):1;
+
+  const procRows = getProcRows(filtered,k);
+  const maxProcVol = procRows.length?procRows[0].vol:1;
+
+  const practiceColors = {
+    t1:{bg:'var(--teal-lt)',border:'rgba(0,125,110,.22)',dot:'var(--teal)',label:'T1 Employed'},
+    t2:{bg:'var(--blue-lt)',border:'rgba(26,86,176,.2)', dot:'var(--blue)',label:'T2 CIN Network'},
+    oon:{bg:'rgba(15,30,60,.04)',border:'var(--border)', dot:'var(--text3)',label:'OON'},
+  };
+
+  // Highest/lowest proc rate physicians
+  const sortedByRate = [...filtered].sort((a,b)=>b.procRate-a.procRate);
+  const topRateDoc = sortedByRate[0];
+  const botRateDoc = sortedByRate[sortedByRate.length-1];
+
+  let periodLabel='CY 2025';
+  if(state.month!=='all') periodLabel=MONTH_NAMES[parseInt(state.month)-1]+' 2025';
+  else if(state.quarter!=='all') periodLabel=state.quarter+' 2025';
+  document.getElementById('hd-period').textContent=periodLabel+' · ~20,000 Referrals';
+
+  document.getElementById('main-area').innerHTML = `
+  <!-- KPI ROW -->
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-bottom:16px">
+    <div class="kpi-card c-${k==='ortho'?'gold':k==='cardio'?'rose':'teal'}">
+      <div class="kpi-lbl">${sm.label} Referrals</div>
+      <div class="kpi-val">${fmt(kpiTotal)}</div>
+      <div class="kpi-meta">${filtered.length} specialists</div>
+    </div>
+    <div class="kpi-card c-purple">
+      <div class="kpi-lbl">Total Procedures</div>
+      <div class="kpi-val">${fmt(totProc)}</div>
+      <div class="kpi-meta">within 120 days</div>
+    </div>
+    <div class="kpi-card c-${avgRate>=0.22?'teal':'gold'}">
+      <div class="kpi-lbl">Avg Procedure Rate</div>
+      <div class="kpi-val" style="color:${rateColor(avgRate,k)}">${fmtPct(avgRate)}</div>
+      <div class="kpi-meta">of referrals → procedure</div>
+    </div>
+    <div class="kpi-card c-teal">
+      <div class="kpi-lbl">In-Network Procedures</div>
+      <div class="kpi-val">${fmt(totProcIn)}</div>
+      <div class="kpi-meta">${pct(totProcIn,totProc)}% of all procedures</div>
+    </div>
+    <div class="kpi-card c-rose">
+      <div class="kpi-lbl">Out-of-Network Procs</div>
+      <div class="kpi-val">${fmt(totProcOon)}</div>
+      <div class="kpi-meta">${pct(totProcOon,totProc)}% procedure leakage</div>
+    </div>
+    <div class="kpi-card c-blue">
+      <div class="kpi-lbl">In-Net Capture Rate</div>
+      <div class="kpi-val" style="color:${netColor(avgNetSplit)}">${fmtPct(avgNetSplit)}</div>
+      <div class="kpi-meta">of procedures in-network</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Tier breakdown + Procedure donut -->
+  <div class="grid-2" style="align-items:start">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Procedure Rate by Tier</div>
+          <div class="card-subtitle">Referrals, procedures, rate &amp; network capture by tier</div>
+        </div>
+        <span class="card-badge">${fmt(totProc)} procedures</span>
+      </div>
+      <div class="source-bars">
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">PROCEDURE RATE BY TIER</div>
+        <div class="src-row">
+          <div class="src-name">T1 · Employed</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(t1Rate/0.40*100)}%;background:var(--teal)"></div></div>
+          <div class="src-val" style="color:${rateColor(t1Rate,k)}">${fmtPct(t1Rate)}</div>
+          <div class="src-pct" style="color:var(--text3);font-size:9px">${fmt(t1Proc)} procs</div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">T2 · CIN Network Affiliated</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(t2Rate/0.40*100)}%;background:var(--blue)"></div></div>
+          <div class="src-val" style="color:${rateColor(t2Rate,k)}">${fmtPct(t2Rate)}</div>
+          <div class="src-pct" style="color:var(--text3);font-size:9px">${fmt(t2Proc)} procs</div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Out-of-Network</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(oonRate/0.40*100)}%;background:var(--rose)"></div></div>
+          <div class="src-val" style="color:${rateColor(oonRate,k)}">${fmtPct(oonRate)}</div>
+          <div class="src-pct" style="color:var(--text3);font-size:9px">${fmt(oonProc)} procs</div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:6px 0"></div>
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">IN-NETWORK PROCEDURE CAPTURE BY TIER</div>
+        <div class="src-row">
+          <div class="src-name">T1 · Employed</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(t1NetSplit*100)}%;background:var(--teal)"></div></div>
+          <div class="src-val" style="color:${netColor(t1NetSplit)}">${fmtPct(t1NetSplit)}</div>
+          <div class="src-pct"></div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">T2 · CIN Network</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(t2NetSplit*100)}%;background:var(--blue)"></div></div>
+          <div class="src-val" style="color:${netColor(t2NetSplit)}">${fmtPct(t2NetSplit)}</div>
+          <div class="src-pct"></div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Out-of-Network</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${Math.round(oonNetSplit*100)}%;background:var(--rose)"></div></div>
+          <div class="src-val" style="color:${netColor(oonNetSplit)}">${fmtPct(oonNetSplit)}</div>
+          <div class="src-pct"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="margin-bottom:10px">
+        <div>
+          <div class="card-title">Procedure Volume Mix</div>
+          <div class="card-subtitle">In-network vs. out-of-network procedure distribution</div>
+        </div>
+      </div>
+      <div class="donut-wrap" style="margin-bottom:16px">
+        <div style="width:130px;height:130px;flex-shrink:0"><canvas id="procDonut"></canvas></div>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#007d6e"></div><span class="dl-name">T1 In-Net Procedures</span><span class="dl-val">${fmt(totalProcIn(t1list,k))}</span><span class="dl-pct">${pct(totalProcIn(t1list,k),totProc)}%</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#009e8c"></div><span class="dl-name">T1 OON Procedures</span><span class="dl-val">${fmt(t1Proc-totalProcIn(t1list,k))}</span><span class="dl-pct">${pct(t1Proc-totalProcIn(t1list,k),totProc)}%</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#1a56b0"></div><span class="dl-name">T2 In-Net Procedures</span><span class="dl-val">${fmt(totalProcIn(t2list,k))}</span><span class="dl-pct">${pct(totalProcIn(t2list,k),totProc)}%</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#4a80e0"></div><span class="dl-name">T2 OON Procedures</span><span class="dl-val">${fmt(t2Proc-totalProcIn(t2list,k))}</span><span class="dl-pct">${pct(t2Proc-totalProcIn(t2list,k),totProc)}%</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#c8354a"></div><span class="dl-name">OON In-Net Procedures</span><span class="dl-val">${fmt(totalProcIn(oonlist,k))}</span><span class="dl-pct">${pct(totalProcIn(oonlist,k),totProc)}%</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#e88098"></div><span class="dl-name">OON Leakage Procs</span><span class="dl-val">${fmt(oonProc-totalProcIn(oonlist,k))}</span><span class="dl-pct">${pct(oonProc-totalProcIn(oonlist,k),totProc)}%</span></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border2);padding-top:12px">
+        <div class="card-title" style="font-size:13px;margin-bottom:10px">Procedure Rate by Practice</div>
+        <div class="source-bars">
+          ${practices.slice(0,6).map(p=>{
+            const rc=rateColor(p.rate,k); const nc=netColor(p.netSplit);
+            return `<div style="margin-bottom:5px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+                <span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>
+                <span style="font-family:'DM Mono',monospace;font-size:10px;color:${nc};font-weight:600;margin-left:8px">${fmtPct(p.netSplit)} in-net</span>
+              </div>
+              <div class="rate-bar-wrap">
+                <div class="rate-bar-bg"><div class="rate-bar-fill" style="width:${p.rate/0.40*100}%;background:${rc}"></div></div>
+                <span class="rate-val" style="color:${rc}">${fmtPct(p.rate)}</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Practice grid -->
+  <div class="card full">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Procedure Rate by Physician Practice</div>
+        <div class="card-subtitle">${sm.label} practices · Procedures, rate &amp; network capture · Click to filter</div>
+      </div>
+      <span class="card-badge">${practices.length} practices</span>
+    </div>
+    <div class="practice-grid">
+      ${practices.map(pr=>{
+        const pc=practiceColors[pr.tier];
+        const rc=rateColor(pr.rate,k); const nc=netColor(pr.netSplit);
+        const isSelected=state.practice===pr.pid;
+        return `<div class="practice-card ${isSelected?'selected':''}" style="background:${pc.bg};border-color:${pc.border}" onclick="setPracticeCard('${pr.pid}')">
+          <div class="pc-name">${pr.name}</div>
+          <div class="pc-sub">${pr.count} specialist${pr.count>1?'s':''} · ${pc.label}</div>
+          <div class="pc-bar"><div class="pc-bar-fill" style="width:${pr.procs/maxPProc*100}%;background:${pc.dot}"></div></div>
+          <div class="pc-meta">
+            <span class="pc-vol" style="color:${pc.dot}">${fmt(pr.procs)} procs</span>
+            <span style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">
+              <span class="pc-stat" style="color:${rc}">Rate: ${fmtPct(pr.rate)}</span>
+              <span class="pc-stat" style="color:${nc}">In-Net: ${fmtPct(pr.netSplit)}</span>
+            </span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <!-- ROW 3: Top Downstream Procedures (interactive) + Procedure Locations -->
+  <div class="grid-2" style="align-items:start">
+
+    <!-- LEFT: Top Downstream Procedures table -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top Downstream Procedures</div>
+          <div class="card-subtitle">${sm.label} · Click a row to filter locations</div>
+        </div>
+        <span class="card-badge">${fmt(procRows.slice(0,15).reduce((s,p)=>s+p.vol,0))} procedures</span>
+      </div>
+      <table class="ref-table" style="table-layout:fixed;width:100%">
+        <colgroup>
+          <col style="width:auto">
+          <col style="width:64px">
+          <col style="width:64px">
+          <col style="width:56px">
+          <col style="width:40px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th style="padding-left:14px">Procedure</th>
+            <th style="text-align:right">Total</th>
+            <th style="text-align:right;color:var(--teal)">In-Net</th>
+            <th style="text-align:right;color:var(--rose)">OON</th>
+            <th style="text-align:right;padding-right:14px">In%</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(()=>{
+            const top10 = procRows.slice(0,15);
+            const maxVol = top10[0]?top10[0].vol:1;
+            return top10.map((proc,i)=>{
+              const isOon = proc.network==='oon';
+              const inPct = proc.vol?Math.round(proc.inV/proc.vol*100):0;
+              const isSel = state.procName===proc.code;
+              const pctC  = inPct>=80?'var(--teal)':inPct>=60?'var(--gold)':'var(--rose)';
+              return '<tr onclick="clickProcRow(\''+proc.code+'\')" style="cursor:pointer;'+(isSel?'background:var(--teal-lt)':'')+'">'
+                +'<td style="padding-left:'+(isSel?'11':'14')+'px;border-left:3px solid '+(isSel?'var(--teal)':'transparent')+';padding-right:8px">'
+                  +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">'
+                    +'<span class="dr-name" style="font-size:11px;font-weight:600">'+proc.name+'</span>'
+                    +(isOon?'<span class="pill pill-oon">OON</span>':'')
+                  +'</div>'
+                  +'<div class="proc-bar-bg" style="width:100%"><div class="proc-bar-fill" style="width:'+(proc.vol/maxVol*100)+'%;background:'+(isOon?'var(--rose)':'var(--teal)')+'"></div></div>'
+                +'</td>'
+                +'<td style="text-align:right"><div class="num">'+fmt(proc.vol)+'</div></td>'
+                +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:600;color:var(--teal)">'+fmt(proc.inV)+'</td>'
+                +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:600;color:'+(proc.oonV>0?'var(--rose)':'var(--text3)')+'">'+fmt(proc.oonV)+'</td>'
+                +'<td style="text-align:right;padding-right:14px;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:600;color:'+pctC+'">'+inPct+'%</td>'
+              +'</tr>';
+            }).join('');
+          })()}
+        </tbody>
+      </table>
+      ${state.procName!=='all'?'<div style="padding:7px 14px;border-top:1px solid var(--border2);background:var(--teal-lt);font-size:10px;color:var(--teal);cursor:pointer" onclick="clickProcRow(state.procName)">✕  Clear selection</div>':''}
+    </div>
+
+    <!-- RIGHT: Procedure Locations table -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Procedure Locations</div>
+          <div class="card-subtitle">${state.procName==='all'?'All procedures · Click a row on the left to filter':'Filtered to selected procedure'}</div>
+        </div>
+        <span class="card-badge" style="${state.procName!=='all'?'background:var(--teal-lt);color:var(--teal);border-color:rgba(0,125,110,.2)':''}">${state.procName==='all'?'All':'Selected'}</span>
+      </div>
+      ${(()=>{
+        const locRows   = getLocationRows(filtered, k, state.procNet).slice(0,15);
+        const inVol     = locRows.filter(l=>l.network==='in').reduce((s,l)=>s+l.vol,0);
+        const oonVol    = locRows.filter(l=>l.network==='oon').reduce((s,l)=>s+l.vol,0);
+        const tot       = (inVol+oonVol)||1;
+        const maxLocVol = locRows.length?locRows[0].vol:1;
+        return '<div style="display:flex;border-bottom:1px solid var(--border2)">'
+          +'<div style="flex:1;padding:10px 14px;border-right:1px solid var(--border2)">'
+            +'<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px">In-Network</div>'
+            +'<div style="font-family:\'DM Serif Display\',serif;font-size:20px;color:var(--teal);line-height:1">'+fmt(inVol)+'</div>'
+            +'<div style="font-size:10px;color:var(--text3);margin-top:2px">'+Math.round(inVol/tot*100)+'% of procedures</div>'
+          +'</div>'
+          +'<div style="flex:1;padding:10px 14px">'
+            +'<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin-bottom:3px">Out-of-Network</div>'
+            +'<div style="font-family:\'DM Serif Display\',serif;font-size:20px;color:var(--rose);line-height:1">'+fmt(oonVol)+'</div>'
+            +'<div style="font-size:10px;color:var(--text3);margin-top:2px">'+Math.round(oonVol/tot*100)+'% of procedures</div>'
+          +'</div>'
+        +'</div>'
+        +'<table class="ref-table" style="table-layout:fixed;width:100%">'
+        +'<colgroup><col style="width:auto"><col style="width:52px"><col style="width:56px"><col style="width:40px"></colgroup>'
+        +'<thead><tr>'
+          +'<th style="padding-left:14px">Facility</th>'
+          +'<th style="text-align:center">Network</th>'
+          +'<th style="text-align:right">Volume</th>'
+          +'<th style="text-align:right;padding-right:14px">Pct</th>'
+        +'</tr></thead>'
+        +'<tbody>'
+        +locRows.map(loc=>{
+          const isIn = loc.network==='in';
+          return '<tr>'
+            +'<td style="padding-left:14px;padding-right:8px">'
+              +'<div class="dr-name" style="font-size:11px;font-weight:600;margin-bottom:2px">'+loc.name+'</div>'
+              +'<div class="dr-spec">'+loc.city+' · '+(loc.type==='asc'?'ASC':'Hospital')+'</div>'
+              +'<div class="proc-bar-bg" style="width:100%;margin-top:3px"><div class="proc-bar-fill" style="width:'+(loc.vol/maxLocVol*100)+'%;background:'+(isIn?'#007d6e':'#c8354a')+'"></div></div>'
+            +'</td>'
+            +'<td style="text-align:center"><span class="pill '+(isIn?'pill-in':'pill-oon')+'">'+(isIn?'In-Net':'OON')+'</span></td>'
+            +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:600;color:'+(isIn?'var(--teal)':'var(--rose)')+'">'+fmt(loc.vol)+'</td>'
+            +'<td style="text-align:right;padding-right:14px;font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text3)">'+Math.round(loc.vol/tot*100)+'%</td>'
+          +'</tr>';
+        }).join('')
+        +'</tbody></table>';
+      })()}
+    </div>
+  </div>
+
+  <!-- ROW 4: Physician detail table -->
+  <div class="card full">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Downstream Procedure Detail by Physician</div>
+        <div class="card-subtitle">${sm.label} · ${filtered.length} specialists · Ranked by procedure volume</div>
+      </div>
+      <span class="card-badge">Top 15 by procedures</span>
+    </div>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Specialist</th>
+          <th>Practice</th>
+          <th>Tier</th>
+          <th style="text-align:right">Referrals</th>
+          <th style="text-align:right">Procedures</th>
+          <th style="min-width:120px">Procedure Rate</th>
+          <th style="text-align:right">In-Net Procs</th>
+          <th style="text-align:right">OON Procs</th>
+          <th style="min-width:110px">In-Net Capture</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map((s,i)=>{
+          const vol=getRefTotal(s, k||s.spec);
+          const procs=getProcVol(s,k);
+          const procsIn=getProcInNet(s,k);
+          const procsOon=procs-procsIn;
+          const rc=rateColor(s.procRate,k);
+          const nc=netColor(s.procNetSplit);
+          return `<tr>
+            <td class="rank">${i+1}</td>
+            <td><div class="dr-name">${s.name}</div><div class="dr-spec">${s.city}</div></td>
+            <td><div class="dr-practice">${s.practice}</div></td>
+            <td>${s.tier==='t1'?'<span class="pill pill-t1">T1 Employed</span>':s.tier==='t2'?'<span class="pill pill-t2">T2 Affiliated</span>':'<span class="pill pill-ext">Out-of-Net</span>'}</td>
+            <td style="text-align:right"><div class="num">${fmt(vol)}</div></td>
+            <td style="text-align:right">
+              <div class="num">${fmt(procs)}</div>
+              <div class="mini-bar-bg" style="margin-left:auto"><div class="mini-bar" style="width:${procs/maxDocProc*100}%;background:${sm.hex}"></div></div>
+            </td>
+            <td>
+              <div class="rate-bar-wrap">
+                <div class="rate-bar-bg"><div class="rate-bar-fill" style="width:${s.procRate/0.40*100}%;background:${rc}"></div></div>
+                <span class="rate-val" style="color:${rc}">${fmtPct(s.procRate)}</span>
+              </div>
+            </td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--teal)">${fmt(procsIn)}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:${procsOon>0?'var(--rose)':'var(--text3)'}">${fmt(procsOon)}</td>
+            <td>
+              <div class="rate-bar-wrap">
+                <div class="rate-bar-bg"><div class="rate-bar-fill" style="width:${Math.round(s.procNetSplit*100)}%;background:${nc}"></div></div>
+                <span class="rate-val" style="color:${nc}">${fmtPct(s.procNetSplit)}</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ROW 5: Procedure Location Analysis -->
+  ${(()=>{
+    const locRows = getLocationRows(filtered, k, state.procNet);
+    const maxLocVol = locRows.length ? locRows[0].vol : 1;
+    const totalLocVol = locRows.reduce((s,l)=>s+l.vol,0);
+    const inNetLocs  = locRows.filter(l=>l.network==='in');
+    const oonLocs    = locRows.filter(l=>l.network==='oon');
+    const inNetLocVol = inNetLocs.reduce((s,l)=>s+l.vol,0);
+    const oonLocVol   = oonLocs.reduce((s,l)=>s+l.vol,0);
+
+    return `
+  <div style="margin-bottom:6px">
+    <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text);margin-bottom:4px">Procedure Location Analysis</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Where procedures were performed · In-Network health system facilities vs. competitor locations${state.procName!=='all'?' · Filtered: '+(PROC_CATALOG[k].find(p=>p.code===state.procName)||{name:''}).name:''}</div>
+  </div>
+  <!-- Location summary KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:14px">
+    <div class="kpi-card c-teal">
+      <div class="kpi-lbl">In-Network Facilities</div>
+      <div class="kpi-val">${inNetLocs.length}</div>
+      <div class="kpi-meta">${fmt(inNetLocVol)} procedures</div>
+    </div>
+    <div class="kpi-card c-rose">
+      <div class="kpi-lbl">Out-of-Network Facilities</div>
+      <div class="kpi-val">${oonLocs.length}</div>
+      <div class="kpi-meta">${fmt(oonLocVol)} procedures</div>
+    </div>
+    <div class="kpi-card c-gold">
+      <div class="kpi-lbl">Top In-Net Location</div>
+      <div class="kpi-val" style="font-size:14px;line-height:1.2">${inNetLocs.length?inNetLocs[0].name.replace('Health System ','PH '):'—'}</div>
+      <div class="kpi-meta">${inNetLocs.length?fmt(inNetLocs[0].vol)+' procedures':''}</div>
+    </div>
+    <div class="kpi-card c-rose">
+      <div class="kpi-lbl">Top OON Competitor</div>
+      <div class="kpi-val" style="font-size:14px;line-height:1.2">${oonLocs.length?oonLocs[0].name:'—'}</div>
+      <div class="kpi-meta">${oonLocs.length?fmt(oonLocs[0].vol)+' procedures':''}</div>
+    </div>
+  </div>
+  <!-- Location bar chart full-width — REMOVED -->
+  <!-- Two-column facility detail — REMOVED -->
+  <!-- All locations table -->
+  <div class="card full">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Complete Procedure Location Detail</div>
+        <div class="card-subtitle">All facilities · Ranked by volume · Network status highlighted</div>
+      </div>
+      <span class="card-badge">${locRows.length} locations · ${fmt(totalLocVol)} procedures</span>
+    </div>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Facility Name</th>
+          <th>Location</th>
+          <th>Type</th>
+          <th>Network Status</th>
+          <th style="text-align:right">Procedures</th>
+          <th style="text-align:right">% of Total</th>
+          <th style="min-width:120px">Volume</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${locRows.map((loc,i)=>{ const bc=loc.network==='in'?'var(--teal)':'var(--rose)'; return `
+        <tr>
+          <td class="rank">${i+1}</td>
+          <td><div class="dr-name">${loc.name}</div></td>
+          <td><div class="dr-spec">${loc.city}</div></td>
+          <td><div style="font-size:11px;color:var(--text2)">${loc.type==='hospital'?'Hospital':'Ambulatory Surgery Center'}</div></td>
+          <td>${loc.network==='in'?'<span class="pill pill-in">In-Network</span>':'<span class="pill pill-oon">Out-of-Network</span>'}</td>
+          <td style="text-align:right"><div class="num">${fmt(loc.vol)}</div></td>
+          <td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text3)">${totalLocVol>0?(loc.vol/totalLocVol*100).toFixed(1):0}%</td>
+          <td>
+            <div class="rate-bar-wrap">
+              <div class="rate-bar-bg"><div class="rate-bar-fill" style="width:${loc.vol/maxLocVol*100}%;background:${bc}"></div></div>
+            </div>
+          </td>
+        </tr>`}).join('')}
+      </tbody>
+    </table>
+  </div>
+`;
+  })()}
+
+  <!-- Insights -->
+  <div class="full">
+    <div class="insight ins-teal"><span style="font-size:14px;flex-shrink:0">✓</span><span><strong>Procedure volume:</strong> ${fmt(totProc)} downstream procedures were generated from ${fmt(totRef)} ${sm.label} referrals — an average Procedure Rate of <strong>${fmtPct(avgRate)}</strong>. Tier 1 Health System-employed specialists drove ${fmtPct(t1Rate)} vs. ${fmtPct(t2Rate)} for T2 CIN Network and ${fmtPct(oonRate)} for Out-of-Network.</span></div>
+    <div class="insight ins-${avgNetSplit<0.70?'rose':'gold'}"><span style="font-size:14px;flex-shrink:0">${avgNetSplit<0.70?'⚠':'△'}</span><span><strong>Procedure network capture:</strong> ${fmtPct(avgNetSplit)} of procedures were performed in-network (${fmt(totProcIn)} of ${fmt(totProc)}). Out-of-network procedures total ${fmt(totProcOon)} — representing revenue and quality steerage opportunity. OON-referred specialists average only ${fmtPct(oonNetSplit)} in-network procedure capture.</span></div>
+    <div class="insight ins-blue"><span style="font-size:14px;flex-shrink:0">◎</span><span><strong>Physician variability:</strong> Procedure Rate ranges from ${topRateDoc?fmtPct(topRateDoc.procRate)+' ('+topRateDoc.name+')':'—'} at the high end to ${botRateDoc?fmtPct(botRateDoc.procRate)+' ('+botRateDoc.name+')':'—'} at the low end. This variability may reflect differences in patient acuity, care protocols, or documentation practices — all worth investigating.</span></div>
+    ${(()=>{
+      const locRows = getLocationRows(filtered, k, state.procNet);
+      const oonLocs = locRows.filter(l=>l.network==='oon');
+      const topOon  = oonLocs.length ? oonLocs[0] : null;
+      const oonLocVol = oonLocs.reduce((s,l)=>s+l.vol,0);
+      return `<div class="insight ins-rose"><span style="font-size:14px;flex-shrink:0">⚠</span><span><strong>Competitor facility leakage:</strong> ${fmt(oonLocVol)} procedures were performed at ${oonLocs.length} out-of-network competitor facilities. ${topOon?'The highest-volume competitor site is <strong>'+topOon.name+'</strong> ('+topOon.city+') with '+fmt(topOon.vol)+' procedures — a priority steerage and network development target.':''}</span></div>`;
+    })()}
+  </div>
+  `;
+
+  // ── DONUT CHART ──
+  const dCtx=document.getElementById('procDonut').getContext('2d');
+  chartInstances.donut=new Chart(dCtx,{
+    type:'doughnut',
+    data:{
+      labels:['T1 In-Net','T1 OON','T2 In-Net','T2 OON','OON In-Net','OON Leakage'],
+      datasets:[{data:[
+        totalProcIn(t1list,k), t1Proc-totalProcIn(t1list,k),
+        totalProcIn(t2list,k), t2Proc-totalProcIn(t2list,k),
+        totalProcIn(oonlist,k), oonProc-totalProcIn(oonlist,k),
+      ],backgroundColor:['#007d6e','#009e8c','#1a56b0','#4a80e0','#c8354a','#e88098'],borderWidth:2,borderColor:'#fff',hoverOffset:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{...CT.tooltip,callbacks:{label:c=>`${c.label}: ${fmt(c.raw)}`}}}}
+  });
+
+
+
+}
+
+// Init
+function updateSidebarCounts(){
+  const mos=getActiveMonths();
+  const mwSum={};
+  ['ortho','cardio','gi'].forEach(sp=>{
+    mwSum[sp]=mos.reduce((s,m)=>s+MONTH_WEIGHTS[sp][m-1],0);
+  });
+  let allVol=0;
+  ['ortho','cardio','gi'].forEach(sp=>{
+    const vol=specialists.filter(s=>s.spec===sp)
+      .reduce((t,s)=>t+Math.round(s.refs[sp]*mwSum[sp]),0);
+    allVol+=vol;
+    const el=document.getElementById('cnt-'+sp);
+    if(el) el.textContent=vol.toLocaleString();
+  });
+  const allEl=document.getElementById('cnt-all');
+  if(allEl) allEl.textContent=allVol.toLocaleString();
+}
+renderAll();
+
+// Notify parent suite of this tab's system name for CTA widget
+(function() {
+  if (typeof SYS_NAME !== 'undefined') {
+    window.parent.postMessage({ type: 'sys-name', value: SYS_NAME }, '*');
+  }
+})();
+</script>
+</body>
+</html>

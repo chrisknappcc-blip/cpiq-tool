@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CarePath IQ Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f7f9fc;--surface:#fff;--text:#0f1e2e;--text2:#4a6080;--text3:#8aa0b8;
+  --border:rgba(15,30,60,.09);--border2:rgba(15,30,60,.05);
+  --teal:#007d6e;--teal-lt:#e6f4f2;
+  --gold:#b8720e;--gold-lt:#fdf3e2;
+  --rose:#c8354a;--rose-lt:#fdeef0;
+  --blue:#1a56b0;--blue-lt:#e8f0ff;
+  --purple:#6a42b8;--purple-lt:#f0eaff;
+  --shadow:0 1px 4px rgba(15,30,60,.06),0 4px 16px rgba(15,30,60,.04);
+  --shadow-md:0 2px 8px rgba(15,30,60,.08),0 8px 24px rgba(15,30,60,.06);
+}
+html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+header{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  height:56px;padding:0 24px;position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);
+}
+.hd-left{display:flex;align-items:center;gap:14px}
+.hd-brand{display:flex;flex-direction:column;gap:1px}
+.hd-title{font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);line-height:1}
+.hd-sub{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.hd-right{display:flex;align-items:center;gap:10px}
+.hd-total{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.hd-total strong{color:var(--text);font-weight:600}
+
+/* LAYOUT */
+.shell{display:flex;height:calc(100vh - 56px);overflow:hidden}
+
+/* ASIDE */
+aside{
+  width:200px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);overflow-y:auto;
+  padding:14px 12px;display:flex;flex-direction:column;gap:0;
+}
+.s-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:6px;display:block}
+.s-divider{height:1px;background:var(--border);margin:10px 0}
+.spec-btn{
+  width:100%;display:flex;align-items:center;gap:8px;
+  padding:6px 8px;border-radius:8px;border:none;background:transparent;
+  cursor:pointer;font-family:'Outfit',sans-serif;font-size:12px;color:var(--text2);
+  transition:background .12s;margin-bottom:2px;text-align:left;
+}
+.spec-btn:hover{background:rgba(15,30,60,.04)}
+.spec-btn.active{background:rgba(0,125,110,.08);color:var(--text)}
+.spec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.spec-name{flex:1;font-weight:500}
+.spec-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.chip-row{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0}
+.chip{
+  font-size:10px;font-weight:600;padding:3px 8px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg);color:var(--text2);
+  font-family:'DM Mono',monospace;transition:all .12s;
+}
+.chip.active{background:var(--teal-lt);color:var(--teal);border-color:rgba(0,125,110,.3)}
+.chip.rose.active{background:var(--rose-lt);color:var(--rose);border-color:rgba(200,53,74,.3)}
+.chip.gold.active{background:var(--gold-lt);color:var(--gold);border-color:rgba(184,114,14,.3)}
+.chip.blue.active{background:var(--blue-lt);color:var(--blue);border-color:rgba(26,86,176,.3)}
+.filter-select{
+  width:100%;font-size:11px;font-family:'Outfit',sans-serif;color:var(--text);
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:5px 7px;cursor:pointer;
+}
+
+/* MAIN */
+.main-content{flex:1;overflow-y:auto;padding:18px 20px 40px}
+
+
+
+/* CATEGORY SECTIONS */
+.category-section{margin-bottom:22px}
+.category-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:10px;
+}
+.cat-icon{
+  width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.cat-title{font-size:14px;font-weight:600;color:var(--text)}
+.cat-count{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:2px 8px}
+.cat-desc{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* INSIGHT ROW GRID */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+
+/* INSIGHT CARD */
+.insight-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;
+}
+.insight-card:hover{
+  border-color:rgba(15,30,60,.18);box-shadow:var(--shadow-md);
+  transform:translateY(-1px);
+}
+.insight-card:hover .ic-cta-arrow{opacity:1;transform:translateX(0)}
+.ic-accent{height:3px;border-radius:10px 10px 0 0}
+.ic-body{padding:12px 14px;flex:1}
+.ic-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.ic-count{font-family:'DM Serif Display',serif;font-size:28px;line-height:1}
+.ic-pct-badge{
+  font-size:10px;font-weight:700;font-family:'DM Mono',monospace;
+  padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block;
+}
+.ic-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.4;flex:1}
+.ic-desc{font-size:10px;color:var(--text3);line-height:1.5;margin-bottom:8px}
+.ic-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 14px;background:var(--bg);border-top:1px solid var(--border2);
+}
+.ic-footer-label{font-size:10px;color:var(--text3)}
+.ic-cta-arrow{
+  display:flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:700;font-family:'DM Mono',monospace;
+  opacity:.5;transform:translateX(-4px);transition:all .15s;
+}
+.ic-bar{height:3px;border-radius:2px;background:var(--border);overflow:hidden;margin-bottom:8px}
+.ic-bar-fill{height:100%;border-radius:2px;transition:width .4s}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<script>
+/* CPIQ Data Shim */
+(function() {
+  function applyState(s) {
+    window.CPIQ = s;
+    window.SYS_NAME = s.meta ? s.meta.sysName : 'Health System';
+    window.COMPETITORS = (s.meta && s.meta.competitors) || [];
+    if (typeof window.__cpiqReady === 'function') window.__cpiqReady(s);
+  }
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cpiq-state') applyState(e.data.payload);
+    if (e.data && e.data.type === 'apply-filters' && typeof window.__applyFilters === 'function') window.__applyFilters(e.data.filterState);
+  });
+  if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
+})();
+</script>
+<script>
+/* CPIQ preset patient loader — fetches /presets/*-patients.json lazily */
+(function() {
+  var _origReady = window.__cpiqReady;
+  window.__cpiqReady = function(state) {
+    if (state.patients) {
+      if (typeof _origReady === 'function') _origReady(state);
+      return;
+    }
+    if (state.meta && state.meta.patientsUrl) {
+      fetch(state.meta.patientsUrl)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          state.patients = data.patients || [];
+          window.CPIQ = state;
+          if (typeof _origReady === 'function') _origReady(state);
+        })
+        .catch(function(e) {
+          console.warn('Failed to load preset patients:', e);
+          state.patients = [];
+          if (typeof _origReady === 'function') _origReady(state);
+        });
+    } else {
+      if (typeof _origReady === 'function') _origReady(state);
+    }
+  };
+})();
+</script></head>
+<body>
+
+<header>
+  <div class="hd-left">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain">
+    <div style="width:1px;height:28px;background:var(--border)"></div>
+    <div class="hd-brand">
+      <div class="hd-title">Patient Insights</div>
+      <div class="hd-sub">Segmented Patient Lists</div>
+    </div>
+  </div>
+  <div class="hd-right">
+    <span class="hd-period" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">CY 2025 · 2,000 Patients · CIN Network</span>
+  </div>
+</header>
+
+<div class="shell">
+<!-- SIDEBAR -->
+<aside>
+  <!-- SPECIALTY -->
+  <div style="padding:0 0 6px">
+    <div class="s-label" style="margin-bottom:8px">Specialty</div>
+    <button class="spec-btn active" id="pi-sb-all" onclick="setSpec('all',this)">
+      <div class="spec-dot" style="background:linear-gradient(135deg,var(--gold),var(--rose),var(--teal))"></div>
+      <span class="spec-name">All Specialties</span>
+      <span class="spec-count" id="pi-cnt-all">2,000</span>
+    </button>
+    <button class="spec-btn" id="pi-sb-ortho" onclick="setSpec('ortho',this)">
+      <div class="spec-dot" style="background:var(--gold)"></div>
+      <span class="spec-name">Orthopedics</span>
+      <span class="spec-count" id="pi-cnt-ortho">—</span>
+    </button>
+    <button class="spec-btn" id="pi-sb-cardio" onclick="setSpec('cardio',this)">
+      <div class="spec-dot" style="background:var(--rose)"></div>
+      <span class="spec-name">Cardiology</span>
+      <span class="spec-count" id="pi-cnt-cardio">—</span>
+    </button>
+    <button class="spec-btn" id="pi-sb-gi" onclick="setSpec('gi',this)">
+      <div class="spec-dot" style="background:var(--teal)"></div>
+      <span class="spec-name">Gastroenterology</span>
+      <span class="spec-count" id="pi-cnt-gi">—</span>
+    </button>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- DESTINATION TIER -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Destination Tier</div>
+    <div class="chip-row">
+      <div class="chip active" id="pi-tier-all" onclick="setTier('all',this)">All</div>
+      <div class="chip" id="pi-tier-t1" onclick="setTier('t1',this)">T1</div>
+      <div class="chip blue" id="pi-tier-t2" onclick="setTier('t2',this)">T2</div>
+      <div class="chip rose" id="pi-tier-oon" onclick="setTier('oon',this)">OON</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- REFERRAL SOURCE TYPE -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Referral Source</div>
+    <div class="chip-row">
+      <div class="chip active" id="pi-ptype-all" onclick="setPtype('all',this)">All</div>
+      <div class="chip gold" id="pi-ptype-pcp" onclick="setPtype('pcp',this)">PCP</div>
+      <div class="chip blue" id="pi-ptype-spec" onclick="setPtype('spec',this)">Specialist</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- CATEGORY VISIBILITY -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Category</div>
+    <div style="display:flex;flex-direction:column;gap:4px;padding-top:4px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:pointer">
+        <input type="checkbox" checked id="cat-gaps" onchange="render()"> Care Gaps
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:pointer">
+        <input type="checkbox" checked id="cat-oon" onchange="render()"> OON Leakage
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:pointer">
+        <input type="checkbox" checked id="cat-ed" onchange="render()"> ED &amp; Risk
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:pointer">
+        <input type="checkbox" checked id="cat-completed" onchange="render()"> Completed Care
+      </label>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- SORT -->
+  <div style="padding-bottom:6px">
+    <div class="s-label" style="margin-bottom:6px">Sort By</div>
+    <select class="filter-select" id="pi-sort" onchange="render()">
+      <option value="count-desc">Count (High → Low)</option>
+      <option value="count-asc">Count (Low → High)</option>
+      <option value="pct-desc">% of Total (High → Low)</option>
+      <option value="name-asc">Name (A → Z)</option>
+    </select>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+<!-- CATEGORIES -->
+  <div id="categories-container"></div>
+</div>
+</div>
+
+<script>
+const PATIENTS = (window.CPIQ && window.CPIQ.patients) ? window.CPIQ.patients.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};}) : [];
+
+// ── State ─────────────────────────────────────────────────────────
+let specFilter = 'all';
+let tierFilter = 'all';
+let ptypeFilter = 'all';
+
+function setSpec(val, el) {
+  specFilter = val;
+  ['all','ortho','cardio','gi'].forEach(s => {
+    const b = document.getElementById('pi-sb-'+s);
+    if(b) b.classList.toggle('active', s===val);
+  });
+  render();
+}
+function setTier(val, el) {
+  tierFilter = val;
+  ['all','t1','t2','oon'].forEach(t => {
+    const c = document.getElementById('pi-tier-'+t);
+    if(c) c.classList.toggle('active', t===val);
+  });
+  render();
+}
+function setPtype(val, el) {
+  ptypeFilter = val;
+  ['all','pcp','spec'].forEach(p => {
+    const c = document.getElementById('pi-ptype-'+p);
+    if(c) c.classList.toggle('active', p===val);
+  });
+  render();
+}
+
+// ── Base filtered pool ────────────────────────────────────────────
+function basePool() {
+  return PATIENTS.filter(p =>
+    (specFilter==='all' || p.spec===specFilter) &&
+    (tierFilter==='all' || p.destTier===tierFilter) &&
+    (ptypeFilter==='all' || p.refPtype===ptypeFilter)
+  );
+}
+
+// ── Segment definitions ───────────────────────────────────────────
+// Each segment: { id, name, desc, color, filter(pool), journeyFilters }
+// journeyFilters maps to the Patient Journeys filter state
+function buildSegments(pool) {
+  const n = pool.length;
+  return [
+    // ══ CARE GAPS ══════════════════════════════════════════════════
+    { category:'gaps', id:'no-visit',
+      name:'No Specialist Visit Completed',
+      desc:'Referral issued but no specialist appointment was recorded in CY2025.',
+      color:'rose',
+      pts: pool.filter(p=>!p.visitDone),
+      jf: {status:'novisit'} },
+
+    { category:'gaps', id:'long-wait-60',
+      name:'Long Wait — MTTA Over 60 Days',
+      desc:'Patients waiting more than 60 days for a specialist appointment — above network target.',
+      color:'gold',
+      pts: pool.filter(p=>p.mttaDays && p.mttaDays>60),
+      jf: {status:'visited', mttaMin:61} },
+
+    { category:'gaps', id:'long-wait-90',
+      name:'Extended Wait — MTTA Over 90 Days',
+      desc:'Severely delayed access (>90 days). High risk of OON migration or loss to follow-up.',
+      color:'rose',
+      pts: pool.filter(p=>p.mttaDays && p.mttaDays>90),
+      jf: {status:'visited', mttaMin:91} },
+
+    { category:'gaps', id:'no-proc-after-visit',
+      name:'Visit Completed — No Downstream Procedure',
+      desc:'Patients who saw the specialist but had no downstream procedure recorded.',
+      color:'gold',
+      pts: pool.filter(p=>p.visitDone && !p.procDone),
+      jf: {status:'visited', journeyStatus:'noproc'} },
+
+    { category:'gaps', id:'oon-src-no-visit',
+      name:'OON-Sourced Referral — No Visit',
+      desc:'Referrals originating from an out-of-network provider where the specialist visit was never completed.',
+      color:'gold',
+      pts: pool.filter(p=>p.refTier==='oon' && !p.visitDone),
+      jf: {refTier:'oon', status:'novisit'} },
+
+    // ══ OON LEAKAGE ════════════════════════════════════════════════
+    { category:'oon', id:'oon-dest',
+      name:'Referred to Out-of-Network Specialist',
+      desc:'The initial specialist referral was directed to an out-of-network destination practice.',
+      color:'rose',
+      pts: pool.filter(p=>p.destTier==='oon'),
+      jf: {destTier:'oon'} },
+
+    { category:'oon', id:'oon-proc',
+      name:'Out-of-Network Procedure Performed',
+      desc:'Downstream procedure completed outside the Health System / CIN Network network.',
+      color:'rose',
+      pts: pool.filter(p=>p.procNet==='oon'),
+      jf: {procNet:'oon'} },
+
+    { category:'oon', id:'oon-proc-after-visit',
+      name:'Visit Completed — Procedure Performed Out-of-Network',
+      desc:'Patient completed the specialist visit but the downstream procedure leaked to an OON facility.',
+      color:'rose',
+      pts: pool.filter(p=>p.visitDone && p.procNet==='oon'),
+      jf: {status:'visited', procNet:'oon'} },
+
+    { category:'oon', id:'oon-proc-gi',
+      name:'GI — Out-of-Network Procedure',
+      desc:'GI patients with OON downstream procedures — the highest leakage specialty at 24% OON rate.',
+      color:'rose',
+      pts: pool.filter(p=>p.spec==='gi' && p.procNet==='oon'),
+      jf: {spec:'gi', procNet:'oon'} },
+
+    { category:'oon', id:'oon-proc-cardio',
+      name:'Cardiology — Out-of-Network Procedure',
+      desc:'Cardiology patients with OON downstream procedures.',
+      color:'rose',
+      pts: pool.filter(p=>p.spec==='cardio' && p.procNet==='oon'),
+      jf: {spec:'cardio', procNet:'oon'} },
+
+    // ══ ED & RISK ══════════════════════════════════════════════════
+    { category:'ed', id:'ed-all',
+      name:'ED Visit Recorded',
+      desc:'Patients with an emergency department visit recorded during this referral episode.',
+      color:'rose',
+      pts: pool.filter(p=>p.edVisit),
+      jf: {edVisit:'yes'} },
+
+    { category:'ed', id:'ed-no-visit',
+      name:'ED Visit — No Specialist Follow-Up',
+      desc:'High-priority: ED visit occurred but no specialist appointment was subsequently completed.',
+      color:'rose',
+      pts: pool.filter(p=>p.edVisit && !p.visitDone),
+      jf: {edVisit:'yes', status:'novisit'} },
+
+    { category:'ed', id:'ed-oon',
+      name:'ED Visit — OON Destination',
+      desc:'ED visit patients whose original referral was directed to an out-of-network specialist.',
+      color:'rose',
+      pts: pool.filter(p=>p.edVisit && p.destTier==='oon'),
+      jf: {edVisit:'yes', destTier:'oon'} },
+
+    { category:'ed', id:'ed-with-visit',
+      name:'ED Visit — Specialist Visit Also Completed',
+      desc:'ED visit patients who did subsequently complete their specialist appointment.',
+      color:'gold',
+      pts: pool.filter(p=>p.edVisit && p.visitDone),
+      jf: {edVisit:'yes', status:'visited'} },
+
+    // ══ COMPLETED CARE ════════════════════════════════════════════
+    { category:'completed', id:'visit-done',
+      name:'Specialist Visit Completed',
+      desc:'Patients who successfully completed their specialist appointment within CY2025.',
+      color:'teal',
+      pts: pool.filter(p=>p.visitDone),
+      jf: {status:'visited'} },
+
+    { category:'completed', id:'full-journey',
+      name:'Full Journey Complete — Referral → Visit → Procedure',
+      desc:'Patients who completed the entire care pathway: referral, specialist visit, and downstream procedure.',
+      color:'teal',
+      pts: pool.filter(p=>p.visitDone && p.procDone),
+      jf: {status:'proc'} },
+
+    { category:'completed', id:'in-net-proc',
+      name:'In-Network Procedure Completed',
+      desc:'Patients whose downstream procedure was performed within the Health System / CIN Network network.',
+      color:'teal',
+      pts: pool.filter(p=>p.procNet==='in'),
+      jf: {procNet:'in'} },
+
+    { category:'completed', id:'t1-full',
+      name:'T1 Employed — Full Journey Retained',
+      desc:'Patients at T1 Employed practices who completed the full care journey within the network.',
+      color:'teal',
+      pts: pool.filter(p=>p.destTier==='t1' && p.visitDone && p.procDone),
+      jf: {destTier:'t1', status:'proc'} },
+  ];
+}
+
+const CATEGORY_META = {
+  gaps:      { label:'Care Gaps',       color:'rose',   icon:'⚠',  desc:'Patients who did not complete care — lost to follow-up, long waits, or dropped journeys' },
+  oon:       { label:'OON Leakage',     color:'rose',   icon:'↗',  desc:'Patients whose care migrated out of the network — referrals, procedures, or both' },
+  ed:        { label:'ED & Risk',       color:'rose',   icon:'🚨', desc:'Emergency department visits — high-risk patients requiring urgent care coordination attention' },
+  completed: { label:'Completed Care',  color:'teal',   icon:'✓',  desc:'Patients who successfully progressed through all or part of their care journey' },
+};
+
+const COLOR_MAP = {
+  teal:   { text:'var(--teal)',   bg:'var(--teal-lt)',   hex:'#007d6e' },
+  gold:   { text:'var(--gold)',   bg:'var(--gold-lt)',   hex:'#b8720e' },
+  rose:   { text:'var(--rose)',   bg:'var(--rose-lt)',   hex:'#c8354a' },
+  blue:   { text:'var(--blue)',   bg:'var(--blue-lt)',   hex:'#1a56b0' },
+};
+
+// ── Navigate to Patient Journeys with filters ─────────────────────
+function handleCard(el) {
+  try {
+    var jf = JSON.parse(el.getAttribute('data-jf') || '{}');
+    openJourneys(jf);
+  } catch(e) {}
+}
+
+function openJourneys(jf) {
+  // Merge with current sidebar filters
+  var merged = Object.assign({}, jf);
+  if(specFilter !== 'all') merged.spec = specFilter;
+  if(tierFilter !== 'all') merged.destTier = tierFilter;
+  if(ptypeFilter !== 'all') merged.refPtype = ptypeFilter;
+
+  // Primary: call parent switchTab directly
+  try {
+    if(window.parent && window.parent.switchTab) {
+      window.parent.switchTab('journeys');
+      setTimeout(function() {
+        try {
+          var frame = window.parent.document.getElementById('frame-journeys');
+          if(frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({ type:'apply-filters', filterState: merged }, '*');
+          }
+        } catch(e2) {}
+      }, 700);
+      return;
+    }
+  } catch(e) {}
+  // Fallback: postMessage
+  try {
+    window.parent.postMessage({ type:'carepathiq-navigate', tab:'journeys', filterState: merged }, '*');
+  } catch(e) {}
+}
+
+// ── Render ────────────────────────────────────────────────────────
+function render() {
+  const pool = basePool();
+  const total = pool.length;
+  const segments = buildSegments(pool);
+
+  // Update sidebar counts
+  ['all','ortho','cardio','gi'].forEach(sp => {
+    const el = document.getElementById('pi-cnt-'+sp);
+    if(!el) return;
+    const n = sp==='all'
+      ? PATIENTS.filter(p=>(tierFilter==='all'||p.destTier===tierFilter)&&(ptypeFilter==='all'||p.refPtype===ptypeFilter)).length
+      : PATIENTS.filter(p=>p.spec===sp&&(tierFilter==='all'||p.destTier===tierFilter)&&(ptypeFilter==='all'||p.refPtype===ptypeFilter)).length;
+    el.textContent = n.toLocaleString();
+  });
+
+
+
+  // Sort
+  const sortVal = document.getElementById('pi-sort').value;
+  function sortSegs(segs) {
+    return [...segs].sort((a,b) => {
+      if(sortVal==='count-desc') return b.pts.length - a.pts.length;
+      if(sortVal==='count-asc')  return a.pts.length - b.pts.length;
+      if(sortVal==='pct-desc')   return b.pts.length - a.pts.length;
+      if(sortVal==='name-asc')   return a.name.localeCompare(b.name);
+      return 0;
+    });
+  }
+
+  // Category visibility
+  const showGaps = document.getElementById('cat-gaps')?.checked;
+  const showOon  = document.getElementById('cat-oon')?.checked;
+  const showEd   = document.getElementById('cat-ed')?.checked;
+  const showComp = document.getElementById('cat-completed')?.checked;
+  const catShow  = { gaps:showGaps, oon:showOon, ed:showEd, completed:showComp };
+
+  const order = ['gaps','oon','ed','completed'];
+  const container = document.getElementById('categories-container');
+
+  container.innerHTML = order.filter(cat=>catShow[cat]).map(cat => {
+    const meta = CATEGORY_META[cat];
+    const catSegs = sortSegs(segments.filter(s=>s.category===cat));
+    if(!catSegs.length) return '';
+    const catTotal = catSegs.reduce((s,seg)=>s+seg.pts.length,0);
+    const C = COLOR_MAP[meta.color];
+
+    const cards = catSegs.map(seg => {
+      const n = seg.pts.length;
+      const pct = total ? (n/total*100).toFixed(1) : '0.0';
+      const barPct = total ? Math.min(n/total*100, 100) : 0;
+      const C2 = COLOR_MAP[seg.color];
+      const jfStr = JSON.stringify(seg.jf).replace(/"/g,'&quot;');
+      return `
+        <div class="insight-card" data-jf='${JSON.stringify(seg.jf)}' onclick="handleCard(this)">
+          <div class="ic-accent" style="background:${C2.hex}"></div>
+          <div class="ic-body">
+            <div class="ic-top">
+              <div>
+                <div class="ic-count" style="color:${C2.text}">${n.toLocaleString()}</div>
+                <span class="ic-pct-badge" style="background:${C2.bg};color:${C2.text}">${pct}% of patients</span>
+              </div>
+              <div class="ic-name">${seg.name}</div>
+            </div>
+            <div class="ic-bar">
+              <div class="ic-bar-fill" style="width:${barPct}%;background:${C2.hex}"></div>
+            </div>
+            <div class="ic-desc">${seg.desc}</div>
+          </div>
+          <div class="ic-footer">
+            <span class="ic-footer-label">Click to view in Patient Journeys →</span>
+            <span class="ic-cta-arrow" style="color:${C2.text}">
+              Open list
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="category-section">
+        <div class="category-header">
+          <div class="cat-icon" style="background:${C.bg};color:${C.text};font-size:14px">${meta.icon}</div>
+          <div>
+            <div class="cat-title">${meta.label} <span class="cat-count">${catSegs.length} lists</span></div>
+            <div class="cat-desc">${meta.desc}</div>
+          </div>
+        </div>
+        <div class="insight-grid">${cards}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── Listen for filter messages from suite ─────────────────────────
+window.addEventListener('message', function(e) {
+  if(!e.data || e.data.type !== 'apply-filters') return;
+  const fs = e.data.filterState || {};
+  if(fs.spec) setSpec(fs.spec, null);
+  if(fs.destTier) setTier(fs.destTier, null);
+  if(fs.refPtype) setPtype(fs.refPtype, null);
+});
+
+render();
+
+// Notify parent suite of this tab's system name for CTA widget
+(function() {
+  if (typeof SYS_NAME !== 'undefined') {
+    window.parent.postMessage({ type: 'sys-name', value: SYS_NAME }, '*');
+  }
+})();
+</script>
+</body>
+</html>

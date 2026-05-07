@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarePath IQ Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#f7f9fc; --surface:#fff; --sidebar:#f1f4f8;
+  --text:#0f1e2e; --text2:#4a6080; --text3:#8aa0b8;
+  --border:rgba(15,30,60,.09); --border2:rgba(15,30,60,.05);
+  --teal:#007d6e; --teal-lt:#e6f4f2; --teal-mid:#009e8c;
+  --gold:#b8720e; --gold-lt:#fdf3e2;
+  --rose:#c8354a; --rose-lt:#fdeef0;
+  --blue:#1a56b0; --blue-lt:#e8f0ff;
+  --purple:#6a42b8; --purple-lt:#f0eaff;
+  --shadow:0 1px 4px rgba(15,30,60,.07),0 4px 16px rgba(15,30,60,.04);
+  --shadow-sm:0 1px 3px rgba(15,30,60,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
+header{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);height:60px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.hd-left{display:flex;align-items:center;gap:14px}
+.prisma-logo{display:flex;align-items:center;gap:9px}
+.prisma-logo svg{width:32px;height:32px}
+.prisma-wordmark{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);letter-spacing:.01em}
+.prisma-wordmark span{color:var(--teal)}
+.hd-divider{width:1px;height:28px;background:var(--border);margin:0 4px}
+.hd-title{font-size:13px;color:var(--text2);font-weight:400}
+.hd-right{display:flex;align-items:center;gap:10px}
+.badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;font-family:'DM Mono',monospace}
+.badge-teal{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(0,125,110,.2)}
+.badge-blue{background:var(--blue-lt);color:var(--blue);border:1px solid rgba(26,86,176,.2)}
+.hd-period{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.shell{display:flex;min-height:calc(100vh - 60px)}
+aside{width:230px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);padding:14px 0;overflow-y:auto;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.s-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:0 14px;margin-bottom:7px}
+.s-divider{height:1px;background:var(--border);margin:10px 0}
+.spec-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 14px;border:1px solid transparent;border-radius:0;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;background:transparent;margin-bottom:1px}
+.spec-btn:hover{background:rgba(0,125,110,.05)}
+.spec-btn.active{background:var(--teal-lt);border-left:3px solid var(--teal)}
+.spec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.spec-name{font-size:12px;font-weight:500;color:var(--text);text-align:left}
+.spec-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-left:auto}
+.filter-section{padding:0 14px;margin-bottom:10px}
+.filter-select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:6px;font-size:11px;font-family:'Outfit',sans-serif;appearance:none;cursor:pointer;box-shadow:var(--shadow-sm);margin-bottom:6px}
+.filter-select:focus{outline:none;border-color:var(--teal)}
+.chip-row{display:flex;flex-wrap:wrap;gap:4px;padding:0 14px;margin-bottom:8px}
+.chip{font-size:10px;padding:3px 8px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;font-weight:500}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.chip.active{background:var(--teal-lt);border-color:rgba(0,125,110,.3);color:var(--teal)}
+.chip.gold.active{background:var(--gold-lt);border-color:rgba(184,114,14,.3);color:var(--gold)}
+.chip.rose.active{background:var(--rose-lt);border-color:rgba(200,53,74,.3);color:var(--rose)}
+.chip.blue.active{background:var(--blue-lt);border-color:rgba(26,86,176,.3);color:var(--blue)}
+main{flex:1;padding:18px 22px;overflow-y:auto}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px 16px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .2s}
+.kpi-card:hover{box-shadow:0 4px 20px rgba(15,30,60,.1)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.c-teal::before{background:var(--teal)}
+.kpi-card.c-blue::before{background:var(--blue)}
+.kpi-card.c-gold::before{background:var(--gold)}
+.kpi-card.c-rose::before{background:var(--rose)}
+.kpi-card.c-purple::before{background:var(--purple)}
+.kpi-lbl{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:6px}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);line-height:1;margin-bottom:4px}
+.kpi-meta{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px}
+.delta{font-size:10px;font-weight:700;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:3px}
+.d-up{color:var(--teal);background:var(--teal-lt)}
+.d-dn{color:var(--rose);background:var(--rose-lt)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-2-3{display:grid;grid-template-columns:2fr 3fr;gap:14px;margin-bottom:14px}
+.grid-3-2{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+.full{margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);transition:box-shadow .2s}
+.card:hover{box-shadow:0 4px 20px rgba(15,30,60,.1)}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.card-title{font-family:'DM Serif Display',serif;font-size:14px;color:var(--text)}
+.card-subtitle{font-size:11px;color:var(--text2);margin-top:2px}
+.card-badge{font-size:10px;font-family:'DM Mono',monospace;color:var(--teal);background:var(--teal-lt);border:1px solid rgba(0,125,110,.18);padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.source-bars{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.src-row{display:flex;align-items:center;gap:8px}
+.src-name{font-size:11px;color:var(--text2);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-bar-bg{flex:1;height:7px;background:rgba(15,30,60,.07);border-radius:4px;overflow:hidden;min-width:30px}
+.src-bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.src-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);width:46px;text-align:right;font-weight:600}
+.src-pct{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:34px;text-align:right}
+.ref-table{width:100%;border-collapse:collapse}
+.ref-table th{text-align:left;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:0 10px 8px 0;border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:7px 10px 7px 0;font-size:11px;border-bottom:1px solid var(--border2);vertical-align:middle}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:rgba(0,125,110,.025)}
+.dr-name{font-weight:600;color:var(--text);font-size:12px}
+.dr-spec{font-size:10px;color:var(--text3);margin-top:1px}
+.dr-practice{font-size:10px;color:var(--text2)}
+.num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);font-weight:600}
+.pill{font-size:9px;padding:2px 7px;border-radius:9px;font-weight:700;white-space:nowrap}
+.pill-t1{background:var(--teal-lt);color:var(--teal)}
+.pill-t2{background:var(--blue-lt);color:var(--blue)}
+.pill-ext{background:rgba(15,30,60,.07);color:var(--text2)}
+.pill-pcp{background:var(--gold-lt);color:var(--gold)}
+.pill-spec{background:var(--purple-lt);color:var(--purple)}
+.mini-bar-bg{height:3px;background:rgba(15,30,60,.08);border-radius:2px;overflow:hidden;margin-top:3px;width:60px}
+.mini-bar{height:100%;border-radius:2px}
+.rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:16px;text-align:right}
+.practice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.practice-card{border-radius:8px;padding:9px 11px;border:1px solid;cursor:pointer;transition:all .15s}
+.practice-card:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.practice-card.selected{box-shadow:0 0 0 2px var(--teal)}
+.pc-name{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px;line-height:1.3}
+.pc-sub{font-size:9px;color:var(--text2);margin-bottom:5px}
+.pc-bar{height:3px;background:rgba(15,30,60,.08);border-radius:2px;overflow:hidden;margin-bottom:3px}
+.pc-bar-fill{height:100%;border-radius:2px}
+.pc-meta{display:flex;justify-content:space-between;align-items:center}
+.pc-vol{font-family:'DM Mono',monospace;font-size:11px;font-weight:700}
+.pc-tier{font-size:9px;font-weight:700}
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-legend{flex:1;display:flex;flex-direction:column;gap:5px}
+.dl-row{display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer;padding:2px 4px;border-radius:4px;transition:background .1s}
+.dl-row:hover{background:rgba(15,30,60,.04)}
+.dl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.dl-name{color:var(--text2);flex:1}
+.dl-val{font-family:'DM Mono',monospace;color:var(--text);font-size:11px;font-weight:600}
+.dl-pct{font-family:'DM Mono',monospace;color:var(--text3);font-size:10px;width:30px;text-align:right}
+.insight{border-radius:8px;padding:9px 13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:12px;line-height:1.65}
+.ins-teal{background:var(--teal-lt);border:1px solid rgba(0,125,110,.18);color:var(--text2)}
+.ins-rose{background:var(--rose-lt);border:1px solid rgba(200,53,74,.18);color:var(--text2)}
+.ins-gold{background:var(--gold-lt);border:1px solid rgba(184,114,14,.18);color:var(--text2)}
+.ins-blue{background:var(--blue-lt);border:1px solid rgba(26,86,176,.18);color:var(--text2)}
+.insight strong{color:var(--text);font-weight:600}
+footer{border-top:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;font-size:10px;color:var(--text3);background:var(--surface)}
+.foot-logo{font-family:'DM Serif Display',serif;color:var(--teal)}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<script>
+/* CPIQ Data Shim */
+(function() {
+  function applyState(s) {
+    window.CPIQ = s;
+    window.SYS_NAME = s.meta ? s.meta.sysName : 'Health System';
+    window.COMPETITORS = (s.meta && s.meta.competitors) || [];
+    if (typeof window.__cpiqReady === 'function') window.__cpiqReady(s);
+  }
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cpiq-state') applyState(e.data.payload);
+    if (e.data && e.data.type === 'apply-filters' && typeof window.__applyFilters === 'function') window.__applyFilters(e.data.filterState);
+  });
+  if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
+})();
+</script></head>
+<body>
+
+<header>
+  <div class="hd-left">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain">
+      </div>
+    </div>
+    <div class="hd-divider"></div>
+    <div class="hd-title">Specialist Referral Patterns</div>
+  </div>
+  <div class="hd-right">
+    <span class="badge badge-teal">CIN Network Network</span>
+    <span class="badge badge-blue">Metro Market</span>
+    <span class="hd-period" id="hd-period">CY 2025 · ~20,000 Referrals</span>
+  </div>
+</header>
+
+<div class="shell">
+<aside>
+    <!-- SPECIALTY -->
+  <div style="padding:0 0 6px">
+    <div class="s-label" style="margin-bottom:8px">Specialty</div>
+    <button class="spec-btn active" id="sb-all" onclick="setSpec('all',this)">
+      <div class="spec-dot" style="background:linear-gradient(135deg,var(--gold),var(--rose),var(--teal))"></div>
+      <span class="spec-name">All Specialties</span>
+      <span class="spec-count" id="cnt-all">—</span>
+    </button>
+    <button class="spec-btn" id="sb-ortho" onclick="setSpec('ortho',this)">
+      <div class="spec-dot" style="background:var(--gold)"></div>
+      <span class="spec-name">Orthopedics</span>
+      <span class="spec-count" id="cnt-ortho">—</span>
+    </button>
+    <button class="spec-btn" id="sb-cardio" onclick="setSpec('cardio',this)">
+      <div class="spec-dot" style="background:var(--rose)"></div>
+      <span class="spec-name">Cardiology</span>
+      <span class="spec-count" id="cnt-cardio">—</span>
+    </button>
+    <button class="spec-btn" id="sb-gi" onclick="setSpec('gi',this)">
+      <div class="spec-dot" style="background:var(--teal)"></div>
+      <span class="spec-name">Gastroenterology</span>
+      <span class="spec-count" id="cnt-gi">—</span>
+    </button>
+  </div>
+
+  <div class="s-divider"<div class="s-divider"></div>
+
+  <!-- TIME PERIOD -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:8px">Quarter</div>
+    <div class="chip-row" style="padding:0;margin-bottom:8px">
+      <div class="chip active" id="q-all" onclick="setQuarter('all',this)">All</div>
+      <div class="chip" id="q-q1" onclick="setQuarter('Q1',this)">Q1</div>
+      <div class="chip" id="q-q2" onclick="setQuarter('Q2',this)">Q2</div>
+      <div class="chip" id="q-q3" onclick="setQuarter('Q3',this)">Q3</div>
+      <div class="chip" id="q-q4" onclick="setQuarter('Q4',this)">Q4</div>
+    </div>
+    <div class="s-label" style="margin-bottom:6px">Month</div>
+    <select class="filter-select" id="sel-month" onchange="setMonth(this.value)">
+      <option value="all">All Months</option>
+      <option value="1">January</option><option value="2">February</option>
+      <option value="3">March</option><option value="4">April</option>
+      <option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option>
+      <option value="9">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- SOURCE -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Source</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-src-all" onclick="setSource('all',this)">All</div>
+      <div class="chip" id="ch-src-int" onclick="setSource('internal',this)">Internal</div>
+      <div class="chip" id="ch-src-ext" onclick="setSource('external',this)">External</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- TIER -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Employment Tier</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-tier-all" onclick="setTier('all',this)">All</div>
+      <div class="chip" id="ch-tier-t1" onclick="setTier('t1',this)">T1 Employed</div>
+      <div class="chip blue" id="ch-tier-t2" onclick="setTier('t2',this)">T2 CIN Network</div>
+      <div class="chip rose" id="ch-tier-oon" onclick="setTier('oon',this)">Out-of-Net</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PROVIDER TYPE -->
+  <div style="padding-bottom:6px">
+    <div class="s-label">Provider Type</div>
+    <div class="chip-row" style="padding-top:4px">
+      <div class="chip active" id="ch-pt-all" onclick="setPtype('all',this)">All</div>
+      <div class="chip gold" id="ch-pt-pcp" onclick="setPtype('pcp',this)">Primary Care</div>
+      <div class="chip" id="ch-pt-spec" onclick="setPtype('spec',this)">Specialist</div>
+    </div>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PRACTICE FILTER -->
+  <div class="filter-section">
+    <div class="s-label" style="margin-bottom:6px">Practice</div>
+    <select class="filter-select" id="sel-practice" onchange="setPractice(this.value)">
+      <option value="all">All Practices</option>
+    </select>
+  </div>
+</aside>
+
+<main>
+  <div id="main-area"></div>
+</main>
+</div>
+
+<footer>
+  <span class="foot-logo">Health System</span>
+  <span>Specialist Referral Patterns Dashboard · CY 2025 · Metro Market SC</span>
+  <span>Analytics &amp; Strategy</span>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   PHYSICIAN DATA — 108 physicians
+   tier: t1=T1 · Employed (replace SYS_NAME), t2=CIN Network Affiliated, oon=Out-of-Network
+   ptype: pcp=Primary Care, spec=Specialist
+   refs: {ortho, cardio, gi} = annual referral volume
+══════════════════════════════════════════════════════ */
+const physicians = (window.CPIQ && window.CPIQ.referrers) ? window.CPIQ.referrers : [];
+
+/* ══════════════════════════════════════════════════════
+   MONTHLY DISTRIBUTION WEIGHTS (CY 2025)
+   Seasonal patterns: ortho peaks summer, cardio peaks winter, GI flat
+══════════════════════════════════════════════════════ */
+const MONTH_WEIGHTS = {
+  ortho:  [0.07,0.07,0.08,0.09,0.09,0.10,0.10,0.09,0.09,0.08,0.08,0.06],
+  cardio: [0.10,0.09,0.09,0.08,0.08,0.07,0.07,0.07,0.08,0.09,0.09,0.09],
+  gi:     [0.08,0.08,0.08,0.08,0.08,0.09,0.09,0.09,0.08,0.09,0.08,0.08],
+};
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const QUARTER_MAP = {1:'Q1',2:'Q1',3:'Q1',4:'Q2',5:'Q2',6:'Q2',7:'Q3',8:'Q3',9:'Q3',10:'Q4',11:'Q4',12:'Q4'};
+
+function getMonthlyRef(p, specKey, month) {
+  if(!specKey || specKey==='all') return 0;
+  const annual = p.refs[specKey] || 0;
+  const w = (MONTH_WEIGHTS[specKey]||MONTH_WEIGHTS['ortho'])[month-1];
+  return Math.round(annual * w);
+}
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const state = { spec:'all', quarter:'all', month:'all', source:'all', tier:'all', ptype:'all', practice:'all' };
+let chartInstances = {};
+
+function destroyCharts() {
+  Object.values(chartInstances).forEach(c=>{try{c.destroy()}catch(e){}});
+  chartInstances = {};
+}
+
+const specMeta = {
+  all: {key:'all', label:'All Specialties', hex:'#4a6080', color:'var(--text2)'},
+  ortho:  {label:'Orthopedics',     color:'var(--gold)',   hex:'#b8720e', lt:'var(--gold-lt)',   key:'ortho'},
+  cardio: {label:'Cardiology',      color:'var(--rose)',   hex:'#c8354a', lt:'var(--rose-lt)',   key:'cardio'},
+  gi:     {label:'Gastroenterology',color:'var(--teal)',   hex:'#007d6e', lt:'var(--teal-lt)',   key:'gi'},
+};
+
+const CT = {
+  legend:{color:'#4a6080',font:{family:'Outfit',size:10},boxWidth:9,boxHeight:9},
+  tooltip:{backgroundColor:'#fff',titleColor:'#0f1e2e',bodyColor:'#4a6080',borderColor:'rgba(15,30,60,.12)',borderWidth:1,padding:10},
+  tick:'#8aa0b8',
+  grid:'rgba(15,30,60,.07)',
+};
+
+/* ══════════════════════════════════════════════════════
+   FILTER ENGINE
+══════════════════════════════════════════════════════ */
+function getActiveMonths() {
+  if (state.month !== 'all') return [parseInt(state.month)];
+  if (state.quarter !== 'all') {
+    return [1,2,3,4,5,6,7,8,9,10,11,12].filter(m=>QUARTER_MAP[m]===state.quarter);
+  }
+  return [1,2,3,4,5,6,7,8,9,10,11,12];
+}
+
+function getRefTotal(p, specKey) {
+  if(!specKey || specKey==='all') {
+    return ['ortho','cardio','gi'].reduce((total,sp)=>
+      total+getActiveMonths().reduce((s,m)=>s+getMonthlyRef(p,sp,m),0),0);
+  }
+  return getActiveMonths().reduce((s,m)=>s+getMonthlyRef(p,specKey,m),0);
+}
+
+function filteredPhysicians() {
+  const k = specMeta[state.spec] ? specMeta[state.spec].key : 'all';
+  return physicians.filter(p => {
+    if (getRefTotal(p,k) === 0) return false;
+    if (state.source === 'internal' && p.tier === 'oon') return false;
+    if (state.source === 'external' && p.tier !== 'oon') return false;
+    if (state.tier !== 'all' && p.tier !== state.tier) return false;
+    if (state.ptype !== 'all' && p.ptype !== state.ptype) return false;
+    if (state.practice !== 'all' && p.pid !== state.practice) return false;
+    return true;
+  });
+}
+
+function totalRef(list, specKey) {
+  return list.reduce((s,p)=>s+getRefTotal(p, specKey||p.spec),0);
+}
+
+/* ══════════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════════ */
+function setSpec(s,el){
+  state.spec=s;
+  document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderAll();
+}
+function setQuarter(q,el){
+  state.quarter=q; state.month='all';
+  document.getElementById('sel-month').value='all';
+  ['q-all','q-q1','q-q2','q-q3','q-q4'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active');
+  renderAll();
+}
+function setMonth(v){
+  state.month=v;
+  if(v!=='all'){ state.quarter='all'; ['q-all','q-q1','q-q2','q-q3','q-q4'].forEach(id=>document.getElementById(id).classList.remove('active')); document.getElementById('q-all').classList.add('active'); }
+  renderAll();
+}
+function setSource(s,el){
+  state.source=s;
+  ['ch-src-all','ch-src-int','ch-src-ext'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setTier(t,el){
+  state.tier=t;
+  ['ch-tier-all','ch-tier-t1','ch-tier-t2','ch-tier-oon'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setPtype(p,el){
+  state.ptype=p;
+  ['ch-pt-all','ch-pt-pcp','ch-pt-spec'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); renderAll();
+}
+function setPractice(v){ state.practice=v; renderAll(); }
+function setPracticeCard(pid){
+  state.practice = state.practice===pid?'all':pid;
+  document.getElementById('sel-practice').value=state.practice;
+  renderAll();
+}
+
+function populatePracticeDropdown(filtered) {
+  const k = specMeta[state.spec].key;
+  const pidSet = new Set(filtered.map(p=>p.pid));
+  const practiceNames = {};
+  physicians.filter(p=>pidSet.has(p.pid)).forEach(p=>{ practiceNames[p.pid]=p.practice; });
+  const sel = document.getElementById('sel-practice');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="all">All Practices</option>';
+  Object.entries(practiceNames).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([pid,name])=>{
+    const o=document.createElement('option'); o.value=pid; o.textContent=name;
+    if(pid===cur) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+function fmt(n){ return Math.round(n).toLocaleString(); }
+function pct(n,d){ return d?Math.round(n/d*100):0; }
+
+/* ══════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════ */
+function updateSidebarCounts(){
+  // Sidebar shows total specialist-destination volume (consistent with other dashboards)
+  // Computed from the same canonical specialist refs data used across the suite
+  const SPEC_TOTALS={ortho:13770,cardio:14560,gi:19180};
+  const mos=getActiveMonths();
+  const mwSum={};
+  ['ortho','cardio','gi'].forEach(sp=>{
+    mwSum[sp]=mos.reduce((s,m)=>s+MONTH_WEIGHTS[sp][m-1],0);
+  });
+  let allVol=0;
+  ['ortho','cardio','gi'].forEach(sp=>{
+    const vol=Math.round(SPEC_TOTALS[sp]*mwSum[sp]);
+    allVol+=vol;
+    const el=document.getElementById('cnt-'+sp);
+    if(el) el.textContent=vol.toLocaleString();
+  });
+  const allEl=document.getElementById('cnt-all');
+  if(allEl) allEl.textContent=allVol.toLocaleString();
+}
+
+function renderAll() {
+  updateSidebarCounts();
+  destroyCharts();
+  const k = specMeta[state.spec].key;
+  const sm = specMeta[state.spec] || specMeta['ortho'];
+  const activeMonths = getActiveMonths();
+  const filtered = filteredPhysicians();
+
+  populatePracticeDropdown(filteredPhysicians_noTierFilter());
+
+  const t1list  = filtered.filter(p=>p.tier==='t1');
+  const t2list  = filtered.filter(p=>p.tier==='t2');
+  const oonlist = filtered.filter(p=>p.tier==='oon');
+  const pcplist = filtered.filter(p=>p.ptype==='pcp');
+  const speclist = filtered.filter(p=>p.ptype==='spec');
+
+  const total    = totalRef(filtered, k);
+  const kpiTotal = (()=>{
+    const mos=getActiveMonths(), specs=state.spec==='all'?['ortho','cardio','gi']:[state.spec];
+    const SPEC_ANNUAL = (window.CPIQ && window.CPIQ.meta && window.CPIQ.meta.specVols) ? window.CPIQ.meta.specVols : {ortho:1300,cardio:950,gi:1200};
+    return specs.reduce((t,sp)=>{
+      const mw=mos.reduce((s,m)=>s+MONTH_WEIGHTS[sp][m-1],0);
+      return t+Math.round(SPEC_ANNUAL[sp]*mw);
+    },0);
+  })();
+  const t1Total  = totalRef(t1list,  k);
+  const t2Total  = totalRef(t2list,  k);
+  const intTotal = t1Total + t2Total;
+  const extTotal = totalRef(oonlist, k);
+  const pcpTotal = totalRef(pcplist, k);
+  const specTotal= totalRef(speclist, k);
+  const t1pct    = pct(t1Total,  total);
+  const t2pct    = pct(t2Total,  total);
+  const intPct   = pct(intTotal, total);
+  const extpct   = pct(extTotal, total);
+
+  const sorted = [...filtered].sort((a,b)=>getRefTotal(b,k)-getRefTotal(a,k)).slice(0,15);
+
+  // Practice aggregation
+  const practiceMap = {};
+  filtered.forEach(p=>{
+    if(!practiceMap[p.pid]) practiceMap[p.pid]={name:p.practice,pid:p.pid,tier:p.tier,vol:0,count:0};
+    practiceMap[p.pid].vol += getRefTotal(p,k);
+    practiceMap[p.pid].count++;
+  });
+  const practices = Object.values(practiceMap).sort((a,b)=>b.vol-a.vol);
+  const maxPVol = practices.length?practices[0].vol:1;
+
+  const practiceColors = {
+    t1:  {bg:'var(--teal-lt)',border:'rgba(0,125,110,.22)',dot:'var(--teal)',label:'T1',lc:'var(--teal)'},
+    t2:  {bg:'var(--blue-lt)',border:'rgba(26,86,176,.2)', dot:'var(--blue)',label:'T2',lc:'var(--blue)'},
+    oon: {bg:'rgba(15,30,60,.04)',border:'var(--border)',  dot:'var(--text3)',label:'OON',lc:'var(--text3)'},
+  };
+
+  // Top CIN Network contributors for insight
+  const t2sorted = [...t2list].sort((a,b)=>getRefTotal(b,k)-getRefTotal(a,k)).slice(0,3).map(p=>p.name);
+
+  // Period label
+  let periodLabel = 'CY 2025';
+  if (state.month !== 'all') periodLabel = MONTH_NAMES[parseInt(state.month)-1]+' 2025';
+  else if (state.quarter !== 'all') periodLabel = state.quarter+' 2025';
+  document.getElementById('hd-period').textContent = periodLabel+' · ~20,000 Referrals';
+
+  document.getElementById('main-area').innerHTML = `
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi-card c-${state.spec==='ortho'?'gold':state.spec==='cardio'?'rose':'teal'}">
+      <div class="kpi-lbl">${sm.label} Referrals</div>
+      <div class="kpi-val">${fmt(kpiTotal)}</div>
+      <div class="kpi-meta"><span class="delta d-up">+5.8%</span> vs 2024</div>
+    </div>
+    <div class="kpi-card c-teal">
+      <div class="kpi-lbl">Internal (T1+T2)</div>
+      <div class="kpi-val">${intPct}%</div>
+      <div class="kpi-meta">${fmt(intTotal)} referrals</div>
+    </div>
+    <div class="kpi-card c-rose">
+      <div class="kpi-lbl">Out-of-Network</div>
+      <div class="kpi-val">${extpct}%</div>
+      <div class="kpi-meta">${fmt(extTotal)} external</div>
+    </div>
+    <div class="kpi-card c-blue">
+      <div class="kpi-lbl">Tier 2 CIN Network</div>
+      <div class="kpi-val">${t2pct}%</div>
+      <div class="kpi-meta">${fmt(t2Total)} referrals</div>
+    </div>
+    <div class="kpi-card c-purple">
+      <div class="kpi-lbl">Referring Physicians</div>
+      <div class="kpi-val">${filtered.length}</div>
+      <div class="kpi-meta">${pcplist.length} PCP · ${speclist.length} Specialist</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Source breakdown + Donut -->
+  <div class="grid-2" style="align-items:start">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Referrals by Source Tier</div>
+          <div class="card-subtitle">Internal (T1+T2) vs. External (Out-of-Network)</div>
+        </div>
+        <span class="card-badge">${fmt(total)} total</span>
+      </div>
+      <div class="source-bars">
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">INTERNAL — ${fmt(intTotal)} (${intPct}%)</div>
+        <div class="src-row">
+          <div class="src-name">Tier 1 · Employed</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(t1Total,total)}%;background:var(--teal)"></div></div>
+          <div class="src-val">${fmt(t1Total)}</div>
+          <div class="src-pct">${t1pct}%</div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Tier 2 · CIN Network Affiliated</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(t2Total,total)}%;background:var(--blue)"></div></div>
+          <div class="src-val">${fmt(t2Total)}</div>
+          <div class="src-pct">${t2pct}%</div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:5px 0"></div>
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">EXTERNAL — ${fmt(extTotal)} (${extpct}%)</div>
+        <div class="src-row">
+          <div class="src-name">Out-of-Network Providers</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(extTotal,total)}%;background:var(--rose)"></div></div>
+          <div class="src-val">${fmt(extTotal)}</div>
+          <div class="src-pct">${extpct}%</div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:5px 0"></div>
+        <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:3px">BY PROVIDER TYPE</div>
+        <div class="src-row">
+          <div class="src-name">Primary Care Physicians</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(pcpTotal,total)}%;background:var(--gold)"></div></div>
+          <div class="src-val">${fmt(pcpTotal)}</div>
+          <div class="src-pct">${pct(pcpTotal,total)}%</div>
+        </div>
+        <div class="src-row">
+          <div class="src-name">Specialist Co-Referrals</div>
+          <div class="src-bar-bg"><div class="src-bar-fill" style="width:${pct(specTotal,total)}%;background:var(--purple)"></div></div>
+          <div class="src-val">${fmt(specTotal)}</div>
+          <div class="src-pct">${pct(specTotal,total)}%</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="card-header" style="margin-bottom:10px">
+          <div>
+            <div class="card-title">Source Mix Overview</div>
+            <div class="card-subtitle">Distribution by tier &amp; provider type</div>
+          </div>
+        </div>
+        <div class="donut-wrap">
+          <div style="width:130px;height:130px;flex-shrink:0"><canvas id="sourceDonut"></canvas></div>
+          <div class="donut-legend">
+            <div class="dl-row"><div class="dl-dot" style="background:#007d6e"></div><span class="dl-name">T1 Employed · PCP</span><span class="dl-val">${fmt(totalRef(t1list.filter(p=>p.ptype==='pcp'),k))}</span><span class="dl-pct">${pct(totalRef(t1list.filter(p=>p.ptype==='pcp'),k),total)}%</span></div>
+            <div class="dl-row"><div class="dl-dot" style="background:#009e8c"></div><span class="dl-name">T1 Employed · Specialist</span><span class="dl-val">${fmt(totalRef(t1list.filter(p=>p.ptype==='spec'),k))}</span><span class="dl-pct">${pct(totalRef(t1list.filter(p=>p.ptype==='spec'),k),total)}%</span></div>
+            <div class="dl-row"><div class="dl-dot" style="background:#1a56b0"></div><span class="dl-name">T2 CIN Network · PCP</span><span class="dl-val">${fmt(totalRef(t2list.filter(p=>p.ptype==='pcp'),k))}</span><span class="dl-pct">${pct(totalRef(t2list.filter(p=>p.ptype==='pcp'),k),total)}%</span></div>
+            <div class="dl-row"><div class="dl-dot" style="background:#4a80e0"></div><span class="dl-name">T2 CIN Network · Specialist</span><span class="dl-val">${fmt(totalRef(t2list.filter(p=>p.ptype==='spec'),k))}</span><span class="dl-pct">${pct(totalRef(t2list.filter(p=>p.ptype==='spec'),k),total)}%</span></div>
+            <div class="dl-row"><div class="dl-dot" style="background:#c8354a"></div><span class="dl-name">Out-of-Net · PCP</span><span class="dl-val">${fmt(totalRef(oonlist.filter(p=>p.ptype==='pcp'),k))}</span><span class="dl-pct">${pct(totalRef(oonlist.filter(p=>p.ptype==='pcp'),k),total)}%</span></div>
+            <div class="dl-row"><div class="dl-dot" style="background:#e88098"></div><span class="dl-name">Out-of-Net · Specialist</span><span class="dl-val">${fmt(totalRef(oonlist.filter(p=>p.ptype==='spec'),k))}</span><span class="dl-pct">${pct(totalRef(oonlist.filter(p=>p.ptype==='spec'),k),total)}%</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ROW 2: Practice grid -->
+  <div class="card full">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Referrals by Physician Practice</div>
+        <div class="card-subtitle">All practices sending ${sm.label} referrals · Click to filter</div>
+      </div>
+      <span class="card-badge">${practices.length} practices</span>
+    </div>
+    <div class="practice-grid">
+      ${practices.slice(0,12).map(pr=>{
+        const pc = practiceColors[pr.tier];
+        const isSelected = state.practice === pr.pid;
+        return `<div class="practice-card ${isSelected?'selected':''}" style="background:${pc.bg};border-color:${pc.border}" onclick="setPracticeCard('${pr.pid}')">
+          <div class="pc-name">${pr.name}</div>
+          <div class="pc-sub">${pr.count} physician${pr.count>1?'s':''}</div>
+          <div class="pc-bar"><div class="pc-bar-fill" style="width:${pr.vol/maxPVol*100}%;background:${pc.dot}"></div></div>
+          <div class="pc-meta">
+            <span class="pc-vol" style="color:${pc.dot}">${fmt(pr.vol)}</span>
+            <span class="pc-tier" style="color:${pc.lc}">${pc.label}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <!-- ROW 3: Physician table -->
+  <div class="card full">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Top Referring Physicians</div>
+        <div class="card-subtitle">${sm.label} referrals · Filtered view · ${filtered.length} physicians</div>
+      </div>
+      <span class="card-badge">Top 15 by volume</span>
+    </div>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Physician</th>
+          <th>Practice</th>
+          <th>Source</th>
+          <th>Tier</th>
+          <th>Type</th>
+          <th style="text-align:right">Referrals</th>
+          <th style="text-align:right">% of Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map((p,i)=>{
+          const v = getRefTotal(p,k);
+          const maxV = getRefTotal(sorted[0],k);
+          return `<tr>
+            <td class="rank">${i+1}</td>
+            <td><div class="dr-name">${p.name}</div><div class="dr-spec">${p.specialty} · ${p.city}</div></td>
+            <td><div class="dr-practice">${p.practice}</div></td>
+            <td><span style="font-size:10px;font-weight:600;color:${p.tier==='oon'?'var(--rose)':'var(--teal)'}">${p.tier==='oon'?'External':'Internal'}</span></td>
+            <td>${p.tier==='t1'?'<span class="pill pill-t1">T1 Employed</span>':p.tier==='t2'?'<span class="pill pill-t2">T2 Affiliated</span>':'<span class="pill pill-ext">Out-of-Net</span>'}</td>
+            <td>${p.ptype==='pcp'?'<span class="pill pill-pcp">Primary Care</span>':'<span class="pill pill-spec">Specialist</span>'}</td>
+            <td style="text-align:right">
+              <div class="num">${fmt(v)}</div>
+              <div class="mini-bar-bg" style="margin-left:auto"><div class="mini-bar" style="width:${v/maxV*100}%;background:${sm.hex}"></div></div>
+            </td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${total>0?(v/total*100).toFixed(1):0}%</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Insights -->
+  <div class="full">
+    <div class="insight ins-teal"><span style="font-size:14px;flex-shrink:0">✓</span><span><strong>Internal network strength:</strong> ${intPct}% of ${sm.label} referrals originate from Internal sources (Tier 1 Employed + Tier 2 CIN Network), demonstrating strong network cohesion across the Metro Market.</span></div>
+    <div class="insight ins-${extpct>35?'rose':'gold'}"><span style="font-size:14px;flex-shrink:0">${extpct>35?'⚠':'△'}</span><span><strong>External referral opportunity:</strong> ${fmt(extTotal)} ${sm.label} referrals (${extpct}%) come from Out-of-Network providers. ${extpct>35?'This exceeds the 35% threshold — a significant network development target.':'Continued CIN Network expansion could convert a portion to affiliated relationships.'}</span></div>
+    <div class="insight ins-blue"><span style="font-size:14px;flex-shrink:0">◎</span><span><strong>CIN Network leverage:</strong> Tier 2 affiliated practices contribute ${t2pct}% of ${sm.label} volume.${t2sorted.length?' Top contributors: '+t2sorted.join(', ')+' — key community partner relationships.':''}</span></div>
+  </div>
+  `;
+
+  // ── DONUT CHART ──
+  const dCtx = document.getElementById('sourceDonut').getContext('2d');
+  const dData = [
+    totalRef(t1list.filter(p=>p.ptype==='pcp'),k),
+    totalRef(t1list.filter(p=>p.ptype==='spec'),k),
+    totalRef(t2list.filter(p=>p.ptype==='pcp'),k),
+    totalRef(t2list.filter(p=>p.ptype==='spec'),k),
+    totalRef(oonlist.filter(p=>p.ptype==='pcp'),k),
+    totalRef(oonlist.filter(p=>p.ptype==='spec'),k),
+  ];
+  chartInstances.donut = new Chart(dCtx, {
+    type:'doughnut',
+    data:{labels:['T1 PCP','T1 Spec','T2 PCP','T2 Spec','OON PCP','OON Spec'],datasets:[{data:dData,backgroundColor:['#007d6e','#009e8c','#1a56b0','#4a80e0','#c8354a','#e88098'],borderWidth:2,borderColor:'#fff',hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{...CT.tooltip,callbacks:{label:c=>`${c.label}: ${fmt(c.raw)} (${total>0?Math.round(c.raw/total*100):0}%)`}}}},
+  });
+
+}
+
+
+function getMonthlyRef(p, specKey, month) {
+  if(!specKey || specKey==='all') return 0;
+  const annual = p.refs[specKey] || 0;
+  const w = (MONTH_WEIGHTS[specKey]||MONTH_WEIGHTS['ortho'])[month-1];
+  return Math.round(annual * w);
+}
+
+function filteredPhysicians_noTierFilter() {
+  const k = specMeta[state.spec].key;
+  return physicians.filter(p => {
+    if (getRefTotal(p,k)===0) return false;
+    if (state.source==='internal' && p.tier==='oon') return false;
+    if (state.source==='external' && p.tier!=='oon') return false;
+    return true;
+  });
+}
+
+// Init
+renderAll();
+
+// Notify parent suite of this tab's system name for CTA widget
+(function() {
+  if (typeof SYS_NAME !== 'undefined') {
+    window.parent.postMessage({ type: 'sys-name', value: SYS_NAME }, '*');
+  }
+})();
+</script>
+</body>
+</html>

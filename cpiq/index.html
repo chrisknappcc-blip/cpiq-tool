@@ -1,0 +1,925 @@
+<!--
+========================================================================
+CPIQ DEMO PROTOTYPE — CPIQ Demo Prototype — DATA MANIFEST v3
+========================================================================
+
+All names are generic placeholders. Replace every instance of
+'Health System', 'CIN Partner', 'Competitor', 'City A/B/C..., ST'
+with real names for the target health system and market.
+
+STRUCTURE:
+  • 35 destination practices  (T1=12, T2=10, OON=13)
+  • 21 procedure locations    (scorecard tab: PROC_LOCATIONS)
+  • 29 referral sources       (source tab: REFERRERS)
+  • 127 physicians, 2,000 synthetic patient records
+
+SYSTEM TEXT TO REPLACE (all 8 tabs + suite shell):
+  'Health System'  →  [New Health System Name]
+  'CIN Network'    →  [New CIN/Network Name]
+  'Metro Market'   →  [New Geographic Market]
+  'T1 Employed'    →  [New System] Employed
+  'City A, ST' ... 'City M, ST'  →  Real city, state
+
+IMPORTANT — APOSTROPHE SAFETY:
+  Practice names may contain apostrophes (St. Joseph’s, Children’s, Women’s, etc.).
+  Before inserting any name into a JS single-quoted string, replace:
+    straight apostrophe (') U+0027  →  right single quote (’) U+2019
+  Apply to: LOCATIONS name/city, PROC_LOCATIONS name/city, REFERRERS practice,
+            SPECIALISTS practice, any other JS object with name:'…' values.
+  JSON arrays (PRACTICES, PRAC_MAP, SRC_MAP) use double-quotes — apostrophes safe there.
+  Python helper:  def safe(s): return s.replace("'", "’")
+
+SYS_NAME CONSTANT (source, destination, procedure, cycle, scorecard):
+  const SYS_NAME = 'Health System';
+  → Replace 'Health System' with the real system name
+
+------------------------------------------------------------------------
+DESTINATION PRACTICES (35) — update in PRACTICES JSON array
+------------------------------------------------------------------------
+
+  ORTHOPEDICS:
+    [T1 Employed]
+      pid=mh-ortho-dal  |  Health System Orthopedics – City A
+      pid=mh-ortho-man  |  Health System Orthopedics – City B
+      pid=mh-ortho-stl  |  Health System Orthopedics – City C
+      pid=mh-trauma-dal  |  Health System Orthopaedic Trauma & Spine – City A
+    [T2 CIN Partner]
+      pid=t2-ortho-irv  |  CIN Partner Orthopedics – City D
+      pid=t2-ortho-mid  |  CIN Partner Orthopedics – City E
+      pid=t2-ortho-gar  |  CIN Partner Orthopedics – City F
+    [OON Competitor]
+      pid=txortho-dal  |  Competitor Orthopaedics – City A
+      pid=txortho-pla  |  Competitor Orthopedic Associates – City B
+      pid=bsw-ortho-dal  |  Academic Medical Orthopaedics – City A
+      pid=utsw-ortho-dal  |  Regional Health Orthopedics – City A
+      pid=medcity-ortho-dal  |  Independent Orthopedic Associates – City B
+
+  CARDIOLOGY:
+    [T1 Employed]
+      pid=mh-cardio-dal  |  Health System Heart & Vascular – City A
+      pid=mh-cardio-ric  |  Health System Heart & Vascular – City B
+      pid=mh-rca-ric  |  Health System Cardiovascular Associates – City C
+      pid=mh-hl-man  |  Health System Heart & Vascular – City D
+    [T2 CIN Partner]
+      pid=t2-cardio-pla  |  CIN Partner Cardiology – City G
+      pid=t2-cardio-arl  |  CIN Partner Cardiology – City H
+      pid=t2-cardio-grp  |  CIN Partner Cardiology – City I
+    [OON Competitor]
+      pid=hplace-dal  |  Competitor Cardiovascular Group – City A
+      pid=hplace-man  |  Competitor Cardiovascular Group – City B
+      pid=utsw-cardio  |  Academic Medical Cardiology – City A
+      pid=medcity-cardio-pla  |  Regional Health Cardiovascular – City B
+
+  GASTROENTEROLOGY:
+    [T1 Employed]
+      pid=mh-gi-chl  |  Health System Digestive Health – City A
+      pid=mh-dhs-dal  |  Health System Digestive Health – City B
+      pid=mh-liver-dal  |  Health System Digestive Health – City C
+      pid=mh-gi-man  |  Health System Digestive Health – City D
+    [T2 CIN Partner]
+      pid=t2-gi-fri  |  CIN Partner Gastroenterology – City J
+      pid=t2-gi-car  |  CIN Partner Gastroenterology – City K
+      pid=t2-gi-roc  |  CIN Partner Gastroenterology – City L
+      pid=t2-gi-mck  |  CIN Partner Gastroenterology – City M
+    [OON Competitor]
+      pid=dhat-dal  |  Competitor Gastroenterology – City A
+      pid=tddc-dal  |  Independent Digestive Disease Consultants – City A
+      pid=utsw-gi-irv  |  Academic Medical Digestive Disease – City B
+      pid=medcity-gi-irv  |  Regional Health GI – City C
+
+------------------------------------------------------------------------
+PROCEDURE LOCATIONS (21) — update PROC_LOCATIONS in scorecard tab
+Also update LOCATIONS in procedure tab (same location ids)
+------------------------------------------------------------------------
+
+  IN-NETWORK:
+    id=ph-gmc  |  Health System Medical Center – City A  |  City A, ST  |  hospital
+    id=ph-patm  |  Health System Medical Center – City B  |  City B, ST  |  hospital
+    id=ph-greer  |  Health System Medical Center – City C  |  City C, ST  |  hospital
+    id=ph-spart  |  Health System Medical Center – City D  |  City D, ST  |  hospital
+    id=ph-tuomey  |  Health System Medical Center – City E  |  City E, ST  |  hospital
+    id=ph-bap  |  Health System Medical Center – City F  |  City F, ST  |  hospital
+    id=ph-asc-gvl  |  Health System Surgery Center – City A  |  City A, ST  |  asc
+    id=ph-asc-lex  |  Health System Surgery Center – City B  |  City B, ST  |  asc
+    id=ph-asc-col  |  Health System Surgery Center – City C  |  City C, ST  |  asc
+
+  OON:
+    id=bs-stfr  |  Competitor Medical Center – City A  |  City A, ST  |  hospital
+    id=bs-mercy  |  Competitor Medical Center – City B  |  City B, ST  |  hospital
+    id=mc-main  |  Regional Health Medical Center – City A  |  City A, ST  |  hospital
+    id=mc-north  |  Regional Health Medical Center – City B  |  City B, ST  |  hospital
+    id=srhs-main  |  Academic Medical Center – City A  |  City A, ST  |  hospital
+    id=mc-asc  |  Competitor Surgery Center – City C  |  City C, ST  |  asc
+    id=cdd-endo  |  Independent Endoscopy Center – City B  |  City B, ST  |  asc
+    id=uhs-main  |  Academic Medical Center – City B  |  City B, ST  |  hospital
+    id=spart-asc  |  Specialty Surgical Institute – City A  |  City A, ST  |  asc
+    id=midlands-asc  |  Independent GI Surgery Center – City D  |  City D, ST  |  asc
+    id=lowcountry-endo  |  Regional Endoscopy Center – City A  |  City A, ST  |  asc
+    id=uhs-asc  |  Competitor Orthopedic Surgery Center – City A  |  City A, ST  |  asc
+
+------------------------------------------------------------------------
+REFERRAL SOURCE PRACTICES (29 unique) — update REFERRERS in source tab
+Also: replace city field on each referrer record
+------------------------------------------------------------------------
+
+  [T1 Employed]
+    pid=ph-fm-gvl  |  pcp  |  Health System Family Medicine – City A
+    pid=ph-fm-simp  |  pcp  |  Competitor Primary Care – City B
+    pid=ph-im-gvl  |  pcp  |  Health System Internal Medicine – City A
+    pid=ph-pc-greer  |  pcp  |  Health System Primary Care – City C
+    pid=ph-fm-laurens  |  pcp  |  Health System Family Medicine – City D
+    pid=ph-im-col  |  pcp  |  Health System Internal Medicine – City E
+    pid=ph-fm-lex  |  pcp  |  Health System Family Medicine – City F
+    pid=ph-im-spart  |  pcp  |  Health System Internal Medicine – City G
+    pid=ph-cardio-gvm  |  spec  |  Health System Cardiology – City A
+    pid=ph-cardio-spart  |  spec  |  Health System Cardiology – City B
+    pid=ph-cardio-col  |  spec  |  Health System Heart & Vascular – City A
+    pid=ph-gi-gvl  |  spec  |  Health System Digestive Health – City B
+    pid=ph-gi-col  |  spec  |  Health System Digestive Health – City A
+
+  [T2 CIN Partner]
+    pid=fam-spart  |  pcp  |  CIN Partner Primary Care – City A
+    pid=pca-anderson  |  pcp  |  CIN Partner Primary Care – City B
+    pid=medlife  |  pcp  |  CIN Partner Primary Care – City C
+    pid=anmed-phy  |  pcp  |  CIN Partner Primary Care – City D
+    pid=midlands-pc  |  pcp  |  CIN Partner Primary Care – City F
+    pid=palmetto-pc  |  pcp  |  CIN Partner Primary Care – City M
+    pid=foothill-cardio  |  spec  |  CIN Partner Cardiology – City G
+    pid=upstate-gi  |  spec  |  CIN Partner Gastroenterology – City M
+    pid=midlands-cardio  |  spec  |  CIN Partner Cardiology – City H
+
+  [OON]
+    pid=bon-secours  |  pcp  |  Health System Family Medicine – City A
+    pid=spart-reg  |  pcp  |  Competitor Primary Care – City B
+    pid=sc-ima  |  pcp  |  Academic Medical Primary Care – City A
+    pid=parkside  |  pcp  |  Regional Health Primary Care – City A
+    pid=carolina-ortho  |  spec  |  Competitor Orthopedic Associates – City B
+    pid=bon-cardio  |  spec  |  Academic Medical Cardiology – City A
+    pid=carolina-gi  |  spec  |  Health System Digestive Health – City A
+
+========================================================================
+SUBSTITUTION INSTRUCTIONS FOR CLAUDE:
+========================================================================
+
+1. Build old→new mapping for all 35 practices, 21 locations, 29 referrers
+
+2. For each of the 8 B64 keys (carepathiq, source, destination, procedure,
+   cycle, scorecard, journeys, insights): decode base64 → substitute → re-encode
+
+3. PRACTICES JSON (scorecard + carepathiq tabs):
+   Find 'const PRACTICES = [' → depth-count → JSON.parse → update .name → JSON.stringify
+
+4. PROC_LOCATIONS (scorecard tab) + LOCATIONS (procedure tab):
+   Same location ids — replace name and city fields in both places
+
+5. REFERRERS array (source tab + journeys tab):
+   Replace practice name and city fields for each referrer pid
+
+6. Physician city fields (all tabs):
+   Replace city:'City X, ST' with real city values matching the referrer's practice city
+
+7. SYS_NAME constant (source, destination, procedure, cycle, scorecard):
+   const SYS_NAME = 'Health System' → const SYS_NAME = '[New System Name]'
+
+8. PRAC_MAP in journeys tab (maps legacy practice pids → practice names):
+   Find 'const PRAC_MAP = {' → replace each value string with the new practice name
+   matching the same pid. Keys: ph-ortho-gvl, ph-ortho-col, bon-ortho, etc.
+
+9. SRC_MAP in journeys tab (maps physician r-ids → referrer practice names):
+   Find 'const SRC_MAP = {' → replace each value string with the new referrer
+   practice name. Keys are r001-r115 physician ids.
+
+8. System text everywhere:
+   'Health System' → [New System Name]
+   'CIN Network'   → [New CIN Name]
+   'Metro Market'  → [New Market]
+   'T1 Employed'   → [New System] Employed
+
+9. Logo: replace LOGO_PLACEHOLDER (in nav shell AND inside each decoded tab)
+   with: data:image/png;base64,[new_logo_b64]
+   Token appears in 9 places: 1 shell + 8 tabs. Use regex: LOGO_PLACEHOLDER
+
+10. PRAC_MAP + SRC_MAP in journeys are DYNAMIC — they auto-update from PRACTICES
+    and REFERRERS arrays, so no separate update needed for journeys labels
+
+11. Save output as [healthsystem]_suite.html
+
+========================================================================
+-->
+DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPIQ Demo Prototype v6</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f7f9fc;--surface:#fff;--text:#0f1e2e;--text2:#4a6080;--text3:#8aa0b8;
+  --border:rgba(15,30,60,.09);--teal:#007d6e;--teal-lt:#e6f4f2;
+  --gold:#b8720e;--gold-lt:#fdf3e2;--rose:#c8354a;--rose-lt:#fdeef0;
+  --blue:#1a56b0;--blue-lt:#e8f0ff;--purple:#6a42b8;--purple-lt:#f0eaff;
+  --shadow:0 1px 4px rgba(15,30,60,.07),0 4px 16px rgba(15,30,60,.04);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',sans-serif}
+
+.suite-nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(255,255,255,.98);backdrop-filter:blur(16px);
+  border-bottom:2px solid var(--border);
+  min-height:58px;height:58px;
+  display:flex;align-items:center;
+  padding:0 16px;gap:0;
+  box-shadow:0 2px 12px rgba(15,30,60,.07);
+  overflow:hidden;
+}
+.suite-logo{display:flex;align-items:center;gap:10px;margin-right:20px;flex-shrink:0}
+.suite-logo img{height:48px;width:auto;flex-shrink:0;max-width:220px;}
+.suite-wordmark{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text);letter-spacing:.01em}
+.suite-wordmark span{color:var(--teal)}
+.suite-logo{display:flex;align-items:center;flex-shrink:0}
+.nav-divider{width:1px;height:22px;background:var(--border);margin:0 16px;flex-shrink:0}
+.nav-divider{width:1px;height:22px;background:var(--border);margin:0 18px;flex-shrink:0}
+.suite-subtitle{font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.05em;text-transform:uppercase;flex-shrink:0;margin-right:28px}
+
+.tab-strip{display:flex;gap:2px;align-items:center;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.tab-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:0 10px;height:36px;
+  border:1px solid transparent;cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;
+  border-radius:8px;
+  transition:all .15s;
+  color:var(--text2);background:transparent;
+  white-space:nowrap;flex-shrink:0;
+}
+.tab-btn:hover{background:rgba(15,30,60,.04);color:var(--text)}
+.tab-btn.active{color:var(--text);border-color:var(--border)}
+.tab-num{
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:700;
+  width:18px;height:18px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;
+  background:rgba(15,30,60,.07);color:var(--text3);
+}
+.tab-btn.active .tab-num{color:#fff}
+.tab-btn:nth-child(1).active .tab-num{background:var(--teal)}
+.tab-btn:nth-child(2).active .tab-num{background:var(--blue)}
+.tab-btn:nth-child(3).active .tab-num{background:var(--gold)}
+.tab-btn:nth-child(4).active .tab-num{background:var(--rose)}
+.tab-btn:nth-child(5).active .tab-num{background:var(--purple)}
+.tab-btn:nth-child(6).active .tab-num{background:var(--blue)}
+.tab-btn:nth-child(7).active .tab-num{background:var(--teal)}
+.tab-btn:nth-child(8).active .tab-num{background:var(--gold)}
+.tab-label{font-size:12px}
+.tab-btn:nth-child(1).active{background:var(--teal-lt)}
+.tab-btn:nth-child(2).active{background:var(--blue-lt)}
+.tab-btn:nth-child(3).active{background:var(--gold-lt)}
+.tab-btn:nth-child(4).active{background:var(--rose-lt)}
+.tab-btn:nth-child(5).active{background:var(--purple-lt)}
+.tab-btn:nth-child(6).active{background:var(--blue-lt)}
+.tab-btn:nth-child(7).active{background:var(--teal-lt)}
+.tab-btn:nth-child(8).active{background:var(--gold-lt)}
+
+.suite-meta{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.meta-badge{
+  font-size:10px;font-weight:700;font-family:'DM Mono',monospace;
+  padding:3px 9px;border-radius:10px;
+}
+.badge-teal{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(0,125,110,.2)}
+.badge-blue{background:var(--blue-lt);color:var(--blue);border:1px solid rgba(26,86,176,.2)}
+
+.frame-wrap{position:fixed;top:58px;left:0;right:0;bottom:0}
+.dash-frame{width:100%;height:100%;border:none;display:none;background:var(--bg)}
+.dash-frame.visible{display:block}
+
+.frame-loading{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;
+  background:var(--bg);pointer-events:none;
+  transition:opacity .4s;
+}
+.frame-loading.done{opacity:0;pointer-events:none}
+
+.spinner{width:36px;height:36px;border-radius:50%;border:3px solid rgba(0,125,110,.15);border-top-color:var(--teal);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-label{font-size:13px;color:var(--text3);font-family:'Outfit',sans-serif}
+.loading-sub{font-size:11px;color:var(--text3);opacity:.6}
+
+/* ── RESPONSIVE NAV ──────────────────────────────────────────── */
+/* Hide scrollbar on tab-strip */
+.tab-strip::-webkit-scrollbar{display:none}
+
+/* 1300px: shrink logo and tab padding */
+@media(max-width:1300px){
+  .suite-logo img{height:38px;max-width:180px}
+  .tab-btn{padding:0 8px;font-size:11px;gap:5px}
+  .tab-num{width:16px;height:16px;font-size:8px}
+  .nav-divider{margin:0 10px}
+}
+
+/* 1100px: hide tab labels, show numbers only */
+@media(max-width:1100px){
+  .tab-label{display:none}
+  .tab-btn{padding:0 6px;gap:0}
+  .tab-num{width:26px;height:26px;font-size:10px;border-radius:6px}
+  .suite-logo img{height:34px;max-width:160px}
+  .suite-nav{padding:0 10px}
+  .nav-divider{margin:0 8px}
+}
+
+/* 800px: shrink logo further, tighter spacing */
+@media(max-width:800px){
+  .suite-logo img{height:28px;max-width:120px}
+  .tab-btn{padding:0 4px}
+  .tab-num{width:24px;height:24px;font-size:9px}
+  .nav-divider{margin:0 6px}
+}
+
+/* ── Request Widget ── */
+#cta-bubble {
+  position: fixed;
+  top: 72px;
+  right: 20px;
+  z-index: 9999;
+  font-family: 'Outfit', Arial, sans-serif;
+}
+#cta-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #1a7f6e 0%, #0f5a4e 100%);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 9px 18px 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  letter-spacing: .3px;
+  transition: transform .15s, box-shadow .15s;
+  white-space: nowrap;
+}
+#cta-toggle:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+#cta-toggle svg { flex-shrink: 0; }
+#cta-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 310px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.1);
+  overflow: hidden;
+}
+#cta-panel.open { display: block; }
+#cta-panel-header {
+  background: linear-gradient(135deg, #1a7f6e 0%, #0f5a4e 100%);
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#cta-panel-logo {
+  height: 36px;
+  object-fit: contain;
+  max-width: 160px;
+  background: rgba(255,255,255,.12);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+#cta-close-btn {
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 26px;
+  text-align: center;
+  transition: background .15s;
+}
+#cta-close-btn:hover { background: rgba(255,255,255,.3); }
+#cta-panel-body { padding: 16px; }
+#cta-panel-body h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1c2333;
+}
+#cta-panel-body p {
+  margin: 0 0 14px;
+  font-size: 11.5px;
+  color: #667;
+  line-height: 1.5;
+}
+.cta-field {
+  margin-bottom: 10px;
+}
+.cta-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #445;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.cta-field input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #dde3ec;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1c2333;
+  transition: border-color .15s;
+  outline: none;
+}
+.cta-field input:focus { border-color: #1a7f6e; }
+#cta-submit {
+  width: 100%;
+  background: linear-gradient(135deg, #1a7f6e 0%, #0f5a4e 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+  letter-spacing: .3px;
+  transition: opacity .15s;
+}
+#cta-submit:hover { opacity: .9; }
+#cta-success {
+  display: none;
+  text-align: center;
+  padding: 20px 16px 24px;
+}
+#cta-success svg { margin-bottom: 10px; }
+#cta-success h3 { margin: 0 0 6px; font-size: 14px; color: #1c2333; }
+#cta-success p { margin: 0; font-size: 12px; color: #667; }
+</style>
+</head>
+<body>
+
+<nav class="suite-nav">
+  <div class="suite-logo">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain">
+  </div>
+  <div class="nav-divider"></div>
+  <div class="tab-strip">
+    <button class="tab-btn active" id="tab-carepathiq" onclick="switchTab('carepathiq')">
+      <div class="tab-num">00</div>
+      <span class="tab-label">CarePath IQ</span>
+    </button>
+    <button class="tab-btn" id="tab-insights" onclick="switchTab('insights')">
+      <div class="tab-num">01</div>
+      <span class="tab-label">Patient Insights</span>
+    </button>
+    <button class="tab-btn" id="tab-cycle" onclick="switchTab('cycle')">
+      <div class="tab-num">02</div>
+      <span class="tab-label">Pathway Intelligence</span>
+    </button>
+    <button class="tab-btn" id="tab-scorecard" onclick="switchTab('scorecard')">
+      <div class="tab-num">03</div>
+      <span class="tab-label">Provider Scorecard</span>
+    </button>
+    <button class="tab-btn" id="tab-source" onclick="switchTab('source')">
+      <div class="tab-num">04</div>
+      <span class="tab-label">Referral Sources</span>
+    </button>
+    <button class="tab-btn" id="tab-destination" onclick="switchTab('destination')">
+      <div class="tab-num">05</div>
+      <span class="tab-label">Referral Outcomes</span>
+    </button>
+    <button class="tab-btn" id="tab-procedure" onclick="switchTab('procedure')">
+      <div class="tab-num">06</div>
+      <span class="tab-label">Downstream Procedures</span>
+    </button>
+    <button class="tab-btn" id="tab-journeys" onclick="switchTab('journeys')">
+      <div class="tab-num">07</div>
+      <span class="tab-label">Patient Journeys</span>
+    </button>
+  </div>
+
+
+</nav>
+
+<div class="frame-wrap">
+  <div class="frame-loading done" id="loading-source">
+    <div class="spinner"></div>
+    <div class="loading-label">Loading Referral Sources…</div>
+    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+  </div>
+  <div class="frame-loading done" id="loading-carepathiq">
+    <div class="spinner"></div>
+    <div class="loading-label">Loading CarePath IQ…</div>
+    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+  </div>
+  <iframe class="dash-frame visible" id="frame-carepathiq" class="dash-frame visible"
+    sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <iframe class="dash-frame" id="frame-source"
+    sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <div class="frame-loading done" id="loading-destination">
+    <div class="spinner"></div>
+    <div class="loading-label">Loading Referral Outcomes…</div>
+    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+  </div>
+  <iframe class="dash-frame" id="frame-destination"
+    sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <div class="frame-loading done" id="loading-procedure">
+    <div class="spinner"></div>
+    <div class="loading-label">Loading Procedures…</div>
+    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+  </div>
+  <iframe class="dash-frame" id="frame-procedure"
+    sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <div class="frame-loading done" id="loading-cycle">
+    <div class="spinner"></div>
+    <div class="loading-label">Loading Pathway Intelligence…</div>
+    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+  </div>
+  <iframe class="dash-frame" id="frame-cycle"
+    sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <div class="frame-loading done" id="loading-scorecard">
+    <div class="spinner"></div>
+    <div class="loading-label">Loading Provider Scorecard…</div>
+    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+  </div>
+  <iframe class="dash-frame" id="frame-scorecard"
+    sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <div class="frame-loading done" id="loading-journeys">
+    <div class="spinner"></div>
+    <div class="loading-label">Loading Patient Journeys…</div>
+    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+  </div>
+  <iframe class="dash-frame" id="frame-journeys"
+    sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <div class="frame-loading done" id="loading-insights">
+    <div class="spinner"></div>
+    <div class="loading-label">Loading Patient Insights…</div>
+    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+  </div>
+  <iframe class="dash-frame" id="frame-insights"
+    sandbox="allow-scripts allow-same-origin"></iframe>
+</div>
+
+<script src="/data/engine.js"></script>
+<script>
+// ── CPIQ Shell: Map Tool state-load + data generation + tab management ──────
+
+var MAP_TOOL_ROUTER = 'https://eclectic-kitten-27fdf8.netlify.app/.netlify/functions/router';
+var loaded  = {};
+var current = 'carepathiq';
+var cpiqState = null;  // generated dataset, broadcast to all iframes
+
+// ── Fetch Map Tool shared state ──────────────────────────────────────────────
+async function loadMapState() {
+  try {
+    var res = await fetch(MAP_TOOL_ROUTER + '?action=state-load');
+    if (!res.ok) throw new Error('state-load ' + res.status);
+    return await res.json();
+  } catch(e) {
+    console.warn('Map Tool state-load failed, using empty state:', e.message);
+    return { overrides: {}, typeOverrides: {}, customSystems: [], excluded: [] };
+  }
+}
+
+// ── Extract competitor systems from overrides map ───────────────────────────
+function extractCompetitors(mapState, targetSysName) {
+  var counts = {};
+  var overrides = mapState.overrides || {};
+  Object.values(overrides).forEach(function(sysName) {
+    if (!sysName || sysName === 'Independent / Community') return;
+    counts[sysName] = (counts[sysName] || 0) + 1;
+  });
+  return Object.keys(counts)
+    .filter(function(name) { return name !== targetSysName; })
+    .sort(function(a,b) { return counts[b] - counts[a]; })
+    .slice(0, 12)
+    .map(function(name) {
+      return {
+        name: name,
+        tier: 'oon',
+        locationCount: counts[name],
+        logoKey: encodeURIComponent(name.toLowerCase().trim())
+      };
+    });
+}
+
+// ── Load target system logo from Map Tool ────────────────────────────────────
+async function loadSystemLogo(sysName) {
+  if (!sysName) return null;
+  try {
+    var key = encodeURIComponent(sysName.toLowerCase().trim());
+    var res = await fetch(MAP_TOOL_ROUTER + '?action=icon-load&system=' + key);
+    if (!res.ok) return null;
+    var data = await res.json();
+    return data.dataUrl || null;
+  } catch(e) {
+    return null;
+  }
+}
+
+// ── Generate CPIQ dataset and broadcast to all frames ────────────────────────
+async function generateAndBroadcast(sysName, mapState) {
+  var competitors = extractCompetitors(mapState, sysName);
+  var dataset = CPIQEngine.generate(sysName, competitors, {});
+  cpiqState = dataset;
+
+  // Update nav logo
+  var logoDataUrl = await loadSystemLogo(sysName);
+  if (logoDataUrl) {
+    var logoImg = document.querySelector('.suite-logo img');
+    if (logoImg) logoImg.src = logoDataUrl;
+    var ctaLogo = document.getElementById('cta-panel-logo');
+    if (ctaLogo) ctaLogo.src = logoDataUrl;
+  }
+
+  // Update loading subtitles  
+  document.querySelectorAll('.loading-sub').forEach(function(el) {
+    el.textContent = sysName;
+  });
+
+  // Broadcast to any already-loaded frames
+  broadcastToAllFrames({ type: 'cpiq-state', payload: dataset });
+
+  return dataset;
+}
+
+// ── Broadcast to all loaded iframes ─────────────────────────────────────────
+function broadcastToAllFrames(msg) {
+  var tabs = ['carepathiq','source','destination','procedure','scorecard','insights','journeys','cycle'];
+  tabs.forEach(function(id) {
+    var frame = document.getElementById('frame-' + id);
+    if (frame && frame.contentWindow) {
+      try { frame.contentWindow.postMessage(msg, '*'); } catch(e) {}
+    }
+  });
+}
+
+// ── Tab loading (fetch from /tabs/ instead of B64) ───────────────────────────
+function loadFrame(id) {
+  if (loaded[id]) return;
+  loaded[id] = true;
+  var frame  = document.getElementById('frame-' + id);
+  var loader = document.getElementById('loading-' + id);
+  if (loader) loader.classList.remove('done');
+
+  fetch('/tabs/' + id + '.html')
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+      frame.srcdoc = html;
+      frame.addEventListener('load', function onLoad() {
+        frame.removeEventListener('load', onLoad);
+        // Inject state after frame loads
+        setTimeout(function() {
+          if (cpiqState && frame.contentWindow) {
+            try {
+              frame.contentWindow.__cpiqStateCache = cpiqState;
+              frame.contentWindow.postMessage({ type: 'cpiq-state', payload: cpiqState }, '*');
+            } catch(e) {}
+          }
+          if (loader) loader.classList.add('done');
+        }, 150);
+      });
+    })
+    .catch(function(err) {
+      console.error('Failed to load tab ' + id + ':', err);
+      if (loader) loader.classList.add('done');
+    });
+}
+
+function switchTab(id) {
+  if (id === current) return;
+  document.getElementById('frame-' + current).classList.remove('visible');
+  document.getElementById('tab-'   + current).classList.remove('active');
+  current = id;
+  document.getElementById('frame-' + id).classList.add('visible');
+  document.getElementById('tab-'   + id).classList.add('active');
+  loadFrame(id);
+}
+
+// ── Cross-tab navigation from CarePath IQ ───────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (!e.data) return;
+  if (e.data.type === 'carepathiq-navigate') {
+    var tab = e.data.tab;
+    var filterState = e.data.filterState || {};
+    switchTab(tab);
+    setTimeout(function() {
+      var frame = document.getElementById('frame-' + tab);
+      if (frame && frame.contentWindow) {
+        frame.contentWindow.postMessage({ type: 'apply-filters', filterState: filterState }, '*');
+      }
+    }, 800);
+  }
+  if (e.data.type === 'sys-name' && e.data.value) {
+    var el = document.getElementById('cta-sys-name');
+    if (el) el.textContent = e.data.value;
+  }
+});
+
+// ── Preset loader ────────────────────────────────────────────────────────────
+async function loadPreset(presetName) {
+  var res = await fetch('/presets/' + presetName + '.json');
+  if (!res.ok) throw new Error('Preset not found: ' + presetName);
+  return await res.json();
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+(async function init() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var presetName = urlParams.get('preset');   // ?preset=original
+  var sysName    = urlParams.get('sys');       // ?sys=Baptist+Health
+
+  // 1. Load map state (competitors, overrides)
+  var mapState = await loadMapState();
+
+  var dataset;
+
+  if (presetName) {
+    // ── Preset mode: load preserved dataset, overlay sys name from URL or Map Tool ──
+    try {
+      var presetData = await loadPreset(presetName);
+
+      // Determine sys name: URL > Map Tool top system > preset default
+      if (!sysName) {
+        var counts = {};
+        Object.values(mapState.overrides || {}).forEach(function(n) {
+          if (n && n !== 'Independent / Community') counts[n] = (counts[n]||0)+1;
+        });
+        var top = Object.entries(counts).sort(function(a,b){return b[1]-a[1];})[0];
+        sysName = (top && top[0]) || presetData.meta.sysName || 'Health System';
+      }
+
+      var competitors = extractCompetitors(mapState, sysName);
+      presetData.meta.sysName      = sysName;
+      presetData.meta.competitors  = competitors;
+      // patients not in main preset file — tabs fetch /presets/<name>-patients.json themselves
+      presetData.meta.patientsUrl  = '/presets/' + presetName + '-patients.json';
+      presetData.patients          = null; // signal to tabs: fetch separately
+
+      dataset = presetData;
+      cpiqState = dataset;
+
+      // Update nav logo from Map Tool
+      var logoDataUrl = await loadSystemLogo(sysName);
+      if (logoDataUrl) {
+        var logoImg = document.querySelector('.suite-logo img');
+        if (logoImg) logoImg.src = logoDataUrl;
+        var ctaLogo = document.getElementById('cta-panel-logo');
+        if (ctaLogo) ctaLogo.src = logoDataUrl;
+      }
+
+      document.querySelectorAll('.loading-sub').forEach(function(el) {
+        el.textContent = sysName;
+      });
+
+      broadcastToAllFrames({ type: 'cpiq-state', payload: dataset });
+      console.log('Preset loaded:', presetName, '— system:', sysName);
+
+    } catch(e) {
+      console.warn('Preset load failed, falling back to engine:', e.message);
+      presetName = null; // fall through to engine
+    }
+  }
+
+  if (!presetName) {
+    // ── Engine mode: generate fresh from system name ──────────────────────────
+    if (!sysName) {
+      var counts = {};
+      Object.values(mapState.overrides || {}).forEach(function(n) {
+        if (n && n !== 'Independent / Community') counts[n] = (counts[n]||0)+1;
+      });
+      var top = Object.entries(counts).sort(function(a,b){return b[1]-a[1];})[0];
+      sysName = (top && top[0]) || 'Health System';
+    }
+    dataset = await generateAndBroadcast(sysName, mapState);
+  }
+
+  // Load first tab
+  loadFrame('carepathiq');
+  document.getElementById('frame-carepathiq').classList.add('visible');
+})();
+</script>
+
+<!-- ── Request A Custom Analysis Widget ── -->
+<div id="cta-bubble">
+  <button id="cta-toggle" onclick="ctaToggle()">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1.5C4.41 1.5 1.5 4.08 1.5 7.25c0 1.62.72 3.08 1.88 4.12L2.5 14l2.84-1.24A7.1 7.1 0 008 13c3.59 0 6.5-2.58 6.5-5.75S11.59 1.5 8 1.5z" fill="rgba(255,255,255,.9)"/>
+    </svg>
+    Request A Custom Analysis
+  </button>
+
+  <div id="cta-panel">
+    <div id="cta-panel-header">
+      <img id="cta-panel-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System Logo">
+      <button id="cta-close-btn" onclick="ctaClose()" title="Collapse">✕</button>
+    </div>
+    <div id="cta-panel-body">
+      <div id="cta-form-view">
+        <h3>Request A Custom Analysis</h3>
+        <p>This is a prototype. But we can quickly build the real thing with two months of your recent patient referral data. Get in touch and we’ll build these dashboards as part of a free pilot analysis for <strong id="cta-sys-name">your health system</strong>.</p>
+        <div class="cta-field">
+          <label>Your Name</label>
+          <input type="text" id="cta-name" placeholder="">
+        </div>
+        <div class="cta-field">
+          <label>Health System</label>
+          <input type="text" id="cta-system" placeholder="">
+        </div>
+        <div class="cta-field">
+          <label>Email Address</label>
+          <input type="email" id="cta-email" placeholder="">
+        </div>
+        <div class="cta-field">
+          <label>Phone <span style="font-weight:400;opacity:.6">(optional)</span></label>
+          <input type="tel" id="cta-phone" placeholder="">
+        </div>
+        <button id="cta-submit" onclick="ctaSubmit()">Send Request →</button>
+      </div>
+      <div id="cta-success">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="20" fill="#e8f7f4"/>
+          <path d="M12 20l6 6 10-12" stroke="#1a7f6e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>Request Sent!</h3>
+        <p>Your request has been sent. We’ll be in touch within one business day.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+(function() {
+  emailjs.init({ publicKey: 'kr1dlUgNWPFnmQ8MS' });
+
+  function ctaToggle() {
+    var panel = document.getElementById('cta-panel');
+    panel.classList.toggle('open');
+  }
+  function ctaClose() {
+    document.getElementById('cta-panel').classList.remove('open');
+  }
+  function ctaSubmit() {
+    var name   = document.getElementById('cta-name').value.trim();
+    var system = document.getElementById('cta-system').value.trim();
+    var email  = document.getElementById('cta-email').value.trim();
+    var phone  = document.getElementById('cta-phone').value.trim();
+    if (!name || !system || !email) {
+      alert('Please fill in your name, health system, and email before submitting.');
+      return;
+    }
+    var btn = document.getElementById('cta-submit');
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
+    emailjs.send('service_CPIQ', 'template_CPIQ1', {
+      from_name:     name,
+      health_system: system,
+      reply_to:      email,
+      phone:         phone || 'Not provided'
+    }).then(function() {
+      document.getElementById('cta-form-view').style.display = 'none';
+      document.getElementById('cta-success').style.display = 'block';
+    }, function(err) {
+      btn.textContent = 'Send Request →';
+      btn.disabled = false;
+      alert('Something went wrong. Please try again. (' + JSON.stringify(err) + ')');
+    });
+  }
+  window.ctaToggle = ctaToggle;
+  window.ctaClose  = ctaClose;
+  window.ctaSubmit = ctaSubmit;
+})();
+</script>
+
+<script>
+// CTA widget: receive SYS_NAME from active tab
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'sys-name' && e.data.value) {
+    var el = document.getElementById('cta-sys-name');
+    if (el) el.textContent = e.data.value;
+  }
+});
+</script>
+
+</body>
+</html>

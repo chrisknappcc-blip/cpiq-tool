@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarePath IQ Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f7f9fc;--surface:#fff;--text:#0f1e2e;--text2:#4a6080;--text3:#8aa0b8;
+  --border:rgba(15,30,60,.09);--border2:rgba(15,30,60,.06);
+  --teal:#007d6e;--teal-lt:#e6f4f2;
+  --gold:#b8720e;--gold-lt:#fdf3e2;
+  --rose:#c8354a;--rose-lt:#fdeef0;
+  --blue:#1a56b0;--blue-lt:#e8f0ff;
+  --purple:#6a42b8;--purple-lt:#f0eaff;
+  --sidebar:#f2f5f9;
+  --shadow:0 1px 4px rgba(15,30,60,.06),0 4px 16px rgba(15,30,60,.04);
+  --shadow-md:0 2px 8px rgba(15,30,60,.08),0 8px 32px rgba(15,30,60,.06);
+}
+html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+/* LAYOUT */
+header{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);height:60px;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+.hd-left{display:flex;align-items:center;gap:16px}
+.hd-title{font-family:'DM Serif Display',serif;font-size:17px;color:var(--text)}
+.hd-spec-pill{font-size:10px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:10px;letter-spacing:.04em}
+.pill-t1{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(0,125,110,.2)}
+.pill-t2{background:var(--blue-lt);color:var(--blue);border:1px solid rgba(26,86,176,.2)}
+.pill-oon{background:var(--rose-lt);color:var(--rose);border:1px solid rgba(200,53,74,.2)}
+.hd-period{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+
+.shell{display:flex;height:calc(100vh - 60px);overflow:hidden}
+
+/* SIDEBAR */
+aside{width:260px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);
+  padding:14px 0;overflow-y:auto;display:flex;flex-direction:column;gap:0}
+.s-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:0 14px;margin-bottom:6px}
+.s-divider{height:1px;background:var(--border);margin:10px 0}
+
+/* SPECIALTY FILTER */
+.spec-btn{width:100%;display:flex;align-items:center;gap:8px;padding:7px 14px;border:none;
+  cursor:pointer;background:transparent;text-align:left;transition:background .12s;border-radius:0}
+.spec-btn:hover{background:rgba(15,30,60,.05)}
+.spec-btn.active{background:rgba(15,30,60,.07)}
+.spec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.spec-name{font-size:12px;font-weight:500;color:var(--text);flex:1}
+.spec-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+
+/* PRACTICE LIST */
+.practice-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;
+  border-left:3px solid transparent;transition:all .12s}
+.practice-item:hover{background:rgba(15,30,60,.04)}
+.practice-item.active{background:var(--surface);border-left-color:var(--teal)}
+.pi-info{flex:1;min-width:0}
+.pi-name{font-size:12px;font-weight:500;color:var(--text);line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pi-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.pi-refs{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0}
+
+/* MAIN */
+main{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;box-shadow:var(--shadow)}
+.kpi-card.c-teal{border-top:3px solid var(--teal)}
+.kpi-card.c-gold{border-top:3px solid var(--gold)}
+.kpi-card.c-rose{border-top:3px solid var(--rose)}
+.kpi-card.c-blue{border-top:3px solid var(--blue)}
+.kpi-card.c-purple{border-top:3px solid var(--purple)}
+.kpi-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text);line-height:1;margin-bottom:4px}
+.kpi-meta{font-size:10px;color:var(--text3)}
+
+/* GRID LAYOUTS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.full{grid-column:1/-1}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  box-shadow:var(--shadow);overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:12px;font-weight:600;color:var(--text)}
+.card-subtitle{font-size:10px;color:var(--text3);margin-top:1px}
+.card-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:var(--text2);
+  background:var(--bg);padding:2px 8px;border-radius:8px;border:1px solid var(--border)}
+.card-body{padding:14px 18px}
+
+/* CHART */
+.chart-wrap{position:relative;padding:14px 18px}
+.chart-wrap canvas{max-height:180px}
+
+/* PHYSICIAN CARDS */
+.phys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:16px 18px}
+.phys-card{border:1.5px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .15s;background:var(--surface)}
+.phys-card:hover{border-color:rgba(15,30,60,.2);box-shadow:0 2px 12px rgba(15,30,60,.08);transform:translateY(-1px)}
+.phys-card.selected{border-color:var(--teal);box-shadow:0 0 0 2px rgba(0,125,110,.18)}
+.pc-hd{padding:10px 12px;display:flex;align-items:flex-start;gap:8px}
+.pc-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.pc-nameblock{min-width:0}
+.pc-name{font-size:11px;font-weight:600;color:var(--text);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-refs{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:1px}
+.pc-metrics{padding:0 12px 12px;display:flex;flex-direction:column;gap:6px}
+.pc-met{display:flex;align-items:center;gap:6px}
+.pc-met-lbl{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);width:52px;flex-shrink:0}
+.pc-met-bar{flex:1;height:5px;background:rgba(15,30,60,.07);border-radius:3px;overflow:hidden}
+.pc-met-fill{height:100%;border-radius:3px;transition:width .3s}
+.pc-met-val{font-family:'DM Mono',monospace;font-size:9px;font-weight:700;width:32px;text-align:right;flex-shrink:0}
+.pc-divider{height:1px;background:var(--border2);margin:0 12px 10px}
+/* PHYSICIAN TABLE */
+.phys-table{width:100%;border-collapse:collapse}
+.phys-table th{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text3);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;
+  background:var(--bg)}
+.phys-table td{padding:9px 10px;border-bottom:1px solid var(--border2);font-size:12px;color:var(--text2)}
+.phys-table tr:last-child td{border-bottom:none}
+.phys-table tr:hover td{background:rgba(15,30,60,.02)}
+.phys-name{font-weight:500;color:var(--text)}
+
+/* MINI BAR */
+.met-bar-wrap{display:flex;align-items:center;gap:6px}
+.met-bar-bg{flex:1;height:5px;background:rgba(15,30,60,.07);border-radius:3px;overflow:hidden}
+.met-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.met-val{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;white-space:nowrap;min-width:32px;text-align:right}
+
+/* REF SOURCE / PROCEDURE BARS */
+.bar-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2)}
+.bar-row:last-child{border-bottom:none}
+.bar-label{font-size:11px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-tier{font-size:9px;font-weight:700;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:4px;flex-shrink:0}
+.bar-bg{width:90px;height:6px;background:rgba(15,30,60,.07);border-radius:3px;overflow:hidden;flex-shrink:0}
+.bar-fill{height:100%;border-radius:3px}
+.bar-val{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:var(--text2);min-width:36px;text-align:right;flex-shrink:0}
+
+/* PRACTICE HEADER */
+.practice-hd{margin-bottom:16px}
+.practice-hd-name{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:6px}
+.practice-hd-meta{display:flex;align-items:center;gap:10px}
+.tier-badge{font-size:10px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:10px}
+
+/* BENCHMARK BAR */
+.bench-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bench-label{font-size:11px;color:var(--text2);width:110px;flex-shrink:0}
+.bench-track{flex:1;height:8px;background:rgba(15,30,60,.07);border-radius:4px;position:relative;overflow:visible}
+.bench-fill{height:100%;border-radius:4px;transition:width .4s}
+.bench-avg-line{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text3);border-radius:1px}
+.bench-val{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;width:48px;text-align:right;flex-shrink:0}
+.bench-vs{font-size:9px;color:var(--text3);width:40px;text-align:right;flex-shrink:0}
+
+/* NETWORK PILL */
+.net-pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;font-family:'DM Mono',monospace}
+.net-in{background:var(--teal-lt);color:var(--teal)}
+.net-oon{background:var(--rose-lt);color:var(--rose)}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<style>
+header{display:none!important}
+footer{display:none!important}
+.shell{min-height:100vh!important}
+</style>
+<script>
+/* CPIQ Data Shim */
+(function() {
+  function applyState(s) {
+    window.CPIQ = s;
+    window.SYS_NAME = s.meta ? s.meta.sysName : 'Health System';
+    window.COMPETITORS = (s.meta && s.meta.competitors) || [];
+    if (typeof window.__cpiqReady === 'function') window.__cpiqReady(s);
+  }
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cpiq-state') applyState(e.data.payload);
+    if (e.data && e.data.type === 'apply-filters' && typeof window.__applyFilters === 'function') window.__applyFilters(e.data.filterState);
+  });
+  if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
+})();
+</script></head>
+<body>
+
+<header>
+  <div class="hd-left">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgNDgiPgogIDxyZWN0IHdpZHRoPSIyMjAiIGhlaWdodD0iNDgiIHJ4PSI2IiBmaWxsPSIjZjBmNGY4IiBzdHJva2U9IiNjOGQ2ZTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgcng9IjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDxsaW5lIHgxPSI4IiB5MT0iMjQiIHgyPSIzNiIgeTI9IjI0IiBzdHJva2U9IiM4YWEwYjgiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iLjUiLz4KICA8bGluZSB4MT0iMjIiIHkxPSIxMCIgeDI9IjIyIiB5Mj0iMzgiIHN0cm9rZT0iIzhhYTBiOCIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuNSIvPgogIDx0ZXh0IHg9IjQ2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0YTYwODAiPllPVVIgTE9HTyBIRVJFPC90ZXh0PgogIDx0ZXh0IHg9IjQ2IiB5PSIzNyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzhhYTBiOCI+UmVwbGFjZSB3aXRoIGNsaWVudCBsb2dvPC90ZXh0Pgo8L3N2Zz4=" alt="Health System" style="height:48px;object-fit:contain">
+    <div style="width:1px;height:32px;background:rgba(15,30,60,.1)"></div>
+    <div class="hd-title">Provider Scorecard</div>
+    <span id="hd-tier-badge" class="hd-spec-pill pill-t1">T1 · Employed</span>
+    <span id="hd-spec-badge" class="hd-spec-pill" style="background:var(--teal-lt);color:var(--teal)">Cardiology</span>
+  </div>
+  <span class="hd-period">CY 2025 · Destination Practice View</span>
+</header>
+
+<div class="shell">
+<aside>
+  <!-- SPECIALTY FILTER -->
+  <div style="padding:0 0 4px">
+    <div class="s-label" style="margin-bottom:8px">Specialty</div>
+    <button class="spec-btn active" id="sb-all" onclick="setSpec('all',this)">
+      <div class="spec-dot" style="background:linear-gradient(135deg,var(--gold),var(--rose),var(--teal))"></div>
+      <span class="spec-name">All Specialties</span>
+      <span class="spec-count" id="cnt-all">—</span>
+    </button>
+    <button class="spec-btn" id="sb-ortho" onclick="setSpec('ortho',this)">
+      <div class="spec-dot" style="background:var(--gold)"></div>
+      <span class="spec-name">Orthopedics</span>
+      <span class="spec-count" id="cnt-ortho">—</span>
+    </button>
+    <button class="spec-btn" id="sb-cardio" onclick="setSpec('cardio',this)">
+      <div class="spec-dot" style="background:var(--rose)"></div>
+      <span class="spec-name">Cardiology</span>
+      <span class="spec-count" id="cnt-cardio">—</span>
+    </button>
+    <button class="spec-btn" id="sb-gi" onclick="setSpec('gi',this)">
+      <div class="spec-dot" style="background:var(--teal)"></div>
+      <span class="spec-name">Gastroenterology</span>
+      <span class="spec-count" id="cnt-gi">—</span>
+    </button>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- TIER FILTER -->
+  <div style="padding:0 0 4px">
+    <div class="s-label" style="margin-bottom:8px">Provider Tier</div>
+    <button class="spec-btn active" id="tb-all" onclick="setTier('all',this)">
+      <span class="spec-name" style="font-size:11px">All Tiers</span>
+    </button>
+    <button class="spec-btn" id="tb-t1" onclick="setTier('t1',this)">
+      <div class="spec-dot" style="background:var(--teal)"></div>
+      <span class="spec-name" style="font-size:11px">T1 · Employed</span>
+    </button>
+    <button class="spec-btn" id="tb-t2" onclick="setTier('t2',this)">
+      <div class="spec-dot" style="background:var(--blue)"></div>
+      <span class="spec-name" style="font-size:11px">T2 · CIN Network</span>
+    </button>
+    <button class="spec-btn" id="tb-oon" onclick="setTier('oon',this)">
+      <div class="spec-dot" style="background:var(--rose)"></div>
+      <span class="spec-name" style="font-size:11px">Out-of-Network</span>
+    </button>
+  </div>
+
+  <div class="s-divider"></div>
+
+  <!-- PRACTICE LIST -->
+  <div>
+    <div class="s-label" style="margin-bottom:6px">Destination Practices</div>
+    <div id="practice-list"></div>
+  </div>
+</aside>
+
+<main id="main-area">
+  <div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text3)">
+    Select a practice from the left panel
+  </div>
+</main>
+</div>
+
+<script>
+
+const PROC_LOCATIONS = [
+  {id:'ph-gmc',    name:'Health System Medical Center – City A',      city:'City A, ST', type:'hospital', network:'in',  wt:{ortho:0.28,cardio:0.32,gi:0.30}},
+  {id:'ph-patm',   name:'Health System Medical Center – City B',      city:'City B, ST', type:'hospital', network:'in',  wt:{ortho:0.14,cardio:0.16,gi:0.12}},
+  {id:'ph-greer',  name:'Health System Medical Center – City C',      city:'City C, ST', type:'hospital', network:'in',  wt:{ortho:0.14,cardio:0.16,gi:0.14}},
+  {id:'ph-spart',  name:'Health System Medical Center – City D',      city:'City D, ST', type:'hospital', network:'in',  wt:{ortho:0.10,cardio:0.09,gi:0.14}},
+  {id:'ph-tuomey', name:'Health System Medical Center – City E',      city:'City E, ST', type:'hospital', network:'in',  wt:{ortho:0.06,cardio:0.07,gi:0.06}},
+  {id:'ph-bap',    name:'Health System Medical Center – City F',      city:'City F, ST', type:'hospital', network:'in',  wt:{ortho:0.06,cardio:0.06,gi:0.08}},
+  {id:'ph-asc-gvl',name:'Health System Surgery Center – City A',      city:'City A, ST', type:'asc',      network:'in',  wt:{ortho:0.12,cardio:0.05,gi:0.10}},
+  {id:'ph-asc-lex',name:'Health System Surgery Center – City B',      city:'City B, ST', type:'asc',      network:'in',  wt:{ortho:0.08,cardio:0.04,gi:0.06}},
+  {id:'ph-asc-col',name:'Health System Surgery Center – City C',      city:'City C, ST', type:'asc',      network:'in',  wt:{ortho:0.02,cardio:0.05,gi:0.00}},
+  {id:'bs-stfr',   name:'Competitor Medical Center – City A',         city:'City A, ST', type:'hospital', network:'oon', wt:{ortho:0.26,cardio:0.28,gi:0.22}},
+  {id:'bs-mercy',  name:'Competitor Medical Center – City B',         city:'City B, ST', type:'hospital', network:'oon', wt:{ortho:0.14,cardio:0.16,gi:0.14}},
+  {id:'mc-main',   name:'Regional Health Medical Center – City A',    city:'City A, ST', type:'hospital', network:'oon', wt:{ortho:0.18,cardio:0.20,gi:0.16}},
+  {id:'mc-north',  name:'Regional Health Medical Center – City B',    city:'City B, ST', type:'hospital', network:'oon', wt:{ortho:0.10,cardio:0.10,gi:0.10}},
+  {id:'srhs-main', name:'Academic Medical Center – City A',           city:'City A, ST', type:'hospital', network:'oon', wt:{ortho:0.08,cardio:0.06,gi:0.12}},
+  {id:'mc-asc',    name:'Competitor Surgery Center – City C',         city:'City C, ST', type:'asc',      network:'oon', wt:{ortho:0.10,cardio:0.03,gi:0.04}},
+  {id:'cdd-endo',  name:'Independent Endoscopy Center – City B',      city:'City B, ST', type:'asc',      network:'oon', wt:{ortho:0.02,cardio:0.02,gi:0.10}},
+  {id:'uhs-main',  name:'Academic Medical Center – City B',           city:'City B, ST', type:'hospital', network:'oon', wt:{ortho:0.08,cardio:0.08,gi:0.06}},
+  {id:'spart-asc', name:'Specialty Surgical Institute – City A',      city:'City A, ST', type:'asc',      network:'oon', wt:{ortho:0.12,cardio:0.04,gi:0.04}},
+  {id:'midlands-asc',name:'Independent GI Surgery Center – City D',   city:'City D, ST', type:'asc',      network:'oon', wt:{ortho:0.02,cardio:0.02,gi:0.12}},
+  {id:'lowcountry-endo',name:'Regional Endoscopy Center – City A',    city:'City A, ST', type:'asc',      network:'oon', wt:{ortho:0.00,cardio:0.02,gi:0.08}},
+  {id:'uhs-asc',   name:'Competitor Orthopedic Surgery Center – City A',city:'City A, ST',type:'asc',     network:'oon', wt:{ortho:0.08,cardio:0.02,gi:0.02}},
+];
+
+function getLocationsForPractice(p, selectedCode, overrides) {
+  const sp = p.spec;
+  const _refs = overrides ? overrides.refs : p.totalRefs;
+  const _proc = overrides ? overrides.proc : p.procRate;
+  const _oon  = overrides ? overrides.oon  : p.oonProcRate;
+  const totProc = Math.round(_refs * _proc);
+  const inVol   = Math.round(totProc * (1 - _oon));
+  const oonVol  = totProc - inVol;
+
+  // If proc selected, scale pools by that proc's share of topProcs total
+  let inPool = inVol, oonPool = oonVol;
+  if (selectedCode) {
+    const proc = p.topProcs.find(x => x.code === selectedCode);
+    if (proc) {
+      const totProcVol = p.topProcs.reduce((s,x) => s+x.vol, 0) || 1;
+      const share = proc.vol / totProcVol;
+      const procTot = Math.round(totProc * share);
+      // In-net procs are predominantly in-network; OON procs leak more
+      inPool  = proc.network === 'in' ? Math.round(procTot * 0.88) : Math.round(procTot * 0.18);
+      oonPool = procTot - inPool;
+    }
+  }
+
+  return PROC_LOCATIONS.map(loc => {
+    const pool = loc.network === 'in' ? inPool : oonPool;
+    const wt   = loc.wt[sp] || 0;
+    const norm = PROC_LOCATIONS.filter(l => l.network === loc.network)
+                               .reduce((s,l) => s + (l.wt[sp]||0), 0);
+    const vol  = norm > 0 ? Math.round(pool * wt / norm) : 0;
+    return {...loc, vol};
+  }).filter(l => l.vol > 0)
+    .sort((a,b) => b.vol - a.vol)
+    .slice(0, 15);
+}
+
+const PRACTICES = (window.CPIQ && window.CPIQ.practices) ? window.CPIQ.practices : []
+const SYS_NAME = (window.CPIQ && window.CPIQ.meta && window.CPIQ.meta.sysName) || 'Health System'; // REPLACE: set to new health system name
+;
+
+const SPEC_META = {
+  all:   {label:'All Specialties', color:'var(--text2)',   hex:'#4a6080'},
+  ortho: {label:'Orthopedics',     color:'var(--gold)',    hex:'#b8720e'},
+  cardio:{label:'Cardiology',      color:'var(--rose)',    hex:'#c8354a'},
+  gi:    {label:'Gastroenterology',color:'var(--teal)',    hex:'#007d6e'},
+};
+const TIER_META = {
+  all: {label:'All Tiers',         color:'var(--text2)'},
+  t1:  {label:'T1 · Employed',     color:'var(--teal)',   badgeClass:'pill-t1'},
+  t2:  {label:'T2 · CIN Network',    color:'var(--blue)',   badgeClass:'pill-t2'},
+  oon: {label:'Out-of-Network',    color:'var(--rose)',   badgeClass:'pill-oon'},
+};
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let state = {spec:'all', tier:'all', selectedPid: null, selectedProcCode: null, selectedDoc: null};
+let charts = {};
+
+function destroyCharts(){
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});
+  charts={};
+}
+
+function fmt(n){ return Math.round(n).toLocaleString(); }
+function fmtPct(r){ return Math.round(r*100)+'%'; }
+function convColor(r){ return r>=0.68?'var(--teal)':r>=0.52?'var(--gold)':'var(--rose)'; }
+function mttaColor(d){ return d<=35?'var(--teal)':d<=55?'var(--gold)':'var(--rose)'; }
+function procColor(r){ return r>=0.22?'var(--teal)':r>=0.14?'var(--gold)':'var(--rose)'; }
+function oonColor(r){ return r<=0.15?'var(--teal)':r<=0.28?'var(--gold)':'var(--rose)'; }
+
+function specColor(sp){
+  return sp==='ortho'?'var(--gold)':sp==='cardio'?'var(--rose)':'var(--teal)';
+}
+function specHex(sp){
+  return sp==='ortho'?'#b8720e':sp==='cardio'?'#c8354a':'#007d6e';
+}
+function tierColor(t){
+  return t==='t1'?'var(--teal)':t==='t2'?'var(--blue)':'var(--rose)';
+}
+function tierHex(t){
+  return t==='t1'?'#007d6e':t==='t2'?'#1a56b0':'#c8354a';
+}
+function tierLabel(t){
+  return t==='t1'?'T1':t==='t2'?'T2':'OON';
+}
+
+function filteredPractices(){
+  return PRACTICES.filter(p=>{
+    if(state.spec!=='all' && p.spec!==state.spec) return false;
+    if(state.tier!=='all' && p.tier!==state.tier) return false;
+    return true;
+  });
+}
+
+function updateSidebarCounts(){
+  const total = PRACTICES.reduce((s,p)=>s+p.totalRefs,0);
+  document.getElementById('cnt-all').textContent = total.toLocaleString();
+  ['ortho','cardio','gi'].forEach(sp=>{
+    const vol = PRACTICES.filter(p=>p.spec===sp).reduce((s,p)=>s+p.totalRefs,0);
+    document.getElementById('cnt-'+sp).textContent = vol.toLocaleString();
+  });
+}
+
+function buildPracticeList(){
+  const filtered = filteredPractices();
+  // If currently selected practice is not in filtered list, auto-select first
+  const stillValid = filtered.some(p=>p.pid===state.selectedPid);
+  if(!stillValid && filtered.length) {
+    state.selectedPid = filtered[0].pid;
+    state.selectedDoc = null;
+    state.selectedProcCode = null;
+  }
+  const container = document.getElementById('practice-list');
+  container.innerHTML = filtered.map(p=>{
+    const active = p.pid===state.selectedPid ? 'active' : '';
+    const dot = `<div style="width:6px;height:6px;border-radius:50%;background:${specColor(p.spec)};flex-shrink:0"></div>`;
+    return `<div class="practice-item ${active}" onclick="selectPractice('${p.pid}')">
+      ${dot}
+      <div class="pi-info">
+        <div class="pi-name" title="${p.name}">${p.name}</div>
+        <div class="pi-sub">${tierLabel(p.tier)} · ${SPEC_META[p.spec].label}</div>
+      </div>
+      <div class="pi-refs">${fmt(p.totalRefs)}</div>
+    </div>`;
+  }).join('');
+  
+  // Auto-select first if none selected or current not in filtered
+  if(!state.selectedPid || !filtered.find(p=>p.pid===state.selectedPid)){
+    if(filtered.length > 0){
+      selectPractice(filtered[0].pid);
+    } else {
+      document.getElementById('main-area').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text3)">No practices match current filters</div>';
+    }
+  }
+}
+
+function setSpec(sp, el){
+  state.spec = sp;
+  document.querySelectorAll('.spec-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  buildPracticeList();
+  updateSidebarCounts();
+  if(state.selectedPid) renderScorecard(state.selectedPid);
+}
+
+function setTier(t, el){
+  state.tier = t;
+  document.querySelectorAll('[id^="tb-"]').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  buildPracticeList();
+}
+
+function selectPractice(pid){
+  state.selectedPid = pid;
+  state.selectedProcCode = null;
+  state.selectedDoc = null;
+  // Update active state in list
+  document.querySelectorAll('.practice-item').forEach(el=>{
+    el.classList.toggle('active', el.onclick && el.onclick.toString().includes(`'${pid}'`));
+  });
+  renderScorecard(pid);
+}
+
+function clickScorecardDoc(id){
+  state.selectedDoc = (state.selectedDoc===id) ? null : id;
+  state.selectedProcCode = null;
+  renderScorecard(state.selectedPid);
+}
+
+function clickScorecardProc(code){
+  state.selectedProcCode = (state.selectedProcCode===code) ? null : code;
+  renderScorecard(state.selectedPid);
+}
+
+function renderScorecard(pid){
+  destroyCharts();
+  const p = PRACTICES.find(x=>x.pid===pid);
+  if(!p) return;
+
+  // Physician filter — when a doc is selected, scale all practice metrics by that doc's share
+  const activeDoc = state.selectedDoc ? p.docs.find(d=>d.id===state.selectedDoc) : null;
+  const docScale  = activeDoc ? (activeDoc.refs / (p.docs.reduce((s,d)=>s+d.refs,0)||1)) : 1;
+  // Effective practice values when a physician is filtered
+  const effRefs    = activeDoc ? activeDoc.refs  : p.totalRefs;
+  const effConv    = activeDoc ? activeDoc.convRate : p.convRate;
+  const effMTTA    = activeDoc ? activeDoc.mttaDays : p.mttaDays;
+  const effProc    = activeDoc ? activeDoc.procRate  : p.procRate;
+  const effOon     = activeDoc ? activeDoc.oonProcRate : p.oonProcRate;
+  const effMonthly = p.monthly.map(v=>Math.round(v*docScale));
+  const effProcMon = p.monthlyProc.map(v=>Math.round(v*docScale));
+  const effTopProcs= p.topProcs.map(pr=>({
+    ...pr,
+    vol: Math.round(pr.vol*docScale),
+    inV: Math.round(pr.vol*docScale*(activeDoc?1-activeDoc.oonProcRate:1-effOon)),
+    oonV:Math.round(pr.vol*docScale*(activeDoc?activeDoc.oonProcRate:effOon)),
+  }));
+  const effTopRefs  = p.topRefs.map(r=>({...r, vol:Math.round(r.vol*docScale)}))
+                                .sort((a,b)=>b.vol-a.vol);
+  
+
+
+  // Update header badges
+  const tierBadge = document.getElementById('hd-tier-badge');
+  tierBadge.textContent = p.tier==='t1'?'T1 · Employed':p.tier==='t2'?'T2 · CIN Network':'Out-of-Network';
+  tierBadge.className = 'hd-spec-pill ' + (p.tier==='t1'?'pill-t1':p.tier==='t2'?'pill-t2':'pill-oon');
+  const specBadge = document.getElementById('hd-spec-badge');
+  specBadge.textContent = SPEC_META[p.spec].label;
+  specBadge.style.background = p.spec==='ortho'?'var(--gold-lt)':p.spec==='cardio'?'var(--rose-lt)':'var(--teal-lt)';
+  specBadge.style.color = specColor(p.spec);
+
+  // Benchmark values (specialty-level averages)
+  const peers = PRACTICES.filter(x=>x.spec===p.spec);
+  const peerAvgConv = peers.reduce((s,x)=>s+x.convRate*x.totalRefs,0)/peers.reduce((s,x)=>s+x.totalRefs,0);
+  const peerAvgMTTA = peers.reduce((s,x)=>s+x.mttaDays*x.totalRefs,0)/peers.reduce((s,x)=>s+x.totalRefs,0);
+  const peerAvgProc = peers.reduce((s,x)=>s+x.procRate*x.totalRefs,0)/peers.reduce((s,x)=>s+x.totalRefs,0);
+  const peerAvgOon  = peers.reduce((s,x)=>s+x.oonProcRate*x.totalRefs,0)/peers.reduce((s,x)=>s+x.totalRefs,0);
+  const maxRefs = Math.max(...peers.map(x=>x.totalRefs));
+
+  // Total procedures
+  const totProc = Math.round(effRefs * effProc);
+  const totOon  = Math.round(totProc * effOon);
+
+  const spHex = specHex(p.spec);
+  const spColor = specColor(p.spec);
+  const tColor  = tierColor(p.tier);
+  const tHex    = tierHex(p.tier);
+
+  // Monthly trend data — Q labels
+  const months12 = effMonthly;
+  const procs12  = effProcMon;
+
+  // Referring source tier breakdown
+  const t1Refs = effTopRefs.filter(r=>r.tier==='t1').reduce((s,r)=>s+r.vol,0);
+  const t2Refs = effTopRefs.filter(r=>r.tier==='t2').reduce((s,r)=>s+r.vol,0);
+  const oonRefs= effTopRefs.filter(r=>r.tier==='oon').reduce((s,r)=>s+r.vol,0);
+  const totalShownRefs = t1Refs+t2Refs+oonRefs;
+
+  document.getElementById('main-area').innerHTML = `
+  <!-- ACTIVE FILTER STRIP -->
+  <div class="active-filters">
+    <span class="af-label">Physician:</span>
+    ${activeDoc
+      ? `<span class="af-chip af-chip-doc">&#x2713; ${activeDoc.name}</span>`
+      : `<span class="af-chip" style="background:var(--bg);color:var(--text3);border:1px solid var(--border)">All Physicians</span>`
+    }
+  </div>
+
+  <!-- PRACTICE HEADER -->
+  <div class="practice-hd">
+    <div class="practice-hd-name">${p.name}</div>
+    <div class="practice-hd-meta">
+      <span class="tier-badge" style="background:${p.tier==='t1'?'var(--teal-lt)':p.tier==='t2'?'var(--blue-lt)':'var(--rose-lt)'};color:${tColor};border:1px solid ${tHex}30">${p.tier==='t1'?'T1 · Employed':p.tier==='t2'?'T2 · CIN Network':'Out-of-Network'}</span>
+      <span class="tier-badge" style="background:${p.spec==='ortho'?'var(--gold-lt)':p.spec==='cardio'?'var(--rose-lt)':'var(--teal-lt)'};color:${spColor};border:1px solid ${spHex}30">${SPEC_META[p.spec].label}</span>
+      <span style="font-size:11px;color:var(--text3)">${p.docs.length} specialist${p.docs.length!==1?'s':''}</span>
+    </div>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi-card c-teal">
+      <div class="kpi-lbl">Annual Referrals</div>
+      <div class="kpi-val">${fmt(effRefs)}</div>
+      <div class="kpi-meta">${activeDoc ? activeDoc.name.replace("Dr. ","") : p.docs.length+" destination physicians"}</div>
+    </div>
+    <div class="kpi-card c-gold">
+      <div class="kpi-lbl">Completion Rate</div>
+      <div class="kpi-val" style="color:${convColor(effConv)}">${fmtPct(effConv)}</div>
+      <div class="kpi-meta">vs ${fmtPct(peerAvgConv)} specialty avg</div>
+    </div>
+    <div class="kpi-card c-blue">
+      <div class="kpi-lbl">Median Time to Appt</div>
+      <div class="kpi-val" style="color:${mttaColor(effMTTA)}">${Math.round(effMTTA)}d</div>
+      <div class="kpi-meta">vs ${Math.round(peerAvgMTTA)}d specialty avg</div>
+    </div>
+    <div class="kpi-card c-purple">
+      <div class="kpi-lbl">Procedure Rate</div>
+      <div class="kpi-val" style="color:${procColor(effProc)}">${fmtPct(effProc)}</div>
+      <div class="kpi-meta">${fmt(totProc)} procedures/year</div>
+    </div>
+    <div class="kpi-card c-rose">
+      <div class="kpi-lbl">OON Procedure Rate</div>
+      <div class="kpi-val" style="color:${oonColor(effOon)}">${fmtPct(effOon)}</div>
+      <div class="kpi-meta">${fmt(totOon)} OON procedures/year</div>
+    </div>
+  </div>
+
+  <!-- TREND CHARTS ROW -->
+  <div class="grid-charts">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Monthly Referral Volume</div>
+          <div class="card-subtitle">CY 2025 · All referring sources</div>
+        </div>
+        <span class="card-badge">${fmt(effRefs)} annual</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-refs"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Monthly Procedure Volume</div>
+          <div class="card-subtitle">CY 2025 · In-network &amp; OON</div>
+        </div>
+        <span class="card-badge">${fmt(totProc)} annual</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-procs"></canvas>
+      </div>
+    </div>
+  </div>
+
+    <!-- PHYSICIAN CARDS -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Specialist Physicians</div>
+        <div class="card-subtitle">${activeDoc ? 'Filtered to: '+activeDoc.name+' · click card again to clear' : 'Click a physician card to filter all charts above'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${activeDoc ? `<span style="font-size:10px;color:var(--teal);cursor:pointer;padding:3px 8px;background:var(--teal-lt);border-radius:6px;border:1px solid rgba(0,125,110,.2)" onclick="clickScorecardDoc('${activeDoc.id}')">&#x2715; Clear filter</span>` : ''}
+        <span class="card-badge">${p.docs.length} physicians</span>
+      </div>
+    </div>
+    <div class="phys-grid">
+      ${p.docs.map((d,i)=>{
+        const isSel  = state.selectedDoc===d.id;
+        const oonProcs = Math.round(d.refs * d.procRate * d.oonProcRate);
+        return `<div class="phys-card${isSel?' selected':''}" onclick="clickScorecardDoc('${d.id}')">
+          <div class="pc-hd">
+            <div class="pc-avatar" style="background:${isSel?spHex:spHex+'18'}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="8" r="4" fill="${isSel?'white':spHex}" fill-opacity="${isSel?'0.95':'1'}"/>
+                  <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="${isSel?'white':spHex}" stroke-width="2" stroke-linecap="round" fill="none" opacity="${isSel?'0.95':'1'}"/>
+                </svg>
+              </div>
+            <div class="pc-nameblock" style="min-width:0">
+              <div class="pc-name" title="${d.name}">${d.name}</div>
+              <div class="pc-refs">${fmt(d.refs)} referrals · Rank ${i+1}</div>
+            </div>
+          </div>
+          <div class="pc-divider"></div>
+          <div class="pc-metrics">
+            <div class="pc-met">
+              <div class="pc-met-lbl">Conv</div>
+              <div class="pc-met-bar"><div class="pc-met-fill" style="width:${d.convRate/0.90*100}%;background:${convColor(d.convRate)}"></div></div>
+              <div class="pc-met-val" style="color:${convColor(d.convRate)}">${fmtPct(d.convRate)}</div>
+            </div>
+            <div class="pc-met">
+              <div class="pc-met-lbl">MTTA</div>
+              <div class="pc-met-bar"><div class="pc-met-fill" style="width:${Math.min(d.mttaDays/100*100,100)}%;background:${mttaColor(d.mttaDays)}"></div></div>
+              <div class="pc-met-val" style="color:${mttaColor(d.mttaDays)}">${d.mttaDays}d</div>
+            </div>
+            <div class="pc-met">
+              <div class="pc-met-lbl">Proc%</div>
+              <div class="pc-met-bar"><div class="pc-met-fill" style="width:${Math.min(d.procRate/0.45*100,100)}%;background:${procColor(d.procRate)}"></div></div>
+              <div class="pc-met-val" style="color:${procColor(d.procRate)}">${fmtPct(d.procRate)}</div>
+            </div>
+            <div class="pc-met">
+              <div class="pc-met-lbl">OON%</div>
+              <div class="pc-met-bar"><div class="pc-met-fill" style="width:${Math.min(d.oonProcRate/0.90*100,100)}%;background:${oonColor(d.oonProcRate)}"></div></div>
+              <div class="pc-met-val" style="color:${oonColor(d.oonProcRate)}">${fmtPct(d.oonProcRate)}</div>
+            </div>
+          </div>
+          <div style="padding:0 12px 10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">OON Procs</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${oonProcs>0?'var(--rose)':'var(--text3)'}">${fmt(oonProcs)}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <!-- BENCHMARKS + SOURCES ROW -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Performance vs. Specialty Peers</div>
+          <div class="card-subtitle">Benchmarked against ${peers.length} ${SPEC_META[p.spec].label} practices · avg line shown</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom:14px">
+          <div class="bench-row">
+            <div class="bench-label">Completion Rate</div>
+            <div class="bench-track">
+              <div class="bench-fill" style="width:${Math.min(effConv/0.90*100,100)}%;background:${convColor(effConv)}"></div>
+              <div class="bench-avg-line" style="left:${Math.min(peerAvgConv/0.90*100,100)}%"></div>
+            </div>
+            <div class="bench-val" style="color:${convColor(effConv)}">${fmtPct(effConv)}</div>
+            <div class="bench-vs" style="color:${effConv>=peerAvgConv?'var(--teal)':'var(--rose)'}">${effConv>=peerAvgConv?'▲':'▼'} ${Math.abs(Math.round((effConv-peerAvgConv)*100))}pp</div>
+          </div>
+          <div class="bench-row">
+            <div class="bench-label">Time to Appt (d)</div>
+            <div class="bench-track">
+              <div class="bench-fill" style="width:${Math.min(effMTTA/120*100,100)}%;background:${mttaColor(effMTTA)}"></div>
+              <div class="bench-avg-line" style="left:${Math.min(peerAvgMTTA/120*100,100)}%"></div>
+            </div>
+            <div class="bench-val" style="color:${mttaColor(effMTTA)}">${Math.round(effMTTA)}d</div>
+            <div class="bench-vs" style="color:${effMTTA<=peerAvgMTTA?'var(--teal)':'var(--rose)'}">${effMTTA<=peerAvgMTTA?'▲':'▼'} ${Math.abs(Math.round(effMTTA-peerAvgMTTA))}d</div>
+          </div>
+          <div class="bench-row">
+            <div class="bench-label">Procedure Rate</div>
+            <div class="bench-track">
+              <div class="bench-fill" style="width:${Math.min(effProc/0.45*100,100)}%;background:${procColor(effProc)}"></div>
+              <div class="bench-avg-line" style="left:${Math.min(peerAvgProc/0.45*100,100)}%"></div>
+            </div>
+            <div class="bench-val" style="color:${procColor(effProc)}">${fmtPct(effProc)}</div>
+            <div class="bench-vs" style="color:${effProc>=peerAvgProc?'var(--teal)':'var(--rose)'}">${effProc>=peerAvgProc?'▲':'▼'} ${Math.abs(Math.round((effProc-peerAvgProc)*100))}pp</div>
+          </div>
+          <div class="bench-row">
+            <div class="bench-label">OON Proc Rate</div>
+            <div class="bench-track">
+              <div class="bench-fill" style="width:${Math.min(effOon/0.90*100,100)}%;background:${oonColor(effOon)}"></div>
+              <div class="bench-avg-line" style="left:${Math.min(peerAvgOon/0.90*100,100)}%"></div>
+            </div>
+            <div class="bench-val" style="color:${oonColor(effOon)}">${fmtPct(effOon)}</div>
+            <div class="bench-vs" style="color:${effOon<=peerAvgOon?'var(--teal)':'var(--rose)'}">${effOon<=peerAvgOon?'▲':'▼'} ${Math.abs(Math.round((effOon-peerAvgOon)*100))}pp</div>
+          </div>
+          <div class="bench-row">
+            <div class="bench-label">Referral Volume</div>
+            <div class="bench-track">
+              <div class="bench-fill" style="width:${Math.min(effRefs/maxRefs*100,100)}%;background:${spColor}"></div>
+              <div class="bench-avg-line" style="left:${Math.min(peers.reduce((s,x)=>s+x.totalRefs,0)/peers.length/maxRefs*100,100)}%"></div>
+            </div>
+            <div class="bench-val" style="color:${spColor}">${fmt(effRefs)}</div>
+            <div class="bench-vs" style="color:var(--text3)">${Math.round(effRefs/peers.reduce((s,x)=>s+x.totalRefs,0)*100)}%</div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:var(--text3);margin-top:4px">▲ = favorable vs specialty avg &nbsp;|&nbsp; vertical line = specialty average</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top Referring Sources</div>
+          <div class="card-subtitle">By annual referral volume to this practice</div>
+        </div>
+        <span class="card-badge">${fmt(totalShownRefs)} shown</span>
+      </div>
+      <div class="card-body" style="padding:10px 18px">
+        ${(()=>{
+          const maxV = effTopRefs[0]?.vol||1;
+          return effTopRefs.map(r=>`
+          <div class="bar-row">
+            <div class="bar-label" title="${r.name}">${r.name}</div>
+            <span class="bar-tier" style="background:${r.tier==='t1'?'var(--teal-lt)':r.tier==='t2'?'var(--blue-lt)':'var(--rose-lt)'};color:${r.tier==='t1'?'var(--teal)':r.tier==='t2'?'var(--blue)':'var(--rose)'}">${tierLabel(r.tier)}</span>
+            <div class="bar-bg"><div class="bar-fill" style="width:${r.vol/maxV*100}%;background:${spHex}"></div></div>
+            <div class="bar-val">${fmt(r.vol)}</div>
+          </div>`).join('');
+        })()}
+      </div>
+    </div>
+  </div>
+
+  <!-- DOWNSTREAM PROCEDURES + PROCEDURE LOCATIONS -->
+  <div class="grid-2" style="margin-bottom:14px">
+
+    <!-- LEFT: Downstream Procedure Mix — clickable rows -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Downstream Procedure Mix</div>
+          <div class="card-subtitle">Click a row to filter locations on the right</div>
+        </div>
+        <span class="card-badge">${fmt(totProc)} procedures</span>
+      </div>
+      <!-- Column headers -->
+      <div style="display:flex;align-items:center;padding:5px 18px;border-bottom:1px solid var(--border);background:var(--bg)">
+        <div style="flex:1;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Procedure</div>
+        <div style="width:52px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Vol</div>
+        <div style="width:40px;text-align:center;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Net</div>
+      </div>
+      ${(()=>{
+        const procs = effTopProcs.slice(0,15);
+        const maxV  = procs[0]?.vol||1;
+        return procs.map(proc=>{
+          const isSel = state.selectedProcCode===proc.code;
+          const isOon = proc.network==='oon';
+          const selStyle = isSel ? `background:var(--teal-lt);border-left:3px solid var(--teal);padding-left:15px;` : `border-left:3px solid transparent;`;
+          const barBg = isOon ? '#c8354a' : '#007d6e';
+          const oonPill = isOon ? `<span class="net-pill net-oon" style="font-size:8px;flex-shrink:0">OON</span>` : '';
+          const netLabel = isOon ? 'OON' : 'In';
+          const netClass = isOon ? 'net-oon' : 'net-in';
+          return `<div onclick="clickScorecardProc('${proc.code}')" style="display:flex;align-items:center;padding:7px 18px;border-bottom:1px solid var(--border2);cursor:pointer;${selStyle}">
+            <div style="flex:1;min-width:0;margin-right:8px">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+                <span style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${proc.name}</span>
+                ${oonPill}
+              </div>
+              <div class="bar-bg" style="width:100%"><div class="bar-fill" style="width:${proc.vol/maxV*100}%;background:${barBg}"></div></div>
+            </div>
+            <div style="width:52px;text-align:right;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--text)">${fmt(proc.vol)}</div>
+            <div style="width:40px;text-align:center"><span class="net-pill ${netClass}" style="font-size:8px">${netLabel}</span></div>
+          </div>`;
+        }).join('');
+      })()}
+      ${state.selectedProcCode ? `<div onclick="clickScorecardProc(state.selectedProcCode)" style="padding:6px 18px;border-top:1px solid var(--border2);background:var(--teal-lt);font-size:10px;color:var(--teal);cursor:pointer">&#x2715;&nbsp; Clear selection</div>` : ''}
+    </div>
+
+    <!-- RIGHT: Procedure Locations — updates when row clicked -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Procedure Locations</div>
+          <div class="card-subtitle">${state.selectedProcCode ? 'Filtered to selected procedure' : 'All procedures · click left to filter'}</div>
+        </div>
+        <span class="card-badge" style="${state.selectedProcCode ? 'background:var(--teal-lt);color:var(--teal);border-color:rgba(0,125,110,.2)' : ''}">${state.selectedProcCode ? 'Selected' : 'All'}</span>
+      </div>
+      ${(()=>{
+        const locRows   = getLocationsForPractice(p, state.selectedProcCode, activeDoc ? {refs:effRefs,proc:effProc,oon:effOon} : null);
+        const inVol     = locRows.filter(l=>l.network==='in').reduce((s,l)=>s+l.vol,0);
+        const oonVol    = locRows.filter(l=>l.network==='oon').reduce((s,l)=>s+l.vol,0);
+        const tot       = (inVol+oonVol)||1;
+        const maxLocVol = locRows.length ? locRows[0].vol : 1;
+        return `
+        <div style="display:flex;border-bottom:1px solid var(--border2)">
+          <div style="flex:1;padding:8px 18px;border-right:1px solid var(--border2);text-align:center">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px">In-Network</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--teal);line-height:1">${fmt(inVol)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${Math.round(inVol/tot*100)}% of procedures</div>
+          </div>
+          <div style="flex:1;padding:8px 18px;text-align:center">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin-bottom:3px">Out-of-Network</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--rose);line-height:1">${fmt(oonVol)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${Math.round(oonVol/tot*100)}% of procedures</div>
+          </div>
+        </div>
+        <!-- Column headers -->
+        <div style="display:flex;align-items:center;padding:5px 18px;border-bottom:1px solid var(--border);background:var(--bg)">
+          <div style="flex:1;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Facility</div>
+          <div style="width:48px;text-align:center;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Net</div>
+          <div style="width:44px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Vol</div>
+          <div style="width:32px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)">Pct</div>
+        </div>
+        ${locRows.map(loc=>{
+          const isIn = loc.network==='in';
+          const netClr = isIn ? 'var(--teal)' : 'var(--rose)';
+          const barClr = isIn ? '#007d6e' : '#c8354a';
+          const pillCls = isIn ? 'net-in' : 'net-oon';
+          const pillLbl = isIn ? 'In-Net' : 'OON';
+          return `<div style="display:flex;align-items:center;padding:7px 18px;border-bottom:1px solid var(--border2)">
+            <div style="flex:1;min-width:0;margin-right:8px">
+              <div style="font-size:11px;font-weight:600;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${loc.name}">${loc.name}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:1px">${loc.city} · ${loc.type==='asc'?'ASC':'Hospital'}</div>
+              <div class="bar-bg" style="margin-top:3px;width:100%"><div class="bar-fill" style="width:${loc.vol/maxLocVol*100}%;background:${barClr}"></div></div>
+            </div>
+            <div style="width:48px;text-align:center"><span class="net-pill ${pillCls}" style="font-size:8px">${pillLbl}</span></div>
+            <div style="width:44px;text-align:right;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:${netClr}">${fmt(loc.vol)}</div>
+            <div style="width:32px;text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">${Math.round(loc.vol/tot*100)}%</div>
+          </div>`;
+        }).join('')}`;
+      })()}
+    </div>
+  </div>
+
+    <!-- PHYSICIAN PERFORMANCE TABLE -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Individual Physician Performance</div>
+        <div class="card-subtitle">All specialists at ${p.name} · sorted by referral volume</div>
+      </div>
+      <span class="card-badge">${p.docs.length} physicians</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="phys-table">
+        <thead>
+          <tr>
+            <th>Physician</th>
+            <th style="min-width:80px">Referrals</th>
+            <th style="min-width:110px">Completion Rate</th>
+            <th style="min-width:100px">Time to Appt</th>
+            <th style="min-width:110px">Procedure Rate</th>
+            <th style="min-width:110px">OON Proc Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${p.docs.map(d=>{
+            const maxDocRefs = p.docs[0].refs;
+            return `<tr>
+              <td><div class="phys-name">${d.name}</div></td>
+              <td>
+                <div class="met-bar-wrap">
+                  <div class="met-bar-bg"><div class="met-bar-fill" style="width:${d.refs/maxDocRefs*100}%;background:${spHex}"></div></div>
+                  <span class="met-val" style="color:var(--text2)">${fmt(d.refs)}</span>
+                </div>
+              </td>
+              <td>
+                <div class="met-bar-wrap">
+                  <div class="met-bar-bg"><div class="met-bar-fill" style="width:${d.convRate/0.90*100}%;background:${convColor(d.convRate)}"></div></div>
+                  <span class="met-val" style="color:${convColor(d.convRate)}">${fmtPct(d.convRate)}</span>
+                </div>
+              </td>
+              <td>
+                <div class="met-bar-wrap">
+                  <div class="met-bar-bg"><div class="met-bar-fill" style="width:${Math.min(d.mttaDays/100*100,100)}%;background:${mttaColor(d.mttaDays)}"></div></div>
+                  <span class="met-val" style="color:${mttaColor(d.mttaDays)}">${d.mttaDays}d</span>
+                </div>
+              </td>
+              <td>
+                <div class="met-bar-wrap">
+                  <div class="met-bar-bg"><div class="met-bar-fill" style="width:${Math.min(d.procRate/0.45*100,100)}%;background:${procColor(d.procRate)}"></div></div>
+                  <span class="met-val" style="color:${procColor(d.procRate)}">${fmtPct(d.procRate)}</span>
+                </div>
+              </td>
+              <td>
+                <div class="met-bar-wrap">
+                  <div class="met-bar-bg"><div class="met-bar-fill" style="width:${Math.min(d.oonProcRate/0.90*100,100)}%;background:${oonColor(d.oonProcRate)}"></div></div>
+                  <span class="met-val" style="color:${oonColor(d.oonProcRate)}">${fmtPct(d.oonProcRate)}</span>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  `;
+
+    // ── CHARTS ────────────────────────────────────────────────────────────────
+  const CT = {
+    legend:{display:false},
+    tooltip:{backgroundColor:'#fff',titleColor:'#0f1e2e',bodyColor:'#4a6080',borderColor:'rgba(15,30,60,.12)',borderWidth:1,padding:10},
+    tick:'#8aa0b8',grid:'rgba(15,30,60,.06)',
+  };
+
+  // Monthly referral trend
+  const ctx1 = document.getElementById('chart-refs').getContext('2d');
+  charts['refs'] = new Chart(ctx1,{
+    type:'bar',
+    data:{
+      labels:MN,
+      datasets:[{
+        label:'Referrals',
+        data:months12,
+        backgroundColor:spHex+'33',
+        borderColor:spHex,
+        borderWidth:1.5,
+        borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...CT.tooltip}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:CT.tick,font:{family:'Outfit',size:10}}},
+        y:{grid:{color:CT.grid},ticks:{color:CT.tick,font:{family:'Outfit',size:10},callback:v=>v.toLocaleString()}},
+      }
+    }
+  });
+
+  // Monthly procedure trend
+  const ctx2 = document.getElementById('chart-procs').getContext('2d');
+  const inProcs  = procs12.map(v=>Math.round(v*(1-effOon)));
+  const oonProcs = procs12.map(v=>Math.round(v*effOon));
+  charts['procs'] = new Chart(ctx2,{
+    type:'bar',
+    data:{
+      labels:MN,
+      datasets:[
+        {label:'In-Network',data:inProcs,backgroundColor:'#007d6e55',borderColor:'#007d6e',borderWidth:1.5,borderRadius:4,stack:'a'},
+        {label:'OON',data:oonProcs,backgroundColor:'#c8354a55',borderColor:'#c8354a',borderWidth:1.5,borderRadius:4,stack:'a'},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:CT.tick,font:{family:'Outfit',size:10},boxWidth:10,boxHeight:10}},tooltip:{...CT.tooltip}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:CT.tick,font:{family:'Outfit',size:10}}},
+        y:{grid:{color:CT.grid},ticks:{color:CT.tick,font:{family:'Outfit',size:10},callback:v=>v.toLocaleString()},stacked:true},
+      }
+    }
+  });
+
+
+}
+
+// INIT
+updateSidebarCounts();
+buildPracticeList();
+// Render the first practice on load
+if(state.selectedPid) renderScorecard(state.selectedPid);
+
+// Notify parent suite of this tab's system name for CTA widget
+(function() {
+  if (typeof SYS_NAME !== 'undefined') {
+    window.parent.postMessage({ type: 'sys-name', value: SYS_NAME }, '*');
+  }
+})();
+</script>
+</body>
+</html>
