@@ -151,6 +151,28 @@ footer{display:none!important}
   if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
 })();
 </script>
+<script>
+/* ── CPIQ Debug Overlay ─────────────────────────────────────────────────── */
+(function() {
+  var overlay = null;
+  function dbg(msg, color) {
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:99999;background:rgba(15,30,60,.92);color:#fff;font-family:monospace;font-size:11px;padding:10px 14px;border-radius:8px;max-width:420px;max-height:200px;overflow-y:auto;line-height:1.6';
+      document.body.appendChild(overlay);
+      setTimeout(function(){ if(overlay) overlay.remove(); overlay=null; }, 15000);
+    }
+    var line = document.createElement('div');
+    line.style.color = color || '#7dd3c8';
+    line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
+    overlay.appendChild(line);
+    overlay.scrollTop = overlay.scrollHeight;
+    console.log('[CPIQ DBG]', msg);
+  }
+  window.__cpiqDbg = dbg;
+})();
+</script>
+
 </head>
 <body>
 
@@ -267,23 +289,27 @@ footer{display:none!important}
 let PATIENTS = [];
 function _loadPatients() {
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
+  var dbg = window.__cpiqDbg || function(){};
+  dbg('_loadPatients called, sessionKey=' + sessionKey);
   
   // Try sessionStorage first (instant, no network)
   try {
     var stored = window.parent.sessionStorage.getItem('cpiq_patients_' + sessionKey);
+    dbg('sessionStorage: ' + (stored ? JSON.parse(stored).length + ' patients' : 'empty'));
     if (stored) {
       var raw = JSON.parse(stored);
       if (raw && raw.length) {
         PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
-        try { render(); } catch(err) {
-          console.error('[CPIQ insights] render error:', err.message);
+        dbg('PATIENTS: ' + PATIENTS.length + ' records');
+        try { render(); dbg('render OK ✓', '#4ade80'); } catch(err) {
+          dbg('render ERROR: ' + err.message, '#f87171');
           document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
         }
         window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
         return;
       }
     }
-  } catch(e) { console.warn('[CPIQ insights] sessionStorage read failed:', e.message); }
+  } catch(e) { dbg('sessionStorage ERROR: ' + e.message, '#f87171'); }
 
   // Fallback: fetch from blob
   var waitEl = document.createElement('div');

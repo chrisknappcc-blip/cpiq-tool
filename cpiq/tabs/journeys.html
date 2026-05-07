@@ -163,6 +163,28 @@ footer{display:none!important}
   if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
 })();
 </script>
+<script>
+/* ── CPIQ Debug Overlay ─────────────────────────────────────────────────── */
+(function() {
+  var overlay = null;
+  function dbg(msg, color) {
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:99999;background:rgba(15,30,60,.92);color:#fff;font-family:monospace;font-size:11px;padding:10px 14px;border-radius:8px;max-width:420px;max-height:200px;overflow-y:auto;line-height:1.6';
+      document.body.appendChild(overlay);
+      setTimeout(function(){ if(overlay) overlay.remove(); overlay=null; }, 15000);
+    }
+    var line = document.createElement('div');
+    line.style.color = color || '#7dd3c8';
+    line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
+    overlay.appendChild(line);
+    overlay.scrollTop = overlay.scrollHeight;
+    console.log('[CPIQ DBG]', msg);
+  }
+  window.__cpiqDbg = dbg;
+})();
+</script>
+
 </head>
 <body>
 
@@ -364,23 +386,27 @@ function expandPatient(r, cpiq) {
 function _loadRaw() {
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
   var cpiq = window.CPIQ;
+  var dbg = window.__cpiqDbg || function(){};
+  dbg('_loadRaw called, sessionKey=' + sessionKey + ', CPIQ=' + (cpiq?'set':'null'));
 
   // Try sessionStorage first (instant)
   try {
     var stored = window.parent.sessionStorage.getItem('cpiq_patients_' + sessionKey);
+    dbg('sessionStorage: ' + (stored ? JSON.parse(stored).length + ' patients' : 'empty'));
     if (stored) {
       var raw = JSON.parse(stored);
       if (raw && raw.length) {
         _RAW = raw.map(function(r) { return expandPatient(r, cpiq); });
-        try { populateDropdowns(); applyFilters(); } catch(err) {
-          console.error('[CPIQ journeys] render error:', err.message);
+        dbg('_RAW expanded: ' + _RAW.length + ' records, sample destPractice=' + (_RAW[0]&&_RAW[0].destPractice));
+        try { populateDropdowns(); applyFilters(); dbg('render OK ✓', '#4ade80'); } catch(err) {
+          dbg('render ERROR: ' + err.message, '#f87171');
           document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
         }
         window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
         return;
       }
     }
-  } catch(e) { console.warn('[CPIQ journeys] sessionStorage read failed:', e.message); }
+  } catch(e) { dbg('sessionStorage ERROR: ' + e.message, '#f87171'); }
 
   // Fallback: fetch from blob
   var waitEl = document.createElement('div');
@@ -922,13 +948,10 @@ function clearFilters(){
 window.__cpiqReady = function(state) {
   window.CPIQ = state;
   window.SYS_NAME = state.meta ? state.meta.sysName : 'Health System';
-  _loadRaw();
-  populateDropdowns();
-  applyFilters();
-  window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+  _loadRaw(); // async — populateDropdowns/applyFilters called inside _loadRaw when data ready
 };
 
-_loadRaw();
+_loadRaw(); // async init
 
 // ── Listen for filter state from Patient Insights or CarePath IQ ──
 window.addEventListener('message', function(e) {
@@ -1001,11 +1024,8 @@ window.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'cpiq-state') {
     window.CPIQ = e.data.payload;
     window.SYS_NAME = window.CPIQ.meta ? window.CPIQ.meta.sysName : 'Health System';
-    _loadRaw();
     if (window.__cpiqReadyWait) { window.__cpiqReadyWait.remove(); window.__cpiqReadyWait = null; }
-    populateDropdowns();
-    applyFilters();
-    window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+    _loadRaw(); // async — renders inside
   }
 });
 
