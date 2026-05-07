@@ -291,7 +291,14 @@ footer{display:none!important}
 </div>
 
 <script>
-const PATIENTS = (window.CPIQ && window.CPIQ.patients) ? window.CPIQ.patients.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};}) : [];
+const PATIENTS = [];
+function _loadPatients() {
+  if (window.CPIQ && window.CPIQ.patients && window.CPIQ.patients.length) {
+    PATIENTS = window.CPIQ.patients.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
+    return true;
+  }
+  return false;
+}
 
 // ── State ─────────────────────────────────────────────────────────
 let specFilter = 'all';
@@ -615,14 +622,47 @@ function render() {
 
 // ── Listen for filter messages from suite ─────────────────────────
 window.addEventListener('message', function(e) {
-  if(!e.data || e.data.type !== 'apply-filters') return;
-  const fs = e.data.filterState || {};
-  if(fs.spec) setSpec(fs.spec, null);
-  if(fs.destTier) setTier(fs.destTier, null);
-  if(fs.refPtype) setPtype(fs.refPtype, null);
+  if(!e.data) return;
+  if(e.data.type === 'apply-filters') {
+    const fs = e.data.filterState || {};
+    if(fs.spec) setSpec(fs.spec, null);
+    if(fs.destTier) setTier(fs.destTier, null);
+    if(fs.refPtype) setPtype(fs.refPtype, null);
+  }
+  if(e.data.type === 'cpiq-state') {
+    window.CPIQ = e.data.payload;
+    window.SYS_NAME = window.CPIQ && window.CPIQ.meta ? window.CPIQ.meta.sysName : 'Health System';
+    _loadPatients();
+    render();
+    window.parent.postMessage({ type: 'sys-name', value: window.SYS_NAME }, '*');
+  }
 });
 
-render();
+// Set __cpiqReady so the shim can call us when state arrives
+window.__cpiqReady = function(state) {
+  window.CPIQ = state;
+  window.SYS_NAME = state.meta ? state.meta.sysName : 'Health System';
+  _loadPatients();
+  render();
+  window.parent.postMessage({ type: 'sys-name', value: window.SYS_NAME }, '*');
+  // Signal shell to clear loading overlay
+  window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
+};
+
+// Initial render (will be empty if state not yet here — __cpiqReady will re-render)
+if(_loadPatients()) {
+  render();
+} else {
+  // Show a waiting state rather than blank
+  var waitEl = document.getElementById('insights-wait');
+  if(!waitEl) {
+    waitEl = document.createElement('div');
+    waitEl.id = 'insights-wait';
+    waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
+    waitEl.textContent = 'Loading patient data…';
+    document.body.appendChild(waitEl);
+  }
+}
 
 // Notify parent suite of this tab's system name for CTA widget
 (function() {

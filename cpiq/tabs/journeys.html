@@ -368,7 +368,14 @@ const TIER_LABEL = {t1:'T1 Employed', t2:'T2 CIN Network', oon:'Out-of-Net'};
 const TIER_PILL  = {t1:'pill-t1', t2:'pill-t2', oon:'pill-oon'};
 const PAGE_SIZE  = 100;
 
-const _RAW = (window.CPIQ && window.CPIQ.patients) ? window.CPIQ.patients : [];
+let _RAW = [];
+function _loadRaw() {
+  if (window.CPIQ && window.CPIQ.patients && window.CPIQ.patients.length) {
+    _RAW = window.CPIQ.patients;
+    return true;
+  }
+  return false;
+}
 const PRAC_MAP = {
   "anmed-cardio":"CIN Partner Cardiology – City I",
   "anmed-gi":"CIN Partner Gastroenterology – City K",
@@ -898,8 +905,26 @@ function clearFilters(){
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
-populateDropdowns();
-applyFilters();
+// Wait for cpiq-state before rendering — __cpiqReady is called by the data shim
+window.__cpiqReady = function(state) {
+  window.CPIQ = state;
+  window.SYS_NAME = state.meta ? state.meta.sysName : 'Health System';
+  _loadRaw();
+  populateDropdowns();
+  applyFilters();
+  window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+};
+
+if (_loadRaw()) {
+  populateDropdowns();
+  applyFilters();
+} else {
+  var waitEl = document.createElement('div');
+  waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
+  waitEl.textContent = 'Loading patient data…';
+  document.body.appendChild(waitEl);
+  window.__cpiqReadyWait = waitEl;
+}
 
 // ── Listen for filter state from Patient Insights or CarePath IQ ──
 window.addEventListener('message', function(e) {
@@ -965,6 +990,19 @@ window.addEventListener('message', function(e) {
   // Scroll to top of table
   var wrap = document.querySelector('.table-wrap');
   if (wrap) wrap.scrollTop = 0;
+});
+
+// Listen for cpiq-state postMessage (in case shim fires after __cpiqReady is set)
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'cpiq-state') {
+    window.CPIQ = e.data.payload;
+    window.SYS_NAME = window.CPIQ.meta ? window.CPIQ.meta.sysName : 'Health System';
+    _loadRaw();
+    if (window.__cpiqReadyWait) { window.__cpiqReadyWait.remove(); window.__cpiqReadyWait = null; }
+    populateDropdowns();
+    applyFilters();
+    window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+  }
 });
 
 // Notify parent suite of this tab's system name for CTA widget
