@@ -343,8 +343,15 @@ const PAGE_SIZE  = 100;
 
 let _RAW = [];
 function _loadRaw() {
-  if (window.CPIQ && window.CPIQ.patients && window.CPIQ.patients.length) {
-    _RAW = window.CPIQ.patients;
+  var raw = null;
+  try { raw = window.parent && window.parent.__cpiqPatients; } catch(e) {}
+  if (!raw || !raw.length) {
+    if (window.CPIQ && window.CPIQ.patients && window.CPIQ.patients.length) {
+      raw = window.CPIQ.patients;
+    }
+  }
+  if (raw && raw.length) {
+    _RAW = raw;
     return true;
   }
   return false;

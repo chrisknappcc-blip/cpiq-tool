@@ -266,8 +266,17 @@ footer{display:none!important}
 <script>
 const PATIENTS = [];
 function _loadPatients() {
-  if (window.CPIQ && window.CPIQ.patients && window.CPIQ.patients.length) {
-    PATIENTS = window.CPIQ.patients.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
+  // Read patients from parent window (stored separately to avoid srcdoc size limit)
+  var raw = null;
+  try { raw = window.parent && window.parent.__cpiqPatients; } catch(e) {}
+  if (!raw || !raw.length) {
+    // Fallback: check if patients were embedded directly
+    if (window.CPIQ && window.CPIQ.patients && window.CPIQ.patients.length) {
+      raw = window.CPIQ.patients;
+    }
+  }
+  if (raw && raw.length) {
+    PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
     return true;
   }
   return false;
