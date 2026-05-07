@@ -812,6 +812,8 @@ async function generateAndBroadcast(sysName, mapState) {
 // ── Tab prefetch cache ────────────────────────────────────────────────────────
 var _tabCache = {};
 var _tabFetching = {};
+var _pendingRender = {};   // html waiting for frame to become visible
+var _renderedFrames = {};  // frames that have been rendered at least once
 
 function prefetchTabs() {
   var tabs = ['carepathiq','source','destination','procedure','scorecard','insights','journeys','cycle'];
@@ -845,8 +847,7 @@ function loadFrame(id) {
   var loader = document.getElementById('loading-' + id);
   if (loader) loader.classList.remove('done');
 
-  function _doRender(html) {
-      // Inject slim state inline — patients fetched separately from blob
+  function _injectHtml(html) {
       if (cpiqState) {
         var slimState = {
           meta:        cpiqState.meta,
@@ -859,20 +860,32 @@ function loadFrame(id) {
         var stateScript = '<script>window.__cpiqStateCache = ' + JSON.stringify(slimState) + '; window.CPIQ = window.__cpiqStateCache;<\/script>';
         html = html.replace('<head>', '<head>' + stateScript);
       }
-      frame.srcdoc = html;
+      return html;
+    }
 
-      // Fallback: clear loader after 12s
+  function _renderNow(html) {
+      frame.srcdoc = _injectHtml(html);
+      _renderedFrames[id] = true;
       var fallbackTimer = setTimeout(function() {
         if (loader) loader.classList.add('done');
-      }, 12000);
-
+      }, 8000);
       frame.addEventListener('load', function onLoad() {
         frame.removeEventListener('load', onLoad);
         clearTimeout(fallbackTimer);
         if (id !== 'insights' && id !== 'journeys') {
-          if (loader) loader.classList.add('done');
+          setTimeout(function() { if (loader) loader.classList.add('done'); }, 100);
         }
       });
+  }
+
+  function _doRender(html) {
+      // Only render into visible frames — hidden frames defer script execution in Chrome
+      if (frame.classList.contains('visible')) {
+        _renderNow(html);
+      } else {
+        _pendingRender[id] = html; // render when switchTab makes it visible
+        if (loader) loader.classList.add('done'); // hide spinner now
+      }
   }
 
   if (_tabCache[id]) {
@@ -893,9 +906,24 @@ function switchTab(id) {
   document.getElementById('frame-' + current).classList.remove('visible');
   document.getElementById('tab-'   + current).classList.remove('active');
   current = id;
-  document.getElementById('frame-' + id).classList.add('visible');
-  document.getElementById('tab-'   + id).classList.add('active');
-  loadFrame(id);
+  var frame = document.getElementById('frame-' + id);
+  var loader = document.getElementById('loading-' + id);
+  frame.classList.add('visible');
+  document.getElementById('tab-' + id).classList.add('active');
+  
+  // If there's a pending render (was deferred because frame was hidden), do it now
+  if (_pendingRender[id]) {
+    var html = _pendingRender[id];
+    delete _pendingRender[id];
+    if (loader) loader.classList.remove('done');
+    // Re-run _doRender with frame now visible
+    loaded[id] = false; // allow re-render
+    delete _renderedFrames[id];
+    _tabCache[id] = html; // ensure cache has it
+    loadFrame(id);
+  } else {
+    loadFrame(id);
+  }
 }
 
 // ── Cross-tab navigation from CarePath IQ ───────────────────────────────────
@@ -1000,6 +1028,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Reset loaded tabs so they re-receive new data
     loaded = {};
+    _pendingRender = {};
+    _renderedFrames = {};
     document.querySelectorAll('.dash-frame').forEach(function(f) {
       f.srcdoc = '';
       f.classList.remove('visible');
