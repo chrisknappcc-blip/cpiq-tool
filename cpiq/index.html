@@ -796,7 +796,14 @@ async function generateAndBroadcast(sysName, mapState) {
   // Broadcast to any already-loaded frames
   broadcastToAllFrames({ type: 'cpiq-state', payload: dataset });
 
-  // Prefetch all tabs in parallel so they're ready when user clicks
+  // Ensure carepathiq is in cache before returning (guarantees instant first render)
+  if (!_tabCache['carepathiq']) {
+    try {
+      var r = await fetch('/tabs/carepathiq.html?v=' + Date.now());
+      _tabCache['carepathiq'] = await r.text();
+    } catch(e) {}
+  }
+  // Prefetch remaining tabs in parallel (background)
   prefetchTabs();
 
   return dataset;
@@ -1017,13 +1024,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var genOverlay = document.createElement('div');
     genOverlay.id = 'gen-overlay';
     genOverlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(247,249,252,.92);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Outfit,sans-serif;gap:12px';
-    genOverlay.innerHTML = '<div style="width:40px;height:40px;border:3px solid #e0e8f0;border-top-color:#007d6e;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="font-size:14px;font-weight:600;color:#0f1e2e">Generating dashboard for <span style="color:#007d6e">' + name + '</span>…</div><div style="font-size:11px;color:#8aa0b8">Building referral network data</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    genOverlay.innerHTML = '<div style="width:40px;height:40px;border:3px solid #e0e8f0;border-top-color:#007d6e;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="font-size:14px;font-weight:600;color:#0f1e2e">Generating dashboard for <span style="color:#007d6e">' + name + '</span></div><div id="gen-status" style="font-size:11px;color:#8aa0b8;margin-top:4px">Initializing…</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    var genStatus = function(msg) { var el = document.getElementById('gen-status'); if(el) el.textContent = msg; };
     document.body.appendChild(genOverlay);
 
     // Yield to browser to paint the overlay
     await new Promise(function(resolve) { setTimeout(resolve, 80); });
 
+    genStatus('Building referral network…');
     await generateAndBroadcast(name, mapState);
+    genStatus('Loading dashboard…');
 
     // Remove overlay
     var ov = document.getElementById('gen-overlay');
