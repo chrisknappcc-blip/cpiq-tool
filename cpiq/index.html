@@ -801,31 +801,26 @@ function loadFrame(id) {
   fetch('/tabs/' + id + '.html')
     .then(function(r) { return r.text(); })
     .then(function(html) {
-      // Set onload before srcdoc to guarantee the event fires
-      frame.onload = null;
+      // Inject state as an inline script at the very top of the HTML —
+      // this runs before any tab code so __cpiqStateCache is always available
+      if (cpiqState) {
+        var stateScript = '<script>window.__cpiqStateCache = ' + JSON.stringify(cpiqState) + ';<\/script>';
+        html = html.replace('<head>', '<head>' + stateScript);
+      }
+
       frame.srcdoc = html;
-      // Fallback: clear loader after 10s (20s for insights/journeys which lazy-fetch patients)
-      var fallbackMs = (id === 'insights' || id === 'journeys') ? 20000 : 10000;
+
+      // Fallback: clear loader after 12s
       var fallbackTimer = setTimeout(function() {
         if (loader) loader.classList.add('done');
-      }, fallbackMs);
+      }, 12000);
 
       frame.addEventListener('load', function onLoad() {
         frame.removeEventListener('load', onLoad);
         clearTimeout(fallbackTimer);
-        // Inject state after frame loads — 600ms gives tab scripts time to fully execute
-        setTimeout(function() {
-          if (cpiqState && frame.contentWindow) {
-            try {
-              frame.contentWindow.__cpiqStateCache = cpiqState;
-              frame.contentWindow.postMessage({ type: 'cpiq-state', payload: cpiqState }, '*');
-            } catch(e) {}
-          }
-          // Only clear loader for non-patient tabs — patient tabs signal tab-ready themselves
-          if (id !== 'insights' && id !== 'journeys') {
-            if (loader) loader.classList.add('done');
-          }
-        }, 600);
+        if (id !== 'insights' && id !== 'journeys') {
+          if (loader) loader.classList.add('done');
+        }
       });
     })
     .catch(function(err) {
