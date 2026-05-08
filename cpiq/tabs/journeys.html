@@ -364,6 +364,15 @@ function expandPatient(r, cpiq) {
 }
 
 function _loadRaw() {
+  // Export mode: use baked-in patients if available
+  if (window.__exportPatients && window.__exportPatients.length) {
+    var cpiq = window.CPIQ;
+    _RAW = window.__exportPatients.map(function(r) { return expandPatient(r, cpiq); });
+    _buildPatients();
+    try { populateDropdowns(); applyFilters(); } catch(e) { console.error(e); }
+    window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
+    return;
+  }
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
   var cpiq = window.CPIQ;
 

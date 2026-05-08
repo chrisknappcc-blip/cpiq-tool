@@ -268,6 +268,14 @@ footer{display:none!important}
 <script>
 let PATIENTS = [];
 function _loadPatients() {
+  // Export mode: use baked-in patients if available
+  if (window.__exportPatients && window.__exportPatients.length) {
+    var raw = window.__exportPatients;
+    PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
+    try { render(); } catch(e) { console.error(e); }
+    window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
+    return;
+  }
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
 
   function mapR(r) {
