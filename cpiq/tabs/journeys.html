@@ -398,7 +398,8 @@ function _loadRaw() {
       if (raw && raw.length) {
         _RAW = raw.map(function(r) { return expandPatient(r, cpiq); });
         dbg('_RAW expanded: ' + _RAW.length + ' records, sample destPractice=' + (_RAW[0]&&_RAW[0].destPractice));
-        try { populateDropdowns(); applyFilters(); dbg('render OK ✓', '#4ade80'); } catch(err) {
+        _buildPatients();
+        try { populateDropdowns(); applyFilters(); dbg('render OK ✓ patients:'+PATIENTS.length, '#4ade80'); } catch(err) {
           dbg('render ERROR: ' + err.message, '#f87171');
           document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
         }
@@ -427,6 +428,7 @@ function _loadRaw() {
         _RAW = raw.map(function(r) { return expandPatient(r, cpiq); });
         var w = document.getElementById('journeys-wait');
         if (w) w.remove();
+        _buildPatients();
         try { populateDropdowns(); applyFilters(); } catch(err) {
           console.error('[CPIQ journeys] render error:', err.message);
           document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
@@ -448,154 +450,53 @@ const PRAC_MAP = (function() {
   practices.forEach(function(p) { m[p.pid] = p.name; });
   return m;
 })()
-const PHYS_MAP = {"s001":"Dr. James H. Andrews","s010":"Dr. Angela C. Rhee","s003":"Dr. Robert L. Hazel","s011":"Dr. William B. Foster","s071":"Dr. Kelly T. Coles","s065":"Dr. Ethan L. Gordon","s009":"Dr. Thomas W. Gallagher","s007":"Dr. Jerome M. Patel","s068":"Dr. Ann E. Andrews","s113":"Dr. Deborah E. Barnes","s050":"Dr. Kathleen R. Monroe","s066":"Dr. Barbara R. Ferguson","s069":"Dr. Teresa J. Austin","s033":"Dr. Mark E. Sullivan","s096":"Dr. Ronald J. Hughes","s051":"Dr. Gary W. Simpson","s097":"Dr. Angela N. Ford","s035":"Dr. Vincent P. Rossi","s002":"Dr. Susan M. Schaefer","s008":"Dr. Linda R. Kessler","s099":"Dr. Zachary C. Porter","s037":"Dr. Denise K. Harmon","s117":"Dr. Walter C. Mason","s049":"Dr. Franklin T. Bivens","s005":"Dr. Dennis L. Howell","s072":"Dr. Gloria C. Fleming","s006":"Dr. Marcus A. Price","s064":"Dr. Peter G. Hunter","s067":"Dr. Helen A. Matthews","s004":"Dr. Patricia E. Conway","s070":"Dr. Sara N. Romero","s073":"Dr. Tiffany G. Guerra","s012":"Dr. Catherine J. Moss","s112":"Dr. Steven A. Mitchell","s034":"Dr. Steven L. Abbott","s115":"Dr. Samuel N. West","s036":"Dr. Gary T. Whitfield","s098":"Dr. Jack T. Gibson","s114":"Dr. Jason J. Bryant","s116":"Dr. Aaron T. Murray","s053":"Dr. Sharon D. Hartley","s052":"Dr. Albert C. Reeves","s018":"Dr. Robert P. Kimbrell","s103":"Dr. Frances A. Lane","s078":"Dr. Stephanie J. Cole","s076":"Dr. Dorothy A. Wright","s014":"Dr. William C. Lee","s038":"Dr. Patrick W. Hamilton","s101":"Dr. Richard L. Knight","s080":"Dr. Raymond T. Jordan","s081":"Dr. Adam C. Freeman","s015":"Dr. Theresa M. Nguyen","s041":"Dr. Russell A. Bowen","s055":"Dr. Martin J. Cross","s105":"Dr. Martha J. Sanchez","s057":"Dr. Brenda T. Jackson","s077":"Dr. Donna E. Carter","s079":"Dr. Kathleen N. Alexander","s042":"Dr. Evelyn G. Perry","s020":"Dr. Juan J. Cabanero","s043":"Dr. Kenneth R. Patterson","s074":"Dr. Nicole L. Howard","s021":"Dr. Sandra T. Brewington","s013":"Dr. Karen B. Singh","s056":"Dr. Gary W. Simpson II","s118":"Dr. Stephen G. Hunt","s019":"Dr. Michael S. Fowler","s121":"Dr. Alice A. Armstrong","s058":"Dr. Susan K. Alexander","s016":"Dr. Mark T. Bhatt","s054":"Dr. Douglas P. Holt","s040":"Dr. William C. Parsons","s104":"Dr. Gloria E. Sims","s075":"Dr. Charles R. Thomas","s017":"Dr. Jimmy R. Baucum","s022":"Dr. Philip A. Norwood","s082":"Dr. Harold G. Morales","s023":"Dr. Cheryl D. Hayes","s119":"Dr. Lisa L. Perkins","s039":"Dr. Rebecca S. Lawrence","s100":"Dr. Keith G. Burns","s102":"Dr. Sandra R. Berry","s120":"Dr. Christine R. Olson","s030":"Dr. Laura E. Ferris","s028":"Dr. Benjamin T. Mauldin","s046":"Dr. Henry T. Moore","s127":"Dr. Sarah G. Brown","s088":"Dr. Kelly N. Bishop","s095":"Dr. Amanda E. Brooks","s086":"Dr. Jean E. Carpenter","s107":"Dr. Teresa T. Fields","s032":"Dr. Balbir S. Minhas","s090":"Dr. Carolyn C. Gaines","s106":"Dr. Diana N. Coker","s085":"Dr. Samantha A. Carroll","s110":"Dr. Barbara L. Taylor","s029":"Dr. Srivathsan Palaniappan","s122":"Dr. Lori E. Medina","s024":"Dr. Kenneth J. Vega","s084":"Dr. Nancy R. Hudson","s125":"Dr. Shirley T. Fuller","s093":"Dr. Nancy R. Young","s083":"Dr. Larry L. Black","s026":"Dr. Zachary P. Gitto","s109":"Dr. Rachel G. Hopkins","s025":"Dr. Mohammad A. Abudalou","s087":"Dr. Janice J. Castillo","s111":"Dr. Daniel R. King","s027":"Dr. Joseph D. Meserve","s060":"Dr. Paul J. Hernandez","s123":"Dr. Emma J. Banks","s092":"Dr. John L. Jones","s089":"Dr. Judith T. Drew","s059":"Dr. Vivian N. Pearce","s044":"Dr. Anita J. Patel","s094":"Dr. Ashley A. Green","s126":"Dr. Beverly C. Harmon","s047":"Dr. Maria C. Vasquez","s091":"Dr. Denise G. Harper","s063":"Dr. Russell K. Pope","s045":"Dr. Gregory B. Nichols","s061":"Dr. Brian L. Caldwell","s124":"Dr. Heather N. Drake","s031":"Dr. Devendra Enjamuri","s048":"Dr. Sylvia R. Weston","s108":"Dr. Julie C. Gross","s062":"Dr. Ellen M. Fitzgerald"};
+const PHYS_MAP = (function() {
+  var m = {};
+  var pracs = (window.CPIQ && window.CPIQ.practices) || [];
+  pracs.forEach(function(p) {
+    (p.docs || []).forEach(function(d) { m[d.id] = d.name; });
+  });
+  return m;
+})()
 
-const SRC_MAP = {
-  "r001":"Health System Family Medicine – City A",
-  "r002":"Health System Family Medicine – City A",
-  "r003":"Health System Family Medicine – City A",
-  "r004":"Competitor Primary Care – City B",
-  "r005":"Competitor Primary Care – City B",
-  "r006":"Health System Internal Medicine – City A",
-  "r007":"Health System Internal Medicine – City A",
-  "r008":"Health System Internal Medicine – City A",
-  "r009":"Health System Primary Care – City C",
-  "r010":"Health System Primary Care – City C",
-  "r011":"Health System Family Medicine – City D",
-  "r012":"Health System Family Medicine – City D",
-  "r013":"Health System Internal Medicine – City E",
-  "r014":"Health System Internal Medicine – City E",
-  "r015":"Health System Internal Medicine – City E",
-  "r016":"Health System Family Medicine – City F",
-  "r017":"Health System Family Medicine – City F",
-  "r018":"Health System Internal Medicine – City G",
-  "r019":"Health System Internal Medicine – City G",
-  "r020":"Health System Cardiology – City A",
-  "r021":"Health System Cardiology – City B",
-  "r022":"Health System Heart & Vascular – City A",
-  "r023":"Health System Digestive Health – City B",
-  "r024":"Health System Digestive Health – City A",
-  "r025":"CIN Partner Primary Care – City A",
-  "r026":"CIN Partner Primary Care – City A",
-  "r027":"CIN Partner Primary Care – City A",
-  "r028":"CIN Partner Primary Care – City A",
-  "r029":"CIN Partner Primary Care – City B",
-  "r030":"CIN Partner Primary Care – City B",
-  "r031":"CIN Partner Primary Care – City B",
-  "r032":"CIN Partner Primary Care – City C",
-  "r033":"CIN Partner Primary Care – City C",
-  "r034":"CIN Partner Primary Care – City D",
-  "r035":"CIN Partner Primary Care – City D",
-  "r036":"CIN Partner Primary Care – City F",
-  "r037":"CIN Partner Primary Care – City F",
-  "r038":"CIN Partner Primary Care – City M",
-  "r039":"CIN Partner Primary Care – City M",
-  "r040":"CIN Partner Cardiology – City G",
-  "r041":"CIN Partner Gastroenterology – City M",
-  "r042":"CIN Partner Cardiology – City H",
-  "r043":"Health System Family Medicine – City A",
-  "r044":"Health System Family Medicine – City A",
-  "r045":"Health System Medical Group",
-  "r046":"Competitor Primary Care – City B",
-  "r047":"Competitor Primary Care – City B",
-  "r048":"Competitor Primary Care – City B",
-  "r049":"Academic Medical Primary Care – City A",
-  "r050":"Academic Medical Primary Care – City A",
-  "r051":"Regional Health Primary Care – City A",
-  "r052":"Regional Health Primary Care – City A",
-  "r053":"Competitor Orthopedic Associates – City B",
-  "r054":"Academic Medical Cardiology – City A",
-  "r055":"Health System Digestive Health – City A",
-  "r056":"Health System Family Medicine – City A",
-  "r057":"Health System Family Medicine – City A",
-  "r058":"Competitor Primary Care – City B",
-  "r059":"Competitor Primary Care – City B",
-  "r060":"Health System Internal Medicine – City A",
-  "r061":"Health System Internal Medicine – City A",
-  "r062":"Health System Primary Care – City C",
-  "r063":"Health System Primary Care – City C",
-  "r064":"Health System Family Medicine – City D",
-  "r065":"Health System Internal Medicine – City E",
-  "r066":"Health System Internal Medicine – City E",
-  "r067":"Health System Family Medicine – City F",
-  "r068":"Health System Family Medicine – City F",
-  "r069":"Health System Internal Medicine – City G",
-  "r070":"Health System Internal Medicine – City G",
-  "r071":"Health System Cardiology – City A",
-  "r072":"Health System Cardiology – City A",
-  "r073":"Health System Cardiology – City A",
-  "r074":"Health System Cardiology – City B",
-  "r075":"Health System Cardiology – City B",
-  "r076":"Health System Heart & Vascular – City A",
-  "r077":"Health System Heart & Vascular – City A",
-  "r078":"Health System Digestive Health – City B",
-  "r079":"Health System Digestive Health – City B",
-  "r080":"Health System Digestive Health – City A",
-  "r081":"Health System Digestive Health – City A",
-  "r082":"CIN Partner Primary Care – City A",
-  "r083":"CIN Partner Primary Care – City A",
-  "r084":"CIN Partner Primary Care – City A",
-  "r085":"CIN Partner Primary Care – City B",
-  "r086":"CIN Partner Primary Care – City B",
-  "r087":"CIN Partner Primary Care – City C",
-  "r088":"CIN Partner Primary Care – City C",
-  "r089":"CIN Partner Primary Care – City D",
-  "r090":"CIN Partner Primary Care – City D",
-  "r091":"CIN Partner Primary Care – City F",
-  "r092":"CIN Partner Primary Care – City F",
-  "r093":"CIN Partner Primary Care – City M",
-  "r094":"CIN Partner Primary Care – City M",
-  "r095":"CIN Partner Cardiology – City G",
-  "r096":"CIN Partner Cardiology – City G",
-  "r097":"CIN Partner Cardiology – City G",
-  "r098":"CIN Partner Gastroenterology – City M",
-  "r099":"CIN Partner Gastroenterology – City M",
-  "r100":"CIN Partner Cardiology – City H",
-  "r101":"CIN Partner Cardiology – City H",
-  "r102":"Health System Family Medicine – City A",
-  "r103":"Health System Family Medicine – City A",
-  "r104":"Health System Family Medicine – City A",
-  "r105":"Competitor Primary Care – City B",
-  "r106":"Competitor Primary Care – City B",
-  "r107":"Academic Medical Primary Care – City A",
-  "r108":"Academic Medical Primary Care – City A",
-  "r109":"Regional Health Primary Care – City A",
-  "r110":"Competitor Orthopedic Associates – City B",
-  "r111":"Competitor Orthopedic Associates – City B",
-  "r112":"Academic Medical Cardiology – City A",
-  "r113":"Academic Medical Cardiology – City A",
-  "r114":"Health System Digestive Health – City A",
-  "r115":"Health System Digestive Health – City A"
-};
+const SRC_MAP = (function() {
+  var m = {};
+  var refs = (window.CPIQ && window.CPIQ.referrers) || [];
+  refs.forEach(function(r) { m[r.id] = r.practice || r.name || r.id; });
+  return m;
+})()
 const PROC_MAP = {"27447":"Total Knee Arthroplasty","20610":"Joint Aspiration / Injection","29881":"Knee Arthroscopy w/ Meniscectomy","27130":"Total Hip Arthroplasty","27487":"Revision Total Knee Arthroplasty","22612":"Lumbar Spinal Fusion","29827":"Shoulder Arthroscopy / Rotator Cuff Repair","29823":"Shoulder Arthroscopy D\u00e9bridement","93306":"Echocardiography w/ Doppler","92928":"Percutaneous Coronary Intervention","93458":"Left Heart Catheterization","33208":"Permanent Pacemaker Implantation","33249":"ICD Implantation","33533":"CABG \u2014 Arterial","93621":"Electrophysiology Study","93018":"Cardiovascular Stress Test","43239":"Upper GI Endoscopy w/ Biopsy","43281":"Laparoscopic Hiatal Hernia Repair","45380":"Colonoscopy w/ Biopsy","45378":"Diagnostic Colonoscopy","47562":"Laparoscopic Cholecystectomy","43760":"Percutaneous Gastrostomy Tube"};
 
 // Expand slim records to full patient objects
-const PATIENTS = _RAW.map(r=>{
-  return {
-    pid:          r.i,
-    spec:         r.sp,
-    refDate:      r.rd,
-    refSource:    SRC_MAP[r.ri]  || r.ri,
-    refSourceId:  r.ri,
-    refTier:      r.rt,
-    refPtype:     r.rp,
-    destPractice: PRAC_MAP[r.dp] || r.dp,
-    destPid:      r.dp,
-    destPhysician:PHYS_MAP[r.di] || r.di,
-    destPhysId:   r.di,
-    destTier:     r.dt,
-    visitDone:    r.v===1,
-    mttaDays:     r.m,
-    visitDate:    r.vd,
-    edVisit:      r.e===1,
-    procDone:     r.pr===1,
-    procCode:     r.pc,
-    procName:     r.pc ? PROC_MAP[r.pc] : null,
-    procNet:      r.pn,
-    procDate:     r.pd,
-    daysFromRef:  r.df,
-  };
-});
+let PATIENTS = [];
+function _buildPatients() {
+  PATIENTS = _RAW.map(r=>{
+    return {
+      pid:          r.pid || r.i,
+      spec:         r.spec || r.sp,
+      refDate:      r.refDate || r.rd,
+      refSource:    r.refSource || SRC_MAP[r.ri] || r.ri,
+      refSourceId:  r.refSourceId || r.ri,
+      refTier:      r.refTier || r.rt,
+      refPtype:     r.refPtype || r.rp,
+      destPractice: r.destPractice || PRAC_MAP[r.dp] || r.dp,
+      destPid:      r.destPid || r.dp,
+      destPhysician:r.destPhysician || PHYS_MAP[r.di] || r.di,
+      destPhysId:   r.destPhysId || r.di,
+      destTier:     r.destTier || r.dt,
+      visitDone:    r.visitDone !== undefined ? r.visitDone : r.v===1,
+      mttaDays:     r.mttaDays !== undefined ? r.mttaDays : r.m,
+      visitDate:    r.visitDate || r.vd,
+      edVisit:      r.edVisit !== undefined ? r.edVisit : r.e===1,
+      procDone:     r.procDone !== undefined ? r.procDone : r.pr===1,
+      procCode:     r.procCode || r.pc,
+      procName:     r.procName || (r.pc ? PROC_MAP[r.pc] : null),
+      procNet:      r.procNet || r.pn,
+      procDate:     r.procDate || r.pd,
+      daysFromRef:  r.daysFromRef !== undefined ? r.daysFromRef : r.df,
+    };
+  });
+}
 
 // ── Filters ──────────────────────────────────────────────────────────────────
 const filters = {
