@@ -269,26 +269,21 @@ footer{display:none!important}
 let PATIENTS = [];
 function _loadPatients() {
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
-  dbg('_loadPatients called, sessionKey=' + sessionKey);
   
   // Try sessionStorage first (instant, no network)
   try {
     var stored = window.parent.sessionStorage.getItem('cpiq_patients_' + sessionKey);
-    dbg('sessionStorage: ' + (stored ? JSON.parse(stored).length + ' patients' : 'empty'));
     if (stored) {
       var raw = JSON.parse(stored);
       if (raw && raw.length) {
         PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
-        dbg('PATIENTS: ' + PATIENTS.length + ' records');
         try { render();  } catch(err) {
-          dbg('render ERROR: ' + err.message, '#f87171');
           document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
         }
         window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
         return;
       }
     }
-  } catch(e) { dbg('sessionStorage ERROR: ' + e.message, '#f87171'); }
 
   // Fallback: fetch from blob
   var waitEl = document.createElement('div');

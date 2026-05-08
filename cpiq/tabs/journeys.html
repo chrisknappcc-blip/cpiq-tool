@@ -366,27 +366,21 @@ function expandPatient(r, cpiq) {
 function _loadRaw() {
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
   var cpiq = window.CPIQ;
-  dbg('_loadRaw called, sessionKey=' + sessionKey + ', CPIQ=' + (cpiq?'set':'null'));
 
   // Try sessionStorage first (instant)
   try {
     var stored = window.parent.sessionStorage.getItem('cpiq_patients_' + sessionKey);
-    dbg('sessionStorage: ' + (stored ? JSON.parse(stored).length + ' patients' : 'empty'));
     if (stored) {
       var raw = JSON.parse(stored);
       if (raw && raw.length) {
         _RAW = raw.map(function(r) { return expandPatient(r, cpiq); });
-        dbg('_RAW expanded: ' + _RAW.length + ' records, sample destPractice=' + (_RAW[0]&&_RAW[0].destPractice));
         _buildPatients();
-        try { populateDropdowns(); applyFilters(); dbg('render OK ✓ patients:'+PATIENTS.length, '#4ade80'); } catch(err) {
-          dbg('render ERROR: ' + err.message, '#f87171');
           document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
         }
         window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
         return;
       }
     }
-  } catch(e) { dbg('sessionStorage ERROR: ' + e.message, '#f87171'); }
 
   // Fallback: fetch from blob
   var waitEl = document.createElement('div');
