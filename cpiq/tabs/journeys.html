@@ -371,7 +371,6 @@ function _loadRaw() {
     _RAW = raw.map(function(r) { return expandPatient(r, cpiq); });
     _buildPatients();
     try { populateDropdowns(); applyFilters(); } catch(err) {
-      console.error('[CPIQ journeys] render error:', err.message);
       document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
     }
     window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');
@@ -384,7 +383,7 @@ function _loadRaw() {
       var raw = JSON.parse(stored);
       if (raw && raw.length) { doRender(raw); return; }
     }
-  } catch(e) { console.warn('[CPIQ journeys] sessionStorage failed:', e.message); }
+  } catch(e) {  }
 
   // Fallback: fetch from blob
   var waitEl = document.createElement('div');
@@ -406,7 +405,6 @@ function _loadRaw() {
         doRender(Array.isArray(data) ? data : []);
       })
       .catch(function(e) {
-        console.error('[CPIQ journeys] fetch failed:', e.message);
         var w = document.getElementById('journeys-wait');
         if (w) w.textContent = 'Error: ' + e.message;
         window.parent.postMessage({ type: 'tab-ready', tab: 'journeys' }, '*');

@@ -1106,11 +1106,9 @@ function renderAll(){
 // Init — wait for CPIQ state
 (function() {
   function doInit() {
-    console.log('[CPIQ cycle] specialists:', specialists ? specialists.length : 'null', 'CPIQ:', window.CPIQ ? 'set' : 'null');
     try {
       renderAll();
     } catch(err) {
-      console.error('[CPIQ cycle] init error:', err.message, err.stack);
       document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">cycle: ' + err.message + '</pre>';
     }
     window.parent.postMessage({ type: 'tab-ready', tab: 'cycle' }, '*');
@@ -1128,7 +1126,6 @@ function renderAll(){
         doInit();
       } else if (attempts > 50) {
         clearInterval(poll);
-        console.warn('[CPIQ cycle] CPIQ state never arrived');
         doInit(); // render anyway with empty data
       }
     }, 100);

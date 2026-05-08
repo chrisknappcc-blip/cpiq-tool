@@ -934,8 +934,13 @@ function render() {
   renderMonthlyChart();
   renderPracticeTable();
 }
-
-render();
+try {
+  render();
+} catch(err) {
+  document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999">' + err.message + '</pre>';
+}
+// Signal shell loading overlay can clear
+window.parent.postMessage({ type: 'tab-ready', tab: 'carepathiq' }, '*');
 
 // Notify parent suite of this tab's system name for CTA widget
 (function() {
