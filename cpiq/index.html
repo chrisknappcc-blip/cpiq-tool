@@ -694,7 +694,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
 </div>
 
 
-<script src="/data/engine.js?v=4"></script>
+<script src="/data/engine.js?v=5"></script>
 <script>
 // ── CPIQ Shell: Map Tool state-load + data generation + tab management ──────
 
@@ -1352,8 +1352,8 @@ async function exportDashboard() {
       'display:flex;align-items:center;justify-content:center;background:var(--border);color:var(--text2)}' +
       '.et.on .en{background:var(--teal);color:#fff}' +
       '.em{font-size:9px;color:var(--text3);margin-left:auto;padding-right:4px;white-space:nowrap;flex-shrink:0}' +
-      '.ew{position:fixed;top:64px;left:0;right:0;bottom:0}' +
-      '.ef{width:100%;height:100%;border:none;display:none;background:var(--bg)}' +
+      '.ew{position:fixed;top:64px;left:0;right:0;bottom:0;z-index:1}' +
+      '.ef{width:100%;height:100%;border:none;display:none;background:var(--bg);z-index:1}' +
       '.ev{display:block}' + ctaCss;
 
     var parts = [
