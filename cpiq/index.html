@@ -1247,7 +1247,9 @@ async function exportDashboard() {
     var tabs = {};
     TAB_NAMES.forEach(function(id) {
       var h = _tabCache[id] || '';
-      tabs[id] = h.replace('<head>', '<head>' + stateBlock);
+      h = h.replace('<head>', '<head>' + stateBlock);
+      // Escape </script> so it doesn't break the outer script block in the export
+      tabs[id] = h.replace(/<\/script>/gi, '<\/script>');
     });
 
     // Tab labels
