@@ -589,12 +589,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <div class="frame-loading done" id="loading-source">
     <div class="spinner"></div>
     <div class="loading-label">Loading Referral Sources…</div>
-    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+    <div class="loading-sub">Health System</div>
   </div>
   <div class="frame-loading done" id="loading-carepathiq">
     <div class="spinner"></div>
     <div class="loading-label">Loading CarePath IQ…</div>
-    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+    <div class="loading-sub">Health System</div>
   </div>
   <iframe class="dash-frame" id="frame-carepathiq"
     sandbox="allow-scripts allow-same-origin"></iframe>
@@ -605,7 +605,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <div class="frame-loading done" id="loading-destination">
     <div class="spinner"></div>
     <div class="loading-label">Loading Referral Outcomes…</div>
-    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+    <div class="loading-sub">Health System</div>
   </div>
   <iframe class="dash-frame" id="frame-destination"
     sandbox="allow-scripts allow-same-origin"></iframe>
@@ -613,7 +613,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <div class="frame-loading done" id="loading-procedure">
     <div class="spinner"></div>
     <div class="loading-label">Loading Procedures…</div>
-    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+    <div class="loading-sub">Health System</div>
   </div>
   <iframe class="dash-frame" id="frame-procedure"
     sandbox="allow-scripts allow-same-origin"></iframe>
@@ -621,7 +621,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <div class="frame-loading done" id="loading-cycle">
     <div class="spinner"></div>
     <div class="loading-label">Loading Pathway Intelligence…</div>
-    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+    <div class="loading-sub">Health System</div>
   </div>
   <iframe class="dash-frame" id="frame-cycle"
     sandbox="allow-scripts allow-same-origin"></iframe>
@@ -629,7 +629,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <div class="frame-loading done" id="loading-scorecard">
     <div class="spinner"></div>
     <div class="loading-label">Loading Provider Scorecard…</div>
-    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+    <div class="loading-sub">Health System</div>
   </div>
   <iframe class="dash-frame" id="frame-scorecard"
     sandbox="allow-scripts allow-same-origin"></iframe>
@@ -637,7 +637,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <div class="frame-loading done" id="loading-journeys">
     <div class="spinner"></div>
     <div class="loading-label">Loading Patient Journeys…</div>
-    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+    <div class="loading-sub">Health System</div>
   </div>
   <iframe class="dash-frame" id="frame-journeys"
     sandbox="allow-scripts allow-same-origin"></iframe>
@@ -645,7 +645,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <div class="frame-loading done" id="loading-insights">
     <div class="spinner"></div>
     <div class="loading-label">Loading Patient Insights…</div>
-    <div class="loading-sub">Methodist Health System · Methodist CIN · DFW</div>
+    <div class="loading-sub">Health System</div>
   </div>
   <iframe class="dash-frame" id="frame-insights"
     sandbox="allow-scripts allow-same-origin"></iframe>
@@ -659,7 +659,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
     <label for="sys-name-input">Health System Name</label>
     <input id="sys-name-input" type="text" placeholder="e.g. Baptist Health, Novant Health…" autocomplete="off" spellcheck="false">
     <div id="sys-modal-hint"></div>
-    <label style="margin-top:16px;display:block">System Logo <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text3)">(optional — PNG, SVG, JPG)</span></label>
+    <label style="margin-top:14px;display:block" for="sys-zip-input">Service Area Zip Code <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text3)">(recommended — disambiguates same-name systems)</span></label>
+    <input id="sys-zip-input" type="text" placeholder="e.g. 32216" maxlength="5" autocomplete="off"
+      style="width:100%;padding:11px 14px;font-size:14px;font-family:'Outfit',sans-serif;border:1.5px solid var(--border);border-radius:10px;color:var(--text);outline:none;transition:border-color .15s;box-sizing:border-box;margin-top:6px">
+    <div id="sys-zip-hint" style="font-size:11px;color:var(--text3);margin:6px 0 0;min-height:14px"></div>
+    <label style="margin-top:14px;display:block">System Logo <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text3)">(optional — PNG, SVG, JPG)</span></label>
     <div id="logo-upload-area" style="margin-top:6px;border:1.5px dashed var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s" onclick="document.getElementById('logo-file-input').click()">
       <div id="logo-preview-wrap" style="width:48px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9l4-3 4 3 4-4 4 4"/></svg>
@@ -713,16 +717,63 @@ async function loadMapState() {
   */
 }
 
+// ── Haversine distance (miles) ──────────────────────────────────────────────
+function haversine(lat1, lon1, lat2, lon2) {
+  var R = 3958.8;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLon = (lon2 - lon1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+          Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── Geocode a zip code via Map Tool router ───────────────────────────────────
+async function geocodeZip(zip) {
+  if (!zip || zip.length < 5) return null;
+  try {
+    var res = await fetchWithTimeout(
+      MAP_TOOL_ROUTER + '?action=geocode-proxy&postalcode=' + zip + '&countrycodes=us', 2000
+    );
+    if (!res.ok) return null;
+    var data = await res.json();
+    var first = Array.isArray(data) ? data[0] : null;
+    if (first && first.lat && first.lon) {
+      return { lat: parseFloat(first.lat), lon: parseFloat(first.lon) };
+    }
+    return null;
+  } catch(e) { return null; }
+}
+
 // ── Extract competitor systems from overrides map ───────────────────────────
-function extractCompetitors(mapState, targetSysName) {
+// zipCoords: { lat, lon } — if provided, filters to facilities within 120 miles
+function extractCompetitors(mapState, targetSysName, zipCoords) {
   var counts = {};
   var overrides = mapState.overrides || {};
-  Object.values(overrides).forEach(function(sysName) {
+  
+  Object.entries(overrides).forEach(function(entry) {
+    var key = entry[0];
+    var sysName = entry[1];
     if (!sysName || sysName === 'Independent / Community') return;
+    if (sysName === targetSysName) return;
+    
+    // If zip provided, filter by distance using lat/lon in key
+    if (zipCoords) {
+      var parts = key.split('|');
+      if (parts.length === 3) {
+        var lat = parseFloat(parts[1]);
+        var lon = parseFloat(parts[2]);
+        if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+          var dist = haversine(zipCoords.lat, zipCoords.lon, lat, lon);
+          if (dist > 120) return; // outside 120 mile radius
+        }
+      }
+    }
+    
     counts[sysName] = (counts[sysName] || 0) + 1;
   });
+
   return Object.keys(counts)
-    .filter(function(name) { return name !== targetSysName; })
     .sort(function(a,b) { return counts[b] - counts[a]; })
     .slice(0, 12)
     .map(function(name) {
@@ -755,7 +806,7 @@ async function loadSystemLogo(sysName) {
 
 // ── Generate CPIQ dataset and broadcast to all frames ────────────────────────
 async function generateAndBroadcast(sysName, mapState) {
-  var competitors = extractCompetitors(mapState, sysName);
+  var competitors = extractCompetitors(mapState, sysName, _zipCoords || null);
   var dataset = CPIQEngine.generate(sysName, competitors, {});
   cpiqState = dataset;
 
@@ -802,10 +853,8 @@ async function generateAndBroadcast(sysName, mapState) {
       var _pt = Date.now();
       var r = await fetch('/tabs/carepathiq.html?v=' + Date.now());
       _tabCache['carepathiq'] = await r.text();
-      console.log('[CPIQ TIMING] carepathiq prewarm fetch:', Date.now()-_pt, 'ms');
-    } catch(e) {}
+      } catch(e) {}
   } else {
-    console.log('[CPIQ TIMING] carepathiq already cached');
   }
   // Prefetch remaining tabs in parallel (background)
   prefetchTabs();
@@ -818,6 +867,7 @@ var _tabCache = {};
 var _tabFetching = {};
 var _pendingRender = {};   // html waiting for frame to become visible
 var _renderedFrames = {};  // frames that have been rendered at least once
+var _zipCoords = null;     // geocoded zip for competitor geo-filtering
 
 function prefetchTabs() {
   var tabs = ['carepathiq','source','destination','procedure','scorecard','insights','journeys','cycle'];
@@ -873,12 +923,10 @@ function loadFrame(id) {
       var fallbackTimer = setTimeout(function() {
         if (loader) loader.classList.add('done');
       }, 8000);
-      var _frameStart = Date.now();
       frame.addEventListener('load', function onLoad() {
         frame.removeEventListener('load', onLoad);
         clearTimeout(fallbackTimer);
-        console.log('[CPIQ TIMING] frame', id, 'load event:', Date.now()-_frameStart, 'ms after srcdoc set');
-        if (id !== 'insights' && id !== 'journeys') {
+          if (id !== 'insights' && id !== 'journeys') {
           setTimeout(function() { if (loader) loader.classList.add('done'); }, 100);
         }
       });
@@ -959,6 +1007,8 @@ function openSysModal() {
   overlay.classList.remove('hidden');
   input.value = (cpiqState && cpiqState.meta && cpiqState.meta.sysName !== 'Health System')
     ? cpiqState.meta.sysName : '';
+  var zipHint = document.getElementById('sys-zip-hint');
+  if (zipHint) zipHint.textContent = '';
   setTimeout(function() { input.focus(); input.select(); }, 80);
 }
 
@@ -1035,6 +1085,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var mapState = _mapStateCache || { overrides:{}, typeOverrides:{}, customSystems:[], excluded:[] };
 
+    // Geocode zip if provided (fire before closing modal so user sees feedback)
+    var zipVal = (document.getElementById('sys-zip-input') || {}).value || '';
+    zipVal = zipVal.trim();
+    _zipCoords = null;
+    if (zipVal.length === 5 && /^[0-9]{5}$/.test(zipVal)) {
+      var zipHint = document.getElementById('sys-zip-hint');
+      if (zipHint) zipHint.textContent = 'Locating…';
+      _zipCoords = await geocodeZip(zipVal);
+      if (zipHint) zipHint.textContent = _zipCoords
+        ? '✓ Located — filtering competitors within 120 miles'
+        : 'Zip not found — using national data';
+    }
+
     // Close modal and let browser repaint BEFORE the engine runs
     // (engine is synchronous and blocks UI for ~2-3s)
     goBtn.textContent = 'Building…';
@@ -1044,12 +1107,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Yield one frame so modal close animation completes
     await new Promise(function(resolve) { requestAnimationFrame(resolve); });
 
-    var _t0 = Date.now();
     await generateAndBroadcast(name, mapState);
-    console.log('[CPIQ TIMING] generateAndBroadcast:', Date.now()-_t0, 'ms');
-    var _t1 = Date.now();
     loadFrame('carepathiq');
-    console.log('[CPIQ TIMING] loadFrame called:', Date.now()-_t1, 'ms after generate');
 
     // Force-clear the carepathiq loader after 5s as a safety net
     setTimeout(function() {
@@ -1105,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var presetData = await loadPreset('original');
       var name = input.value.trim() || 'Health System';
       var mapState = _mapStateCache || { overrides:{}, typeOverrides:{}, customSystems:[], excluded:[] };
-      var competitors = extractCompetitors(mapState, name);
+      var competitors = extractCompetitors(mapState, name, _zipCoords || null);
       presetData.meta.sysName     = name;
       presetData.meta.competitors = competitors;
       presetData.meta.patientsUrl = '/presets/original-patients.json';
@@ -1161,7 +1220,7 @@ document.addEventListener('DOMContentLoaded', function() {
           var top = Object.entries(counts).sort(function(a,b){return b[1]-a[1];})[0];
           sysName = (top && top[0]) || presetData.meta.sysName || 'Health System';
         }
-        var competitors = extractCompetitors(mapState, sysName);
+        var competitors = extractCompetitors(mapState, sysName, null);
         presetData.meta.sysName     = sysName;
         presetData.meta.competitors = competitors;
         presetData.meta.patientsUrl = '/presets/' + presetName + '-patients.json';
