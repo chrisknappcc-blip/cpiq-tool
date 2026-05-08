@@ -817,7 +817,7 @@ function extractCompetitors(mapState, targetSysName, zipCoords) {
     counts[sysName] = (counts[sysName] || 0) + 1;
   });
 
-  return Object.keys(counts)
+  var result = Object.keys(counts)
     .sort(function(a,b) { return counts[b] - counts[a]; })
     .slice(0, 12)
     .map(function(name) {
@@ -828,6 +828,11 @@ function extractCompetitors(mapState, targetSysName, zipCoords) {
         logoKey: encodeURIComponent(name.toLowerCase().trim())
       };
     });
+  console.log('[CPIQ competitors] center:', center ? (center.lat.toFixed(3)+','+center.lon.toFixed(3)) : 'none',
+    '| total overrides:', Object.keys(overrides).length,
+    '| filtered to:', Object.keys(counts).length,
+    '| top:', result.slice(0,3).map(function(r){return r.name;}).join(', '));
+  return result;
 }
 
 // ── Load target system logo from Map Tool ────────────────────────────────────
@@ -1138,17 +1143,24 @@ document.addEventListener('DOMContentLoaded', function() {
         var geoRes = await fetchWithTimeout(
           MAP_TOOL_ROUTER + '?action=geocode-proxy&postalcode=' + zipVal + '&countrycodes=us', 3000
         );
+        console.log('[CPIQ geo] geocode status:', geoRes.status);
         if (geoRes.ok) {
           var geoData = await geoRes.json();
+          console.log('[CPIQ geo] geocode response:', JSON.stringify(geoData).substring(0, 200));
           var first = Array.isArray(geoData) ? geoData[0] : null;
           if (first && first.lat && first.lon) {
             _zipCoords = { lat: parseFloat(first.lat), lon: parseFloat(first.lon) };
+            console.log('[CPIQ geo] coords:', _zipCoords);
             if (zipHint) zipHint.textContent = '✓ Located — filtering competitors within 120 miles';
           } else {
+            console.warn('[CPIQ geo] no coords in response');
             if (zipHint) zipHint.textContent = 'Zip not found — using national data';
           }
+        } else {
+          console.warn('[CPIQ geo] geocode failed:', geoRes.status);
         }
       } catch(e) {
+        console.warn('[CPIQ geo] geocode error:', e.message);
         if (zipHint) zipHint.textContent = 'Geocoding unavailable — using national data';
       }
     }
