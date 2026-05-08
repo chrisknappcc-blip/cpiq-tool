@@ -698,7 +698,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
 <script>
 // ── CPIQ Shell: Map Tool state-load + data generation + tab management ──────
 
-var MAP_TOOL_ROUTER = 'https://eclectic-kitten-27fdf8.netlify.app/.netlify/functions/router';
+var MAP_TOOL_ROUTER = 'https://mapping-tool-cc.netlify.app/.netlify/functions/router';
 var loaded  = {};
 var current = 'carepathiq';
 var cpiqState = null;  // generated dataset, broadcast to all iframes
@@ -706,19 +706,27 @@ var cpiqState = null;  // generated dataset, broadcast to all iframes
 // ── Fetch with timeout helper ────────────────────────────────────────────────
 function fetchWithTimeout(url, ms) {
   ms = ms || 4000;
-  var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  var timer = setTimeout(function() { if (controller) controller.abort(); }, ms);
-  var opts = controller ? { signal: controller.signal } : {};
-  return fetch(url, opts).finally(function() { clearTimeout(timer); });
+  var didTimeout = false;
+  return new Promise(function(resolve, reject) {
+    var timer = setTimeout(function() {
+      didTimeout = true;
+      reject(new Error('Request timed out'));
+    }, ms);
+    fetch(url).then(function(res) {
+      clearTimeout(timer);
+      if (!didTimeout) resolve(res);
+    }).catch(function(err) {
+      clearTimeout(timer);
+      if (!didTimeout) reject(err);
+    });
+  });
 }
 
 // ── Fetch Map Tool shared state ───────────────────────────────────────────────
 // NOTE: Map Tool CORS not yet configured for this origin.
 // Returns empty state immediately — re-enable once CORS is sorted.
 async function loadMapState() {
-  return { overrides: {}, typeOverrides: {}, customSystems: [], excluded: [] };
-  /* CORS-DISABLED — uncomment when Map Tool allows this origin:
-  try {
+try {
     var res = await fetchWithTimeout(MAP_TOOL_ROUTER + '?action=state-load', 3000);
     if (!res.ok) throw new Error('state-load ' + res.status);
     return await res.json();
@@ -726,7 +734,7 @@ async function loadMapState() {
     console.warn('Map Tool state-load failed/timed out:', e.message);
     return { overrides: {}, typeOverrides: {}, customSystems: [], excluded: [] };
   }
-  */
+
 }
 
 // ── Haversine distance (miles) ──────────────────────────────────────────────
@@ -801,9 +809,7 @@ function extractCompetitors(mapState, targetSysName, zipCoords) {
 // ── Load target system logo from Map Tool ────────────────────────────────────
 // NOTE: CORS-disabled until Map Tool allows this origin.
 async function loadSystemLogo(sysName) {
-  return null;
-  /* CORS-DISABLED — uncomment when Map Tool allows this origin:
-  if (!sysName) return null;
+if (!sysName) return null;
   try {
     var key = encodeURIComponent(sysName.toLowerCase().trim());
     var res = await fetchWithTimeout(MAP_TOOL_ROUTER + '?action=icon-load&system=' + key, 2000);
@@ -813,7 +819,7 @@ async function loadSystemLogo(sysName) {
   } catch(e) {
     return null;
   }
-  */
+
 }
 
 // ── Generate CPIQ dataset and broadcast to all frames ────────────────────────
