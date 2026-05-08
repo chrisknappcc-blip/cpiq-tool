@@ -163,27 +163,7 @@ footer{display:none!important}
   if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
 })();
 </script>
-<script>
-/* ── CPIQ Debug Overlay ─────────────────────────────────────────────────── */
-(function() {
-  var overlay = null;
-  function dbg(msg, color) {
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:99999;background:rgba(15,30,60,.92);color:#fff;font-family:monospace;font-size:11px;padding:10px 14px;border-radius:8px;max-width:420px;max-height:200px;overflow-y:auto;line-height:1.6';
-      document.body.appendChild(overlay);
-      setTimeout(function(){ if(overlay) overlay.remove(); overlay=null; }, 15000);
-    }
-    var line = document.createElement('div');
-    line.style.color = color || '#7dd3c8';
-    line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
-    overlay.appendChild(line);
-    overlay.scrollTop = overlay.scrollHeight;
-    console.log('[CPIQ DBG]', msg);
-  }
-  window.__cpiqDbg = dbg;
-})();
-</script>
+
 
 </head>
 <body>
@@ -386,7 +366,6 @@ function expandPatient(r, cpiq) {
 function _loadRaw() {
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
   var cpiq = window.CPIQ;
-  var dbg = window.__cpiqDbg || function(){};
   dbg('_loadRaw called, sessionKey=' + sessionKey + ', CPIQ=' + (cpiq?'set':'null'));
 
   // Try sessionStorage first (instant)

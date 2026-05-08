@@ -174,26 +174,7 @@ footer{display:none!important}
   if (window.__cpiqStateCache) applyState(window.__cpiqStateCache);
 })();
 </script>
-<script>
-(function() {
-  var overlay = null;
-  function dbg(msg, color) {
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:99999;background:rgba(15,30,60,.92);color:#fff;font-family:monospace;font-size:11px;padding:10px 14px;border-radius:8px;max-width:420px;max-height:200px;overflow-y:auto;line-height:1.6';
-      document.body.appendChild(overlay);
-      setTimeout(function(){ if(overlay) overlay.remove(); overlay=null; }, 20000);
-    }
-    var line = document.createElement('div');
-    line.style.color = color || '#7dd3c8';
-    line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
-    overlay.appendChild(line);
-    overlay.scrollTop = overlay.scrollHeight;
-    console.log('[CPIQ cycle DBG]', msg);
-  }
-  window.__cpiqDbg = dbg;
-})();
-</script>
+
 </head>
 <body>
 
@@ -1125,10 +1106,6 @@ function renderAll(){
 // Init — wait for CPIQ state
 (function() {
   function doInit() {
-    var dbg = window.__cpiqDbg || function(){};
-    dbg('referrers:' + referrers.length + ' specs:' + specialists.length + ' REFERRALS:' + (typeof REFERRALS !== "undefined" ? REFERRALS.length : "undef"));
-    var oonRefs = referrers.filter(function(r){ return r.tier==='oon'; });
-    dbg('OON referrers: ' + oonRefs.length + (oonRefs[0] ? ' eg:' + oonRefs[0].name : ''));
     console.log('[CPIQ cycle] specialists:', specialists ? specialists.length : 'null', 'CPIQ:', window.CPIQ ? 'set' : 'null');
     try {
       renderAll();
