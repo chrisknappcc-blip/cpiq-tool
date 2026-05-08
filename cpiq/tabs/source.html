@@ -729,12 +729,7 @@ function renderAll() {
 }
 
 
-function getMonthlyRef(p, specKey, month) {
-  if(!specKey || specKey==='all') return 0;
-  const annual = p.refs[specKey] || 0;
-  const w = (MONTH_WEIGHTS[specKey]||MONTH_WEIGHTS['ortho'])[month-1];
-  return Math.round(annual * w);
-}
+// getMonthlyRef defined above
 
 function filteredPhysicians_noTierFilter() {
   const k = specMeta[state.spec].key;
