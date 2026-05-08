@@ -828,6 +828,9 @@ function extractCompetitors(mapState, targetSysName, zipCoords) {
         logoKey: encodeURIComponent(name.toLowerCase().trim())
       };
     });
+  // Log sample override keys to diagnose format
+  var sampleKeys = Object.keys(overrides).slice(0, 5);
+  console.log('[CPIQ competitors] sample keys:', sampleKeys);
   console.log('[CPIQ competitors] center:', center ? (center.lat.toFixed(3)+','+center.lon.toFixed(3)) : 'none',
     '| total overrides:', Object.keys(overrides).length,
     '| filtered to:', Object.keys(counts).length,
