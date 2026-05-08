@@ -269,61 +269,48 @@ footer{display:none!important}
 let PATIENTS = [];
 function _loadPatients() {
   var sessionKey = (window.CPIQ && window.CPIQ.sessionKey) || 'default';
-  
-  // Try sessionStorage first (instant, no network)
-  try {
-    var stored = window.parent.sessionStorage.getItem('cpiq_patients_' + sessionKey);
-    if (stored) {
-      var raw = JSON.parse(stored);
-      if (raw && raw.length) {
-        PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
-        try { render();  } catch(err) {
-          document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
-        }
-        window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
-        return;
-      }
-    }
 
-  // Fallback: fetch from blob
-  var waitEl = document.createElement('div');
-  waitEl.id = 'insights-wait';
-  waitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
-  waitEl.textContent = 'Loading patient data…';
-  document.body.appendChild(waitEl);
-  var attempts = 0;
+  function mapR(r) {
+    return {pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,
+            destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,
+            edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};
+  }
+  function finish(raw) {
+    PATIENTS = raw.map(mapR);
+    try { render(); } catch(err) {
+      document.body.innerHTML += '<pre style="color:red;padding:10px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999">' + err.message + '</pre>';
+    }
+    window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
+  }
+
+  try {
+    var s = window.parent.sessionStorage.getItem('cpiq_patients_' + sessionKey);
+    if (s) { var r = JSON.parse(s); if (r && r.length) { finish(r); return; } }
+  } catch(e) {}
+
+  var w = document.createElement('div');
+  w.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f7f9fc);font-family:Outfit,sans-serif;font-size:13px;color:#8aa0b8;z-index:9';
+  w.textContent = 'Loading patient data…';
+  document.body.appendChild(w);
+  var att = 0;
   function tryFetch() {
     fetch('/.netlify/functions/patients?action=load&session=' + encodeURIComponent(sessionKey))
-      .then(function(r) {
-        if (r.status === 404 && attempts < 20) { attempts++; setTimeout(tryFetch, 500); return null; }
-        return r.json();
+      .then(function(res) {
+        if (res.status === 404 && att < 20) { att++; setTimeout(tryFetch, 500); return null; }
+        return res.json();
       })
       .then(function(data) {
         if (!data) return;
-        var raw = Array.isArray(data) ? data : [];
-        PATIENTS = raw.map(function(r){return{pid:r.i,spec:r.sp,refDate:r.rd,refTier:r.rt,refPtype:r.rp,destTier:r.dt,visitDone:r.v===1,mttaDays:r.m,edVisit:r.e===1,procDone:r.pr===1,procNet:r.pn,daysFromRef:r.df};});
-        var w = document.getElementById('insights-wait');
-        if (w) w.remove();
-        try { render(); } catch(err) {
-          console.error('[CPIQ insights] render error:', err.message);
-          document.body.innerHTML += '<pre style="color:red;padding:20px;position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:999;font-size:11px">' + err.message + '</pre>';
-        }
-        window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
+        w.remove();
+        finish(Array.isArray(data) ? data : []);
       })
       .catch(function(e) {
-        console.error('[CPIQ insights] fetch failed:', e.message);
-        var w = document.getElementById('insights-wait');
-        if (w) w.textContent = 'Error: ' + e.message;
+        w.textContent = 'Error: ' + e.message;
         window.parent.postMessage({ type: 'tab-ready', tab: 'insights' }, '*');
       });
   }
   tryFetch();
 }
-
-// ── State ─────────────────────────────────────────────────────────
-let specFilter = 'all';
-let tierFilter = 'all';
-let ptypeFilter = 'all';
 
 function setSpec(val, el) {
   specFilter = val;
