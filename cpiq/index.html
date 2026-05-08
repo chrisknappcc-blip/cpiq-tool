@@ -799,9 +799,13 @@ async function generateAndBroadcast(sysName, mapState) {
   // Ensure carepathiq is in cache before returning (guarantees instant first render)
   if (!_tabCache['carepathiq']) {
     try {
+      var _pt = Date.now();
       var r = await fetch('/tabs/carepathiq.html?v=' + Date.now());
       _tabCache['carepathiq'] = await r.text();
+      console.log('[CPIQ TIMING] carepathiq prewarm fetch:', Date.now()-_pt, 'ms');
     } catch(e) {}
+  } else {
+    console.log('[CPIQ TIMING] carepathiq already cached');
   }
   // Prefetch remaining tabs in parallel (background)
   prefetchTabs();
@@ -869,9 +873,11 @@ function loadFrame(id) {
       var fallbackTimer = setTimeout(function() {
         if (loader) loader.classList.add('done');
       }, 8000);
+      var _frameStart = Date.now();
       frame.addEventListener('load', function onLoad() {
         frame.removeEventListener('load', onLoad);
         clearTimeout(fallbackTimer);
+        console.log('[CPIQ TIMING] frame', id, 'load event:', Date.now()-_frameStart, 'ms after srcdoc set');
         if (id !== 'insights' && id !== 'journeys') {
           setTimeout(function() { if (loader) loader.classList.add('done'); }, 100);
         }
@@ -1061,15 +1067,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Yield to browser to paint the overlay
     await new Promise(function(resolve) { setTimeout(resolve, 80); });
 
+    var _t0 = Date.now();
     genStatus('Building referral network…');
     await generateAndBroadcast(name, mapState);
+    console.log('[CPIQ TIMING] generateAndBroadcast:', Date.now()-_t0, 'ms');
     genStatus('Loading dashboard…');
+    var _t1 = Date.now();
 
     // Remove overlay
     var ov = document.getElementById('gen-overlay');
     if (ov) ov.remove();
 
     loadFrame('carepathiq');
+    console.log('[CPIQ TIMING] loadFrame called:', Date.now()-_t1, 'ms after generate');
 
     // Force-clear the carepathiq loader after 5s as a safety net
     setTimeout(function() {
