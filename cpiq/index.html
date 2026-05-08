@@ -829,8 +829,10 @@ function extractCompetitors(mapState, targetSysName, zipCoords) {
       };
     });
   // Log sample override keys to diagnose format
-  var sampleKeys = Object.keys(overrides).slice(0, 5);
-  console.log('[CPIQ competitors] sample keys:', sampleKeys);
+  var sampleKeys = Object.keys(overrides).slice(0, 3);
+  var sampleEntries = {};
+  sampleKeys.forEach(function(k){ sampleEntries[k] = overrides[k]; });
+  console.log('[CPIQ competitors] sample entries:', JSON.stringify(sampleEntries).substring(0, 500));
   console.log('[CPIQ competitors] center:', center ? (center.lat.toFixed(3)+','+center.lon.toFixed(3)) : 'none',
     '| total overrides:', Object.keys(overrides).length,
     '| filtered to:', Object.keys(counts).length,
