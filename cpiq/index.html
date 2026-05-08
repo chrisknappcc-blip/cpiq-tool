@@ -885,13 +885,9 @@ function loadFrame(id) {
   }
 
   function _doRender(html) {
-      // Only render into visible frames — hidden frames defer script execution in Chrome
-      if (frame.classList.contains('visible')) {
-        _renderNow(html);
-      } else {
-        _pendingRender[id] = html; // render when switchTab makes it visible
-        if (loader) loader.classList.add('done'); // hide spinner now
-      }
+      _renderNow(html);
+      // Also store in pending in case switchTab is needed
+      _pendingRender[id] = null;
   }
 
   if (_tabCache[id]) {
@@ -917,19 +913,7 @@ function switchTab(id) {
   frame.classList.add('visible');
   document.getElementById('tab-' + id).classList.add('active');
   
-  // If there's a pending render (was deferred because frame was hidden), do it now
-  if (_pendingRender[id]) {
-    var html = _pendingRender[id];
-    delete _pendingRender[id];
-    if (loader) loader.classList.remove('done');
-    // Re-run _doRender with frame now visible
-    loaded[id] = false; // allow re-render
-    delete _renderedFrames[id];
-    _tabCache[id] = html; // ensure cache has it
-    loadFrame(id);
-  } else {
-    loadFrame(id);
-  }
+  loadFrame(id);
 }
 
 // ── Cross-tab navigation from CarePath IQ ───────────────────────────────────
@@ -1056,28 +1040,13 @@ document.addEventListener('DOMContentLoaded', function() {
     closeSysModal();
     applyUploadedLogo();
 
-    // Show generating overlay
-    var genOverlay = document.createElement('div');
-    genOverlay.id = 'gen-overlay';
-    genOverlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(247,249,252,.92);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Outfit,sans-serif;gap:12px';
-    genOverlay.innerHTML = '<div style="width:40px;height:40px;border:3px solid #e0e8f0;border-top-color:#007d6e;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="font-size:14px;font-weight:600;color:#0f1e2e">Generating dashboard for <span style="color:#007d6e">' + name + '</span></div><div id="gen-status" style="font-size:11px;color:#8aa0b8;margin-top:4px">Initializing…</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-    var genStatus = function(msg) { var el = document.getElementById('gen-status'); if(el) el.textContent = msg; };
-    document.body.appendChild(genOverlay);
-
-    // Yield to browser to paint the overlay
-    await new Promise(function(resolve) { setTimeout(resolve, 80); });
+    // Yield one frame so modal close animation completes
+    await new Promise(function(resolve) { requestAnimationFrame(resolve); });
 
     var _t0 = Date.now();
-    genStatus('Building referral network…');
     await generateAndBroadcast(name, mapState);
     console.log('[CPIQ TIMING] generateAndBroadcast:', Date.now()-_t0, 'ms');
-    genStatus('Loading dashboard…');
     var _t1 = Date.now();
-
-    // Remove overlay
-    var ov = document.getElementById('gen-overlay');
-    if (ov) ov.remove();
-
     loadFrame('carepathiq');
     console.log('[CPIQ TIMING] loadFrame called:', Date.now()-_t1, 'ms after generate');
 
