@@ -1085,17 +1085,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var mapState = _mapStateCache || { overrides:{}, typeOverrides:{}, customSystems:[], excluded:[] };
 
-    // Geocode zip if provided (fire before closing modal so user sees feedback)
+    // Zip stored for when Map Tool CORS is resolved — geocoding disabled until then
     var zipVal = (document.getElementById('sys-zip-input') || {}).value || '';
     zipVal = zipVal.trim();
     _zipCoords = null;
-    if (zipVal.length === 5 && /^[0-9]{5}$/.test(zipVal)) {
-      var zipHint = document.getElementById('sys-zip-hint');
-      if (zipHint) zipHint.textContent = 'Locating…';
-      _zipCoords = await geocodeZip(zipVal);
-      if (zipHint) zipHint.textContent = _zipCoords
-        ? '✓ Located — filtering competitors within 120 miles'
-        : 'Zip not found — using national data';
+    var zipHint = document.getElementById('sys-zip-hint');
+    if (zipVal.length === 5) {
+      if (zipHint) zipHint.textContent = '✓ Zip noted — geo-filtering activates when Map Tool is connected';
     }
 
     // Close modal and let browser repaint BEFORE the engine runs
