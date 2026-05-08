@@ -525,6 +525,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
 }
 #sys-modal-preset:hover { border-color:var(--text3); }
 
+/* ── Export button ── */
+#export-btn {
+  display:flex;align-items:center;gap:6px;
+  padding:0 12px;height:30px;margin-left:8px;flex-shrink:0;
+  background:var(--teal);color:#fff;border:none;border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;
+  cursor:pointer;transition:opacity .15s;white-space:nowrap;
+}
+#export-btn:hover{opacity:.88}
+#export-btn:disabled{opacity:.5;cursor:not-allowed}
+#export-btn svg{width:13px;height:13px;flex-shrink:0}
+
 /* Make logo area clickable */
 .suite-logo { cursor:pointer; }
 .suite-logo:hover img { opacity:.82; transition:opacity .15s; }
@@ -581,8 +593,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
       <span class="tab-label">Patient Journeys</span>
     </button>
   </div>
-
-
+  <button id="export-btn" onclick="exportDashboard()" title="Export as standalone HTML file" disabled>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px">
+      <path d="M8 2v8M5 7l3 3 3-3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2"/>
+    </svg>
+    Export
+  </button>
 </nav>
 
 <div class="frame-wrap">
@@ -1114,6 +1130,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     goBtn.disabled = false;
     goBtn.textContent = 'Generate Dashboard';
+    // Enable export now that data is ready
+    var expBtn = document.getElementById('export-btn');
+    if (expBtn) expBtn.disabled = false;
   });
 
   // ── Logo file upload handler ──────────────────────────────────────────────
@@ -1183,6 +1202,60 @@ document.addEventListener('DOMContentLoaded', function() {
     presetBtn.textContent = 'Original Dataset';
   });
 });
+
+// ── Export Dashboard ─────────────────────────────────────────────────────────
+async function exportDashboard() {
+  if (!cpiqState) return;
+  var btn = document.getElementById('export-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Building…'; }
+
+  try {
+    // Get logo if uploaded
+    var logoDataUrl = null;
+    var logoImg = document.querySelector('.suite-logo img');
+    if (logoImg && logoImg.src && logoImg.src.startsWith('data:')) {
+      logoDataUrl = logoImg.src;
+    }
+
+    // Get patients from sessionStorage
+    var sessionKey = cpiqState._sessionKey || 'default';
+    var patients = [];
+    try {
+      var stored = sessionStorage.getItem('cpiq_patients_' + sessionKey);
+      if (stored) patients = JSON.parse(stored);
+    } catch(e) {}
+
+    var payload = {
+      sysName:    cpiqState.meta ? cpiqState.meta.sysName : 'Health System',
+      cpiqState:  cpiqState,
+      logoDataUrl: logoDataUrl,
+      patients:   patients
+    };
+
+    var res = await fetch('/.netlify/functions/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error('Export failed: ' + res.status);
+
+    var html = await res.text();
+    var blob = new Blob([html], { type: 'text/html' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'CPIQ-' + (payload.sysName || 'Export').replace(/[^a-z0-9]/gi, '-') + '.html';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 1000);
+
+  } catch(e) {
+    alert('Export failed: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Export'; }
+  }
+}
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
