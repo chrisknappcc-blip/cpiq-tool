@@ -1199,7 +1199,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// ── Export Dashboard (Blob URL iframes — works locally and online) ────────────
+// ── Export Dashboard (module-scoped iframes via srcdoc) ───────────────────────
 async function exportDashboard() {
   if (!cpiqState) return;
   var btn = document.getElementById('export-btn');
@@ -1230,6 +1230,18 @@ async function exportDashboard() {
         .catch(function() {});
     }));
 
+    // Per-tab event handler functions that need window exposure for onclick= to work
+    var TAB_HANDLERS = {
+      carepathiq: ['handleCTA','navigateTo','setMonthFilter','setNetFilter','setQuarterFilter','setRiskFilter','setSpecFilter','setTierFilter'],
+      source:     ['setMonth','setPractice','setPracticeCard','setPtype','setQuarter','setSource','setSpec','setTier'],
+      destination:['setMonth','setPhysician','setPractice','setPracticeCard','setQuarter','setSpec','setTier'],
+      procedure:  ['clickProcRow','setMonth','setPhysician','setPractice','setPracticeCard','setProc','setProcNet','setQuarter','setSpec','setTier'],
+      scorecard:  ['clickScorecardDoc','clickScorecardProc','selectPractice','setSpec','setTier'],
+      insights:   ['handleCard','render','setPtype','setSpec','setTier'],
+      journeys:   ['clearFilters','loadMore','setToggle','sortBy','toggleExpand'],
+      cycle:      ['clickDst','clickProc','clickSrc','setDstPractice','setDstTier','setMonth','setPtype','setQuarter','setSpec','setSrcPractice','setSrcTier','setTableMode']
+    };
+
     var TAB_LABELS = [
       ['carepathiq','CarePath IQ'],['insights','Patient Insights'],
       ['cycle','Pathway Intelligence'],['scorecard','Provider Scorecard'],
@@ -1239,31 +1251,43 @@ async function exportDashboard() {
 
     var exportDate = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
 
-    // State injection for each tab
+    // State to inject into each tab
     var slimState = {
       meta: cpiqState.meta, practices: cpiqState.practices,
       referrers: cpiqState.referrers, kpis: cpiqState.kpis,
       sessionKey: 'export', patients: null
     };
-    var stateScript = [
-      '<script>',
+    var stateInject = [
+      '<scr' + 'ipt>',
       'window.__cpiqStateCache=' + JSON.stringify(slimState) + ';',
       'window.CPIQ=window.__cpiqStateCache;',
       'window.__exportPatients=' + JSON.stringify(patients) + ';',
       'window.SYS_NAME=' + JSON.stringify(sysName) + ';',
-      '<\/script>'
+      '</' + 'script>'
     ].join('');
 
-    // Create Blob URLs for each tab (avoids file:// same-origin restriction)
-    var blobUrls = {};
+    // Process each tab: convert scripts to modules + expose handlers
+    var processedTabs = {};
     TAB_NAMES.forEach(function(id) {
       var html = _tabCache[id] || '';
-      var injected = html.replace('<head>', '<head>' + stateScript);
-      var blob = new Blob([injected], { type: 'text/html' });
-      blobUrls[id] = URL.createObjectURL(blob);
+      // Inject state
+      html = html.replace('<head>', '<head>' + stateInject);
+      // Convert all inline <script> blocks (not src) to type="module"
+      // and append window exposure for event handlers
+      var handlers = TAB_HANDLERS[id] || [];
+      var windowExpose = handlers.map(function(fn) {
+        return 'if(typeof ' + fn + '!=="undefined")window.' + fn + '=' + fn + ';';
+      }).join('');
+      html = html.replace(/<script(?![^>]*(?:src|type)=)/g, '<script type="module"');
+      // Append window exposure to last script module
+      var lastClose = html.lastIndexOf('</' + 'script>');
+      if (lastClose > 0 && windowExpose) {
+        html = html.substring(0, lastClose) + windowExpose + '</' + 'script>' + html.substring(lastClose + 9);
+      }
+      processedTabs[id] = html;
     });
 
-    // Build logo HTML
+    // Build logo HTML via DOM
     var tmpDiv = document.createElement('div');
     if (logoDataUrl) {
       var li = document.createElement('img');
@@ -1288,91 +1312,78 @@ async function exportDashboard() {
       return b.outerHTML;
     }).join('');
 
-    // Iframe tags (src will be set by JS after blob URLs are created)
-    var iframeTags = TAB_LABELS.map(function(t, i) {
-      return '<iframe class="ef' + (i === 0 ? ' ev' : '') + '" id="ef-' + t[0] + '" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>';
+    // Iframes (use srcdoc — works when served from a web server, which is the intended use)
+    var iframes = TAB_LABELS.map(function(t, i) {
+      // Escape for srcdoc attribute: & -> &amp; " -> &quot;
+      var src = processedTabs[t[0]] || '';
+      // srcdoc needs HTML-attribute escaping
+      src = src.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+      return '<iframe class="ef' + (i === 0 ? ' ev' : '') + '" id="ef-' + t[0] +
+        '" sandbox="allow-scripts allow-same-origin" srcdoc="' + src + '"></iframe>';
     }).join('\n');
 
-    // Blob URLs as JSON to embed in export
-    var blobUrlsJson = JSON.stringify(blobUrls);
-
     var css = '*{box-sizing:border-box;margin:0;padding:0}' +
-      ':root{--t:#007d6e;--tx:#0f1e2e;--t2:#3a4f6a;--t3:#8aa0b8;--bg:#f7f9fc;--bd:#dce6f0}' +
+      ':root{--teal:#007d6e;--text:#0f1e2e;--text2:#3a4f6a;--text3:#8aa0b8;--bg:#f7f9fc;--border:#dce6f0}' +
       'body{font-family:Outfit,sans-serif;background:var(--bg);overflow:hidden;height:100vh}' +
       'nav{position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(255,255,255,.98);' +
-      'backdrop-filter:blur(16px);border-bottom:2px solid var(--bd);height:50px;' +
-      'display:flex;align-items:center;padding:0 10px;gap:0;box-shadow:0 2px 12px rgba(15,30,60,.07)}' +
+      'backdrop-filter:blur(16px);border-bottom:2px solid var(--border);height:50px;' +
+      'display:flex;align-items:center;padding:0 10px;box-shadow:0 2px 12px rgba(15,30,60,.07)}' +
       '.el{display:flex;align-items:center;gap:8px;margin-right:10px;flex-shrink:0}' +
       '.eb{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;' +
-      'background:var(--t);color:#fff;padding:2px 6px;border-radius:20px}' +
+      'background:var(--teal);color:#fff;padding:2px 6px;border-radius:20px}' +
       '.tabs{display:flex;align-items:center;gap:1px;flex:1;overflow:hidden}' +
       '.et{display:flex;align-items:center;gap:3px;padding:0 6px;height:30px;' +
       'border:1px solid transparent;cursor:pointer;font-size:10.5px;font-weight:500;' +
-      'border-radius:6px;color:var(--t2);background:transparent;white-space:nowrap;' +
+      'border-radius:6px;color:var(--text2);background:transparent;white-space:nowrap;' +
       'flex-shrink:0;transition:all .15s;font-family:Outfit,sans-serif}' +
-      '.et:hover{background:rgba(15,30,60,.04)}.et.on{color:var(--tx);border-color:var(--bd);background:#fff}' +
+      '.et:hover{background:rgba(15,30,60,.04)}.et.on{color:var(--text);border-color:var(--border);background:#fff}' +
       '.en{font-size:8px;font-weight:700;width:16px;height:16px;border-radius:4px;' +
-      'display:flex;align-items:center;justify-content:center;background:var(--bd);color:var(--t2)}' +
-      '.et.on .en{background:var(--t);color:#fff}' +
-      '.em{font-size:9px;color:var(--t3);margin-left:auto;padding-right:4px;white-space:nowrap;flex-shrink:0}' +
+      'display:flex;align-items:center;justify-content:center;background:var(--border);color:var(--text2)}' +
+      '.et.on .en{background:var(--teal);color:#fff}' +
+      '.em{font-size:9px;color:var(--text3);margin-left:auto;padding-right:4px;white-space:nowrap;flex-shrink:0}' +
       '.ew{position:fixed;top:50px;left:0;right:0;bottom:0}' +
-      'iframe.ef{width:100%;height:100%;border:none;display:none;background:var(--bg)}' +
-      'iframe.ev{display:block}';
+      '.ef{width:100%;height:100%;border:none;display:none;background:var(--bg)}' +
+      '.ev{display:block}';
 
-    var parts = [];
-    parts.push('<!DOCTYPE html><html lang="en"><head>');
-    parts.push('<meta charset="UTF-8">');
-    parts.push('<meta name="viewport" content="width=device-width,initial-scale=1">');
-    parts.push('<title>CarePath IQ \u2014 ' + sysName + '</title>');
-    parts.push('<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">');
-    parts.push('<style>' + css + '</style>');
-    parts.push('</head><body>');
-    parts.push('<nav>');
-    parts.push('<div class="el">' + logoHtml + '<span class="eb">CarePath IQ</span></div>');
-    parts.push('<div class="tabs">' + navBtns + '</div>');
-    parts.push('<div class="em">Export &middot; ' + sysName + ' &middot; ' + exportDate + '</div>');
-    parts.push('</nav>');
-    parts.push('<div class="ew">');
-    parts.push(iframeTags);
-    parts.push('</div>');
-    // Embed blob URLs and init script
-    parts.push('<script>');
-    parts.push('var BU=' + blobUrlsJson + ',cur="carepathiq",done={};');
-    parts.push('// Set iframe srcs from blob URLs');
-    parts.push('Object.keys(BU).forEach(function(id){');
-    parts.push('  var f=document.getElementById("ef-"+id);');
-    parts.push('  if(f)f.src=BU[id];');
-    parts.push('  done[id]=true;');
-    parts.push('});');
-    parts.push('function es(id){');
-    parts.push('  if(id===cur)return;');
-    parts.push('  document.querySelectorAll(".ef").forEach(function(f){f.classList.remove("ev");});');
-    parts.push('  document.querySelectorAll(".et").forEach(function(b){b.classList.remove("on");});');
-    parts.push('  cur=id;');
-    parts.push('  var f=document.getElementById("ef-"+id);');
-    parts.push('  var b=document.getElementById("eb-"+id);');
-    parts.push('  if(f)f.classList.add("ev");');
-    parts.push('  if(b)b.classList.add("on");');
-    parts.push('}');
-    parts.push('<' + '/script>');
-    parts.push('</body></html>');
+    var parts = [
+      '<!DOCTYPE html><html lang="en"><head>',
+      '<meta charset="UTF-8">',
+      '<meta name="viewport" content="width=device-width,initial-scale=1">',
+      '<title>CarePath IQ \u2014 ' + sysName + '</title>',
+      '<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">',
+      '<style>' + css + '</style>',
+      '</head><body>',
+      '<nav><div class="el">' + logoHtml + '<span class="eb">CarePath IQ</span></div>',
+      '<div class="tabs">' + navBtns + '</div>',
+      '<div class="em">Export &middot; ' + sysName + ' &middot; ' + exportDate + '</div></nav>',
+      '<div class="ew">' + iframes + '</div>',
+      '<scr' + 'ipt>',
+      'var cur="carepathiq";',
+      'function es(id){',
+      '  if(id===cur)return;',
+      '  document.querySelectorAll(".ef").forEach(function(f){f.classList.remove("ev");});',
+      '  document.querySelectorAll(".et").forEach(function(b){b.classList.remove("on");});',
+      '  cur=id;',
+      '  var f=document.getElementById("ef-"+id);',
+      '  var b=document.getElementById("eb-"+id);',
+      '  if(f)f.classList.add("ev");',
+      '  if(b)b.classList.add("on");',
+      '}',
+      '</' + 'script>',
+      '</body></html>'
+    ];
 
     var exportHtml = parts.join('\n');
 
     // Download
-    var blob2 = new Blob([exportHtml], { type: 'text/html' });
-    var url2  = URL.createObjectURL(blob2);
-    var a     = document.createElement('a');
-    a.href    = url2;
+    var blob = new Blob([exportHtml], { type: 'text/html' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
     a.download = 'CPIQ-' + sysName.replace(/[^a-z0-9]/gi, '-') + '.html';
     document.body.appendChild(a);
     a.click();
-    setTimeout(function() {
-      URL.revokeObjectURL(url2);
-      // Also revoke tab blob URLs
-      Object.values(blobUrls).forEach(function(u) { URL.revokeObjectURL(u); });
-      a.remove();
-    }, 5000);
+    setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 2000);
 
   } catch(e) {
     alert('Export failed: ' + e.message);
