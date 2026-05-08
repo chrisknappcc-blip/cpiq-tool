@@ -912,7 +912,8 @@ function switchTab(id) {
   var loader = document.getElementById('loading-' + id);
   frame.classList.add('visible');
   document.getElementById('tab-' + id).classList.add('active');
-  
+  // Show this tab's loader while it loads (it was hidden until now)
+  if (loader && !loaded[id]) loader.classList.remove('done');
   loadFrame(id);
 }
 
@@ -1024,9 +1025,9 @@ document.addEventListener('DOMContentLoaded', function() {
       f.srcdoc = '';
       f.classList.remove('visible');
     });
-    document.querySelectorAll('.frame-loading').forEach(function(l) {
-      l.classList.remove('done');
-    });
+    // Only show spinner for the active tab — others stay hidden until opened
+    var activeLoader = document.getElementById('loading-carepathiq');
+    if (activeLoader) activeLoader.classList.remove('done');
     document.getElementById('frame-carepathiq').classList.add('visible');
     document.getElementById('tab-' + current).classList.remove('active');
     current = 'carepathiq';
