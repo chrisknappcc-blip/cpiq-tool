@@ -245,11 +245,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
 
 .tab-strip{display:flex;gap:2px;align-items:center;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
 .tab-btn{
-  display:flex;align-items:center;gap:4px;
-  padding:0 7px;height:32px;
+  display:flex;align-items:center;gap:3px;
+  padding:0 6px;height:30px;
   border:1px solid transparent;cursor:pointer;
-  font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;
-  border-radius:7px;
+  font-family:'Outfit',sans-serif;font-size:10.5px;font-weight:500;
+  border-radius:6px;
   transition:all .15s;
   color:var(--text2);background:transparent;
   white-space:nowrap;flex-shrink:0;
@@ -525,18 +525,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
 }
 #sys-modal-preset:hover { border-color:var(--text3); }
 
-/* ── Export button ── */
-#export-btn {
-  display:flex;align-items:center;gap:6px;
-  padding:0 12px;height:30px;margin-left:8px;flex-shrink:0;
-  background:var(--teal);color:#fff;border:none;border-radius:8px;
-  font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;
-  cursor:pointer;transition:opacity .15s;white-space:nowrap;
-}
-#export-btn:hover{opacity:.88}
-#export-btn:disabled{opacity:.5;cursor:not-allowed}
-#export-btn svg{width:13px;height:13px;flex-shrink:0}
-
 /* Make logo area clickable */
 .suite-logo { cursor:pointer; }
 .suite-logo:hover img { opacity:.82; transition:opacity .15s; }
@@ -593,12 +581,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
       <span class="tab-label">Patient Journeys</span>
     </button>
   </div>
-  <button id="export-btn" onclick="exportDashboard()" title="Export as standalone HTML file" disabled>
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px">
-      <path d="M8 2v8M5 7l3 3 3-3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2"/>
-    </svg>
-    Export
-  </button>
 </nav>
 
 <div class="frame-wrap">
@@ -666,6 +648,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Outfit',
   <iframe class="dash-frame" id="frame-insights"
     sandbox="allow-scripts allow-same-origin"></iframe>
 </div>
+
+<!-- ── Export Button ── -->
+<button id="export-btn" onclick="exportDashboard()" title="Export as standalone HTML" disabled
+  style="position:fixed;bottom:76px;right:16px;z-index:998;
+    display:flex;align-items:center;gap:6px;padding:0 14px;height:36px;
+    background:var(--teal);color:#fff;border:none;border-radius:20px;
+    font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;
+    cursor:pointer;box-shadow:0 4px 16px rgba(0,125,110,.35);
+    transition:opacity .15s,transform .15s;opacity:0.85">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0">
+    <path d="M8 2v8M5 7l3 3 3-3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2"/>
+  </svg>
+  Export
+</button>
 
 <!-- ── System Name Modal ── -->
 <div id="sys-modal-overlay" class="hidden">
@@ -1225,11 +1221,20 @@ async function exportDashboard() {
       if (stored) patients = JSON.parse(stored);
     } catch(e) {}
 
+    // Send tab HTML from cache so function doesn't need file access
+    var tabNames = ['carepathiq','source','destination','procedure','scorecard','insights','journeys','cycle'];
+    var tabs = {};
+    for (var i = 0; i < tabNames.length; i++) {
+      var tn = tabNames[i];
+      if (_tabCache[tn]) tabs[tn] = _tabCache[tn];
+    }
+
     var payload = {
-      sysName:    cpiqState.meta ? cpiqState.meta.sysName : 'Health System',
-      cpiqState:  cpiqState,
+      sysName:     cpiqState.meta ? cpiqState.meta.sysName : 'Health System',
+      cpiqState:   cpiqState,
       logoDataUrl: logoDataUrl,
-      patients:   patients
+      patients:    patients,
+      tabs:        tabs
     };
 
     var res = await fetch('/.netlify/functions/export', {
