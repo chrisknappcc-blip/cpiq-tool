@@ -312,6 +312,11 @@ function _loadPatients() {
   tryFetch();
 }
 
+// ── State ───────────────────────────────────────────────────
+let specFilter  = 'all';
+let tierFilter  = 'all';
+let ptypeFilter = 'all';
+
 function setSpec(val, el) {
   specFilter = val;
   ['all','ortho','cardio','gi'].forEach(s => {
