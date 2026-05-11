@@ -827,7 +827,6 @@ function extractCompetitors(mapState, targetSysName, zipCoords) {
       };
     });
   // Log sample override keys to diagnose format
-  var sampleKeys = Object.keys(overrides).slice(0, 3);
   var sampleEntries = {};
   sampleKeys.forEach(function(k){ sampleEntries[k] = overrides[k]; });
   console.log('[CPIQ competitors] sample entries:', JSON.stringify(sampleEntries).substring(0, 500));
@@ -870,11 +869,9 @@ async function generateAndBroadcast(sysName, mapState) {
           competitors = cnData.competitors.map(function(c) {
             return { name: c.name, tier: 'oon', locationCount: c.count, marketShare: c.share };
           });
-          console.log('[CPIQ] competitors-near: ' + competitors.length + ' competitors found');
-        }
+            }
       }
     } catch(e) {
-      console.warn('[CPIQ] competitors-near failed, using fallback:', e.message);
     }
   }
   if (!competitors || competitors.length === 0) {
@@ -1170,25 +1167,20 @@ document.addEventListener('DOMContentLoaded', function() {
         var geoRes = await fetchWithTimeout(
           MAP_TOOL_ROUTER + '?action=geocode-proxy&postalcode=' + zipVal + '&countrycodes=us', 3000
         );
-        console.log('[CPIQ geo] geocode status:', geoRes.status);
-        if (geoRes.ok) {
+          if (geoRes.ok) {
           var geoData = await geoRes.json();
-          console.log('[CPIQ geo] geocode response:', JSON.stringify(geoData).substring(0, 200));
-          var first = Array.isArray(geoData) ? geoData[0] : null;
+              var first = Array.isArray(geoData) ? geoData[0] : null;
           if (first && first.lat && first.lon) {
             _zipCoords = { lat: parseFloat(first.lat), lon: parseFloat(first.lon) };
-            console.log('[CPIQ geo] coords:', _zipCoords);
-            if (zipHint) zipHint.textContent = '✓ Located — filtering competitors within 120 miles';
+                  if (zipHint) zipHint.textContent = '✓ Located — filtering competitors within 120 miles';
           } else {
             console.warn('[CPIQ geo] no coords in response');
             if (zipHint) zipHint.textContent = 'Zip not found — using national data';
           }
         } else {
-          console.warn('[CPIQ geo] geocode failed:', geoRes.status);
-        }
+            }
       } catch(e) {
-        console.warn('[CPIQ geo] geocode error:', e.message);
-        if (zipHint) zipHint.textContent = 'Geocoding unavailable — using national data';
+          if (zipHint) zipHint.textContent = 'Geocoding unavailable — using national data';
       }
     }
 
@@ -1230,6 +1222,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var reader = new FileReader();
     reader.onload = function(e) {
       _uploadedLogoDataUrl = e.target.result;
+      try { sessionStorage.setItem('cpiq_logo', _uploadedLogoDataUrl); } catch(e) {}
       logoUploadArea.classList.add('has-logo');
       logoUploadLabel.textContent = file.name;
       logoPreviewWrap.innerHTML = '<img src="' + _uploadedLogoDataUrl + '" style="max-height:32px;max-width:64px;object-fit:contain">';
@@ -1252,6 +1245,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loaded = {};
     document.querySelectorAll('.dash-frame').forEach(function(f) { f.srcdoc = ''; f.classList.remove('visible'); });
     document.querySelectorAll('.frame-loading').forEach(function(l) { l.classList.remove('done'); });
+    var _loadingName = input.value.trim() || 'Health System';
+    document.querySelectorAll('.loading-sub').forEach(function(el) { el.textContent = _loadingName; });
     document.getElementById('frame-carepathiq').classList.add('visible');
     document.getElementById('tab-' + current).classList.remove('active');
     current = 'carepathiq';
@@ -1495,6 +1490,24 @@ async function exportDashboard() {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
 (async function init() {
+  // Restore logo from sessionStorage if available
+  try {
+    var savedLogo = sessionStorage.getItem('cpiq_logo');
+    if (savedLogo) {
+      _uploadedLogoDataUrl = savedLogo;
+      var logoImg = document.querySelector('.suite-logo img');
+      if (logoImg) logoImg.src = savedLogo;
+      var ctaLogo = document.getElementById('cta-panel-logo');
+      if (ctaLogo) ctaLogo.src = savedLogo;
+      var logoUploadArea = document.getElementById('logo-upload-area');
+      if (logoUploadArea) logoUploadArea.classList.add('has-logo');
+      var logoUploadLabel = document.getElementById('logo-upload-label');
+      if (logoUploadLabel) logoUploadLabel.textContent = 'Logo loaded';
+      var logoPreviewWrap = document.getElementById('logo-preview-wrap');
+      if (logoPreviewWrap) logoPreviewWrap.innerHTML = '<img src="' + savedLogo + '" style="max-height:32px;max-width:64px;object-fit:contain">';
+    }
+  } catch(e) {}
+
   var urlParams = new URLSearchParams(window.location.search);
   var presetName = urlParams.get('preset');
   var sysName    = urlParams.get('sys');
