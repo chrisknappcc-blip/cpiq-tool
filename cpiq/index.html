@@ -804,14 +804,12 @@ function extractCompetitors(mapState, targetSysName, zipCoords) {
     // Filter by distance if we have a center point
     if (center) {
       var parts = key.split('|');
-      if (parts.length === 3) {
-        var lat = parseFloat(parts[1]);
-        var lon = parseFloat(parts[2]);
-        if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
-          var dist = haversine(center.lat, center.lon, lat, lon);
-          if (dist > 150) return; // outside 150 mile radius
-        }
-      }
+      if (parts.length < 3) return; // manual_ key with no coordinates — skip when filtering
+      var lat = parseFloat(parts[parts.length - 2]);
+      var lon = parseFloat(parts[parts.length - 1]);
+      if (isNaN(lat) || isNaN(lon) || (lat === 0 && lon === 0)) return; // no valid coords
+      var dist = haversine(center.lat, center.lon, lat, lon);
+      if (dist > 150) return; // outside 150 mile radius
     }
 
     counts[sysName] = (counts[sysName] || 0) + 1;
