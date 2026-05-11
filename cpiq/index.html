@@ -856,7 +856,31 @@ if (!sysName) return null;
 
 // ── Generate CPIQ dataset and broadcast to all frames ────────────────────────
 async function generateAndBroadcast(sysName, mapState) {
-  var competitors = extractCompetitors(mapState, sysName, _zipCoords || null);
+  // Try competitors-near API first (uses KNOWN_SYSTEMS pattern matching on QHIN data)
+  var competitors = null;
+  if (_zipCoords) {
+    try {
+      var cnRes = await fetchWithTimeout(
+        MAP_TOOL_ROUTER + '?action=competitors-near&lat=' + _zipCoords.lat +
+        '&lon=' + _zipCoords.lon + '&miles=25&target=' + encodeURIComponent(sysName), 5000
+      );
+      if (cnRes.ok) {
+        var cnData = await cnRes.json();
+        if (cnData.competitors && cnData.competitors.length > 0) {
+          competitors = cnData.competitors.map(function(c) {
+            return { name: c.name, tier: 'oon', locationCount: c.count, marketShare: c.share };
+          });
+          console.log('[CPIQ] competitors-near: ' + competitors.length + ' competitors found');
+        }
+      }
+    } catch(e) {
+      console.warn('[CPIQ] competitors-near failed, using fallback:', e.message);
+    }
+  }
+  if (!competitors || competitors.length === 0) {
+    competitors = extractCompetitors(mapState, sysName, _zipCoords || null);
+    console.log('[CPIQ] competitors fallback: ' + competitors.length + ' competitors');
+  }
   var dataset = CPIQEngine.generate(sysName, competitors, {});
   cpiqState = dataset;
 
