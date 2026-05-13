@@ -903,6 +903,15 @@ async function generateAndBroadcast(sysName, mapState) {
            !cn.includes(sysNameLower.split(' ')[0]) &&
            !sysNameLower.includes(cn.split(' ')[0]);
   });
+  // Also filter out standalone specialty clinics that aren't health systems
+  var CLINIC_KEYWORDS = ['dialysis','kidney care','nephrology','radiology','va clinic',
+    'va medical','fresenius','davita','surgery center','asc ','endoscopy',
+    'imaging','laboratory','lab ','pharmacy','dental','vision','optical'];
+  competitors = competitors.filter(function(c) {
+    var cn = (c.name || '').toLowerCase();
+    return !CLINIC_KEYWORDS.some(function(kw) { return cn.includes(kw); });
+  });
+
   if (competitors.length === 0) {
     competitors = [
       { name: 'Regional Medical Center', tier: 'oon', locationCount: 8 },
@@ -1157,16 +1166,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (n && n !== 'Independent / Community') counts[n] = (counts[n]||0)+1;
     });
     if (counts[name]) {
-      setSysModalHint('✓ Found in Map Tool — logo + competitors will load automatically', false);
+      setSysModalHint('✓ Found in Map Tool cache', false);
     } else {
-      var similar = Object.keys(counts).filter(function(k) {
-        return k.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(k.toLowerCase().split(' ')[0]);
-      }).slice(0,2);
-      if (similar.length) {
-        setSysModalHint('Not found exactly — did you mean: ' + similar.join(', ') + '?', true);
-      } else {
-        setSysModalHint('Not in Map Tool — synthetic competitors will be used', false);
-      }
+      setSysModalHint('', false);
     }
   });
 
