@@ -902,6 +902,13 @@ async function generateAndBroadcast(sysName, mapState) {
   var sessionKey = sysName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 40);
   cpiqState._sessionKey = sessionKey;
 
+  // Clear any stale patient data from previous sessions before saving new ones
+  try {
+    Object.keys(sessionStorage).forEach(function(k) {
+      if (k.startsWith('cpiq_patients_')) sessionStorage.removeItem(k);
+    });
+  } catch(e) {}
+
   // Store patients in sessionStorage — instant, no network round trip
   try {
     sessionStorage.setItem('cpiq_patients_' + sessionKey, JSON.stringify(dataset.patients || []));
@@ -1285,6 +1292,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (logoImg) logoImg.src = logoDataUrl;
       }
       document.querySelectorAll('.loading-sub').forEach(function(el) { el.textContent = name; });
+      // Clear any cached patient data so journeys fetches fresh preset patients
+      try {
+        Object.keys(sessionStorage).forEach(function(k) {
+          if (k.startsWith('cpiq_patients_')) sessionStorage.removeItem(k);
+        });
+      } catch(e) {}
       broadcastToAllFrames({ type: 'cpiq-state', payload: presetData });
       loadFrame('carepathiq');
       closeSysModal();
