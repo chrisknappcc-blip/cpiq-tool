@@ -1478,7 +1478,14 @@ async function exportDashboard() {
       '  if(b)b.classList.add("on");',
       '}',
       '</' + 'script>',
-      ctaHtml.split('<\/' + 'script>').join('<' + '/script>'),
+      (function() {
+        var ch = ctaHtml.split('<\/' + 'script>').join('<' + '/script>');
+        if (logoDataUrl) {
+          ch = ch.replace(/(<img id=\"cta-panel-logo\" src=\")[^"]*(\")/,
+            '$1' + logoDataUrl + '$2');
+        }
+        return ch;
+      })(),
       '</body></html>'
     ];
 
