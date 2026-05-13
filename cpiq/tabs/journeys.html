@@ -350,10 +350,13 @@ function expandPatient(r, cpiq) {
   var prac = practices.find(function(p) { return p.pid === r.dp; }) || {};
   var ref  = referrers.find(function(p) { return p.id === r.ri; }) || {};
   var doc  = (prac.docs || []).find(function(d) { return d.id === r.di; }) || {};
+  // Always derive destTier from the current practice object, not the stored r.dt
+  // This prevents stale tier data when patients from a previous session are reused
+  var destTier = prac.tier || r.dt || 'oon';
   return {
     pid:r.i, id:r.i, spec:r.sp, refDate:r.rd, refTier:r.rt, refPtype:r.rp,
     refSource:ref.name||'Unknown', refSourceId:r.ri,
-    destPid:r.dp, destTier:r.dt,
+    destPid:r.dp, destTier:destTier,
     destPractice:prac.name||r.dp,
     destPhysician:doc.name||'Unknown', destPhysId:r.di,
     visitDone:r.v===1, mttaDays:r.m, visitDate:r.vd,
@@ -427,6 +430,12 @@ const PRAC_MAP = (function() {
   practices.forEach(function(p) { m[p.pid] = p.name; });
   return m;
 })()
+const PRAC_MAP_TIER = (function() {
+  var m = {};
+  var practices = (window.CPIQ && window.CPIQ.practices) || [];
+  practices.forEach(function(p) { m[p.pid] = p.tier; });
+  return m;
+})()
 const PHYS_MAP = (function() {
   var m = {};
   var pracs = (window.CPIQ && window.CPIQ.practices) || [];
@@ -460,7 +469,7 @@ function _buildPatients() {
       destPid:      r.destPid || r.dp,
       destPhysician:r.destPhysician || PHYS_MAP[r.di] || r.di,
       destPhysId:   r.destPhysId || r.di,
-      destTier:     r.destTier || r.dt,
+      destTier:     (PRAC_MAP_TIER[r.destPid || r.dp]) || r.destTier || r.dt || 'oon',
       visitDone:    r.visitDone !== undefined ? r.visitDone : r.v===1,
       mttaDays:     r.mttaDays !== undefined ? r.mttaDays : r.m,
       visitDate:    r.visitDate || r.vd,
