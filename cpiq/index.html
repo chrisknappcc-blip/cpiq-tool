@@ -1542,6 +1542,14 @@ async function exportDashboard() {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
 (async function init() {
+  // Always clear patient cache on page load — patients regenerate in seconds
+  // and stale data causes incorrect tier assignments in Patient Journeys
+  try {
+    Object.keys(sessionStorage).forEach(function(k) {
+      if (k.startsWith('cpiq_patients_')) sessionStorage.removeItem(k);
+    });
+  } catch(e) {}
+
   // Restore logo from sessionStorage if available
   try {
     var savedLogo = sessionStorage.getItem('cpiq_logo');
