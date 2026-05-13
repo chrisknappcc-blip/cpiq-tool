@@ -855,28 +855,44 @@ if (!sysName) return null;
 
 // ── Generate CPIQ dataset and broadcast to all frames ────────────────────────
 async function generateAndBroadcast(sysName, mapState) {
-  // Try competitors-near API first (uses KNOWN_SYSTEMS pattern matching on QHIN data)
+  // Try Map Tool search cache first (exact match from a previous Map Tool search)
   var competitors = null;
   if (_zipCoords) {
     try {
-      var cnRes = await fetchWithTimeout(
-        MAP_TOOL_ROUTER + '?action=competitors-near&lat=' + _zipCoords.lat +
-        '&lon=' + _zipCoords.lon + '&miles=25&target=' + encodeURIComponent(sysName), 5000
+      var cacheKey = 'comp|' + _zipCoords.lat.toFixed(3) + '|' + _zipCoords.lon.toFixed(3) + '|40000';
+      var cacheRes = await fetchWithTimeout(
+        MAP_TOOL_ROUTER + '?action=search-cache-get&key=' + encodeURIComponent(cacheKey), 3000
       );
-      if (cnRes.ok) {
-        var cnData = await cnRes.json();
-        if (cnData.competitors && cnData.competitors.length > 0) {
-          competitors = cnData.competitors.map(function(c) {
+      if (cacheRes.ok) {
+        var cacheData = await cacheRes.json();
+        if (cacheData.hit && cacheData.facilities && cacheData.facilities.competitors && cacheData.facilities.competitors.length > 0) {
+          competitors = cacheData.facilities.competitors.map(function(c) {
             return { name: c.name, tier: 'oon', locationCount: c.count, marketShare: c.share };
           });
-            }
+        }
       }
-    } catch(e) {
+    } catch(e) {}
+
+    // Fall back to competitors-near if no cache hit
+    if (!competitors || competitors.length === 0) {
+      try {
+        var cnRes = await fetchWithTimeout(
+          MAP_TOOL_ROUTER + '?action=competitors-near&lat=' + _zipCoords.lat +
+          '&lon=' + _zipCoords.lon + '&miles=25&target=' + encodeURIComponent(sysName), 5000
+        );
+        if (cnRes.ok) {
+          var cnData = await cnRes.json();
+          if (cnData.competitors && cnData.competitors.length > 0) {
+            competitors = cnData.competitors.map(function(c) {
+              return { name: c.name, tier: 'oon', locationCount: c.count, marketShare: c.share };
+            });
+          }
+        }
+      } catch(e) {}
     }
   }
   if (!competitors || competitors.length === 0) {
     competitors = extractCompetitors(mapState, sysName, _zipCoords || null);
-    console.log('[CPIQ] competitors fallback: ' + competitors.length + ' competitors');
   }
   var dataset = CPIQEngine.generate(sysName, competitors, {});
   cpiqState = dataset;
