@@ -903,13 +903,37 @@ async function generateAndBroadcast(sysName, mapState) {
            !cn.includes(sysNameLower.split(' ')[0]) &&
            !sysNameLower.includes(cn.split(' ')[0]);
   });
-  // Also filter out standalone specialty clinics that aren't health systems
-  var CLINIC_KEYWORDS = ['dialysis','kidney care','nephrology','radiology','va clinic',
-    'va medical','fresenius','davita','surgery center','asc ','endoscopy',
-    'imaging','laboratory','lab ','pharmacy','dental','vision','optical'];
+  // Only keep competitors that match a known health system name
+  var KNOWN_SYS_NAMES = ['Mass General Brigham',"Boston Children's",'Beth Israel Lahey','Atrius Health',
+    'Tufts Medicine','UMass Memorial','Steward Health Care','Yale New Haven Health',
+    'Hartford HealthCare','Care New England','Lifespan','MaineHealth','Dartmouth Health',
+    'HCA Healthcare','Trinity Health','Ascension','CommonSpirit Health','Advocate Aurora',
+    'Providence','Northwell Health','NYU Langone','NewYork-Presbyterian','Mount Sinai',
+    'Memorial Sloan Kettering','Cleveland Clinic','Mayo Clinic','Kaiser Permanente',
+    'Sutter Health','Intermountain Health','Banner Health','AdventHealth','Atrium Health',
+    'Prisma Health','OhioHealth','University Hospitals','Penn Medicine','Jefferson Health',
+    'ChristianaCare','Spectrum Health','Henry Ford Health','Beaumont Health','OSF HealthCare',
+    'SSM Health','BJC HealthCare','Sanford Health','Fairview Health','Allina Health',
+    'HealthPartners','UCHealth','Centura Health','Scripps Health','Sharp HealthCare',
+    'Cedars-Sinai','UCLA Health','UCSF Health','Stanford Health','Vanderbilt Health',
+    'Emory Healthcare','Piedmont Healthcare','WellStar Health','Ochsner Health',
+    'LCMC Health','CHRISTUS Health','Baylor Scott & White','Texas Health Resources',
+    'Memorial Hermann','Houston Methodist','MD Anderson','Baptist Health','Encompass Health',
+    'LifePoint Health','Community Health Systems','Tenet Healthcare','Universal Health',
+    'Methodist Health','SCL Health','Dignity Health','Barnes-Jewish',
+    'Franciscan Health','IU Health','Indiana University Health','Lutheran Health',
+    'Deaconess Health','Reid Health','Eskenazi Health','Community Health Network',
+    'Ascension St. Vincent','Dupont Hospital','Parkview Health',
+    'Bon Secours','VCU Health','Sentara','Carilion','Inova','Riverside Health',
+    'UPMC','Geisinger','WakeMed','Novant Health','Kettering Health','ProMedica',
+    'Mercy Health','Covenant Health','Adventist Health','Catholic Health',
+    'Bon Secours Mercy','Providence Health'];
   competitors = competitors.filter(function(c) {
     var cn = (c.name || '').toLowerCase();
-    return !CLINIC_KEYWORDS.some(function(kw) { return cn.includes(kw); });
+    return KNOWN_SYS_NAMES.some(function(s) {
+      var sn = s.toLowerCase();
+      return sn === cn || sn.split(' ')[0] === cn.split(' ')[0];
+    });
   });
 
   if (competitors.length === 0) {
