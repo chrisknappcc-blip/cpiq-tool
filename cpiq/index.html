@@ -894,6 +894,22 @@ async function generateAndBroadcast(sysName, mapState) {
   if (!competitors || competitors.length === 0) {
     competitors = extractCompetitors(mapState, sysName, _zipCoords || null);
   }
+  // Filter out any competitor that matches the target system name
+  console.log('[CPIQ] Raw competitors before filter:', JSON.stringify((competitors||[]).map(function(c){return c.name;})));
+  var sysNameLower = sysName.toLowerCase();
+  competitors = (competitors || []).filter(function(c) {
+    var cn = (c.name || '').toLowerCase();
+    return cn !== sysNameLower &&
+           !cn.includes(sysNameLower.split(' ')[0]) &&
+           !sysNameLower.includes(cn.split(' ')[0]);
+  });
+  if (competitors.length === 0) {
+    competitors = [
+      { name: 'Regional Medical Center', tier: 'oon', locationCount: 8 },
+      { name: 'Community Health Partners', tier: 'oon', locationCount: 5 },
+      { name: 'Metro Health System', tier: 'oon', locationCount: 4 }
+    ];
+  }
   var dataset = CPIQEngine.generate(sysName, competitors, {});
   cpiqState = dataset;
 
